@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Walzen-Group/server-cpl/backend/api"
-	"github.com/Walzen-Group/server-cpl/backend/state"
+	"github.com/Walzen-Group/washboard/backend/api"
+	"github.com/Walzen-Group/washboard/backend/state"
 	"github.com/gin-gonic/gin"
 	"github.com/kpango/glg"
 	"gopkg.in/natefinch/lumberjack.v2"

@@ -1,5 +1,5 @@
 package portainer
 
-import "github.com/Walzen-Group/server-cpl/backend/state"
+import "github.com/Walzen-Group/washboard/backend/state"
 
 var appState *state.Data = state.Instance()

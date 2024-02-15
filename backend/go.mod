@@ -1,4 +1,4 @@
-module github.com/Walzen-Group/server-cpl/backend
+module github.com/Walzen-Group/washboard/backend
 
 go 1.22.0
 

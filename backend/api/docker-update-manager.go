@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/Walzen-Group/server-cpl/backend/portainer"
+	"github.com/Walzen-Group/washboard/backend/portainer"
 	"github.com/gin-gonic/gin"
 	"github.com/kpango/glg"
 )
