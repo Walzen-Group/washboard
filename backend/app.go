@@ -41,6 +41,8 @@ func main() {
 	router := gin.Default()
 	router.GET("/portainer-get-endpoints", api.PortainerGetEndpoints)
 	router.GET("/portainer-get-stacks", api.PortainerGetStacks)
+	router.GET("/portainer-get-stack-containers", api.PortainerGetStackContainers)
+	router.GET("/portainer-get-image-status", api.PortainerGetImageStatus)
 	ret := router.Run()
 	if ret != nil {
 		panic(ret)
