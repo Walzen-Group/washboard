@@ -1,5 +1,5 @@
 package api
 
-import "github.com/Walzen-Group/washboard/backend/state"
+import "washboard/state"
 
 var appState *state.Data = state.Instance()

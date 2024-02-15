@@ -1,4 +1,4 @@
-module github.com/Walzen-Group/washboard/backend
+module washboard
 
 go 1.22.0
 
