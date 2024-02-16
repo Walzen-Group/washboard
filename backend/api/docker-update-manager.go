@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -27,8 +28,18 @@ func PortainerGetEndpoints(c *gin.Context) {
 }
 
 func PortainerGetStacks(c *gin.Context) {
+	// Set endpointId
 	endpoint := c.DefaultQuery("endpointId", "1")
 	endpointId, err := strconv.Atoi(endpoint)
+	if err != nil {
+		glg.Errorf("failed to convert endpointId to int: %s", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": fmt.Sprintf("failed to convert endpointId \"%s\" to int", endpoint),
+			"error": err,
+		})
+		return
+	}
+	
 	res, err := portainer.GetStacks(endpointId)
 	if err != nil {
 		glg.Error("failed to get stacks")
@@ -43,16 +54,19 @@ func PortainerGetStacks(c *gin.Context) {
 }
 
 func PortainerGetStackContainers(c *gin.Context) {
+	// Set endpointId
 	endpoint := c.DefaultQuery("endpointId", "1")
 	endpointId, err := strconv.Atoi(endpoint)
 	if err != nil {
 		glg.Errorf("failed to convert endpointId to int: %s", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "failed to convert endpointId to int",
+			"message": fmt.Sprintf("failed to convert endpointId \"%s\" to int", endpoint),
 			"error": err,
 		})
 		return
 	}
+	
+	// Set stackLabel
 	stackLabel := c.Query("stackLabel")
 	res, err := portainer.GetStackContainers(endpointId, stackLabel)
 	if err != nil {
@@ -62,12 +76,21 @@ func PortainerGetStackContainers(c *gin.Context) {
 		})
 		return
 	}
+
+	// Check if stack is empty
+	if len(res) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"message": fmt.Sprintf("Stack \"%s\" not found in environment %d", stackLabel, endpointId),
+		})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"stacks": res,
 	})
 }
 
 func PortainerGetImageStatus(c *gin.Context) {
+	// Set endpointId
 	endpoint := c.DefaultQuery("endpointId", "1")
 	endpointId, err := strconv.Atoi(endpoint)
 	if err != nil {
@@ -78,6 +101,8 @@ func PortainerGetImageStatus(c *gin.Context) {
 		})
 		return
 	}
+
+	// Set containerId
 	containerId := c.Query("containerId")
 	if containerId == "" {
 		glg.Error("containerId is empty")
