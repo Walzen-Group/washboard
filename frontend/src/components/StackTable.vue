@@ -3,7 +3,10 @@
         <template v-slot:text>
             <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify" single-line variant="outlined"
                 hide-details></v-text-field>
-            <v-btn variant="tonal" class="mt-4" @click="updateSelected" color="primary">Update Selected</v-btn>
+            <div class="d-flex flex-row mt-4">
+                <v-btn variant="tonal" class="mr-2" @click="updateSelected" color="primary">Update Selected</v-btn>
+                <v-btn variant="tonal" class="" @click="selectOutdated" color="primary">Select Outdated</v-btn>
+            </div>
         </template>
         <div v-if="loading">
             <v-skeleton-loader type="list-item"></v-skeleton-loader>
@@ -11,13 +14,15 @@
             <v-skeleton-loader type="table-tbody"></v-skeleton-loader>
             <v-skeleton-loader type="table-tfoot"></v-skeleton-loader>
         </div>
-        <v-data-table v-else items-per-page="-1" v-model:sort-by="sortBy" :search=search :headers="headers"
-            v-model="selectedRows" :items="items" item-value="id" @update:modelValue="bulkSelect" show-select show-expand>
+        <v-data-table v-else items-per-page="-1" v-model:sort-by="sortBy" :search=search
+            @update:sortBy="updateSorting" :headers="headers" v-model="selectedRows" :items="items" item-value="id"
+            @update:modelValue="bulkSelect" show-select show-expand>
             <template v-slot:item.updateStatus="{ value }">
                 <div class="d-flex flex-row">
                     <v-tooltip v-for="item in value" :text="item.name" location="top">
                         <template v-slot:activator="{ props }">
-                            <v-icon size="x-large" v-bind="props" class="mr-0" :icon="getIcon(item.status)" :color="getColor(item.status)"></v-icon>
+                            <v-icon size="x-large" v-bind="props" class="mr-0" :icon="getIcon(item.status)"
+                                :color="getColor(item.status)"></v-icon>
                         </template>
                     </v-tooltip>
                 </div>
@@ -49,15 +54,16 @@ import axios from 'axios';
 
 let loading: Ref<boolean> = ref(true);
 let search: Ref<string> = ref("");
-let selectedRows: Ref<Stack[]> = ref([]);
+let selectedRows: Ref<number[]> = ref([]);
 let shiftKeyOn: boolean = false;
-let items: Ref<any> = ref();
+let items: Ref<Stack[]> = ref([]);
 let keyDownHandler: any;
 let keyUpHandler: any;
 let sortBy: Ref<any[]> = ref([{ key: 'name', order: 'asc' }]);
 const headers = [
     { title: "Stack Name", key: "name", value: "name" },
-    { title: "Update Status", value: "updateStatus" }
+    { title: "Update Status", value: "updateStatus" },
+    { title: "ID", key: "id", value: "id" }
 ];
 const containerTableHeaders = [
     { title: "Image Status", value: "upToDate" },
@@ -96,6 +102,23 @@ onUnmounted(() => {
     window.removeEventListener("keyup", keyUpHandler);
 }
 );
+
+function updateSorting(sortByRequest: any) {
+    if (sortByRequest.length === 0) {
+        sortByRequest = [{ key: 'name', order: 'asc' }];
+    }
+    items.value.sort((a: any, b: any) => {
+        if (sortByRequest[0].order === "asc") {
+            if (a[sortByRequest[0].key] < b[sortByRequest[0].key]) return -1;
+            if (a[sortByRequest[0].key] > b[sortByRequest[0].key]) return 1;
+            return 0;
+        } else {
+            if (a[sortByRequest[0].key] > b[sortByRequest[0].key]) return -1;
+            if (a[sortByRequest[0].key] < b[sortByRequest[0].key]) return 1;
+            return 0;
+        }
+    });
+}
 
 function getColor(status: string) {
     if (status === "outdated") return 'yellow-darken-3'
@@ -139,23 +162,39 @@ function bulkSelect(e: any) {
     }
 }
 
+function selectOutdated() {
+    selectedRows.value = []
+    for (let item of items.value) {
+        if (item.updateStatus.some((container: any) => container.status === "outdated")) {
+            selectedRows.value.push(item.id);
+        }
+    }
+}
+
+function updateContainer(stackId: number) {
+    console.log(stackId);
+    axios.put('/portainer-update-stack', {
+        pullImage: true,
+        prune: false,
+        endpointId: 1,
+        stackId: stackId
+    })
+        .then((response) => {
+            console.log(response);
+        })
+        .catch((error) => {
+            console.log(error);
+        });
+}
+
 function updateSelected() {
     console.log(selectedRows.value);
     for (let selectedRow of selectedRows.value) {
-        console.log(selectedRow);
-        axios.put('/portainer-update-stack', {
-            pullImage: true,
-            prune: false,
-            endpointId: 1,
-            stackId: selectedRow
-        })
-            .then((response) => {
-                console.log(response);
-            })
-            .catch((error) => {
-                console.log(error);
-            });
+        updateContainer(selectedRow);
     }
 }
 
 </script>
+
+<style lang="scss">
+</style>

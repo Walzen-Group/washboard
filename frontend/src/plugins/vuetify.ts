@@ -14,7 +14,8 @@ import { createVuetify, type ThemeDefinition } from 'vuetify'
 const washboardThemeLight: ThemeDefinition = {
   colors: {
     primary: '#039BE5',
-    updated: '#42A5F5'
+    updated: '#42A5F5',
+    surface: '#f5f5f5',
   },
 }
 

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"washboard/helper"
 
@@ -15,13 +16,13 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-type Endpoint struct {
+type EndpointDto struct {
 	Id         int         `json:"id"`
 	Name       string      `json:"name"`
-	Containers []Container `json:"containers"`
+	Containers []ContainerDto `json:"containers"`
 }
 
-type Container struct {
+type ContainerDto struct {
 	Id       string                 `json:"id"`
 	Name     string                 `json:"name"`
 	Image    string                 `json:"image"`
@@ -31,12 +32,11 @@ type Container struct {
 	Labels   map[string]interface{} `json:"labels"`
 }
 
-type Stack struct {
+type StackDto struct {
 	Id         int         `json:"id"`
 	Name       string      `json:"name"`
-	Containers []Container `json:"containers"`
+	Containers []ContainerDto `json:"containers"`
 }
-
 
 // GetEndpointId returns the id of the endpoint with the given name, which is also the environment in Portainer
 func GetEndpointId(endpointName string) (int, error) {
@@ -62,7 +62,7 @@ func GetEndpointId(endpointName string) (int, error) {
 		return -1, err
 	}
 
-	var endpoints []Endpoint
+	var endpoints []EndpointDto
 	err = json.Unmarshal(body, &endpoints)
 	if err != nil {
 		glg.Errorf("Failed to unmarshal JSON: %s", err)
@@ -80,7 +80,7 @@ func GetEndpointId(endpointName string) (int, error) {
 }
 
 // GetStacks returns the stacks for the given endpoint
-func GetStacks(endpointId int) ([]Stack, error) {
+func GetStacks(endpointId int) ([]StackDto, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks", appState.PortainerUrl), nil)
 	if err != nil {
@@ -132,7 +132,7 @@ func GetStacks(endpointId int) ([]Stack, error) {
 }
 
 // GetContainers returns the containers for the given endpoint. If stackLabel is provided, only the containers of the stack with the given label are returned, otherwise all containers are returned
-func GetContainers(endpointId int, stackLabel string) ([]Container, error) {
+func GetContainers(endpointId int, stackLabel string) ([]ContainerDto, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/endpoints/%d/docker/containers/json", appState.PortainerUrl, endpointId), nil)
 	if err != nil {
@@ -175,8 +175,8 @@ func GetContainers(endpointId int, stackLabel string) ([]Container, error) {
 	return containersDto, nil
 }
 
-func buildStackDto(stacks map[string]map[string]interface{}, endpointId int) ([]Stack, error) {
-	var stacksDto = make(map[string]*Stack)
+func buildStackDto(stacks map[string]map[string]interface{}, endpointId int) ([]StackDto, error) {
+	var stacksDto = make(map[string]*StackDto)
 	containers, err := GetContainers(endpointId, "")
 	if err != nil {
 		glg.Errorf("Failed to get stack containers: %s", err)
@@ -198,16 +198,16 @@ func buildStackDto(stacks map[string]map[string]interface{}, endpointId int) ([]
 			val.Containers = append(val.Containers, container)
 		} else {
 			if val, ok := stacks[label]; ok {
-				stacksDto[label] = &Stack{
+				stacksDto[label] = &StackDto{
 					Id:         int(val["Id"].(float64)),
 					Name:       val["Name"].(string),
-					Containers: []Container{container},
+					Containers: []ContainerDto{container},
 				}
 			}
 		}
 	}
 
-	stacksDtoList := make([]Stack, 0, len(stacksDto))
+	stacksDtoList := make([]StackDto, 0, len(stacksDto))
 	for _, stack := range stacksDto {
 		stacksDtoList = append(stacksDtoList, *stack)
 	}
@@ -215,8 +215,8 @@ func buildStackDto(stacks map[string]map[string]interface{}, endpointId int) ([]
 	return stacksDtoList, nil
 }
 
-func buildStackContainerDto(containers []map[string]interface{}, endpointId int) []Container {
-	var containersDto []Container
+func buildStackContainerDto(containers []map[string]interface{}, endpointId int) []ContainerDto {
+	var containersDto []ContainerDto
 	for _, container := range containers {
 		portsData := container["Ports"].([]interface{})
 		// Get unique public ports
@@ -233,7 +233,7 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 		}
 		name := container["Names"].([]interface{})[0].(string)
 		name = helper.RemoveFirstIfMatch(name, "/")
-		containersDto = append(containersDto, Container{
+		containersDto = append(containersDto, ContainerDto{
 			Id:       container["Id"].(string),
 			Name:     name,
 			Image:    container["Image"].(string),
@@ -249,13 +249,13 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 	statusChan := make(chan struct {
 		index    int
 		upToDate string
+		cached   bool
 	}, len(containersDto))
 
 	for i, container := range containersDto {
 		wg.Add(1)
-		go func(i int, container Container) {
+		go func(i int, container ContainerDto) {
 			defer wg.Done()
-
 
 			cachedStatus, found := portainerCache.Get(container.Id)
 			var status string
@@ -265,7 +265,10 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 			} else {
 				liveStatus, err := GetImageStatus(endpointId, container.Id)
 				if err != nil {
-					glg.Warnf("Error fetching UpToDate status for container %s: %v\n", container.Id, err)
+					glg.Errorf("Error fetching image status for container id %s", container.Id)
+					// TODO: Make it debug? Remove it? idk, it's annoying :D
+					// glg.Debugf("Error fetching UpToDate status for container %s: %v\n", container.Id, err)
+					portainerCache.Set(container.Id, liveStatus, time.Minute * 5)
 					return
 				}
 				portainerCache.Set(container.Id, liveStatus, cache.DefaultExpiration)
@@ -274,7 +277,8 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 			statusChan <- struct {
 				index    int
 				upToDate string
-			}{i, status}
+				cached   bool
+			}{i, status, found}
 		}(i, container)
 	}
 
@@ -283,9 +287,17 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 		close(statusChan)
 	}()
 
+	cachedCount := 0
+	uncachedCount := 0
 	for status := range statusChan {
 		containersDto[status.index].UpToDate = status.upToDate
+		if status.cached {
+			cachedCount++
+		} else {
+			uncachedCount++
+		}
 	}
+	glg.Logf("cached images: %d, uncached images: %d", cachedCount, uncachedCount)
 	return containersDto
 }
 
@@ -320,7 +332,6 @@ func GetImageStatus(endpointId int, containerId string) (string, error) {
 	}
 	if _, ok := container["message"]; ok {
 		errorMessage := fmt.Sprintf("%s: %s. %s", container["message"], containerId, container["details"])
-		glg.Error(errorMessage)
 		return "", fmt.Errorf(errorMessage)
 	}
 	return container["Status"].(string), nil
@@ -366,22 +377,58 @@ func UpdateContainer(endpointId int, containerId string, pullImage bool) (string
 }
 
 func UpdateStack(endpointId int, stackId int, prune bool, pullImage bool) (float64, error) {
+	glg.Infof("updating stack id: %d", stackId)
 	client := &http.Client{}
+	stackData, err := getStackRaw(stackId)
+	if err != nil {
+		glg.Errorf("Failed to get stack data: %s", err)
+		return -1, err
+	}
+	if val, ok := stackData["EndpointId"] ; !ok {
+		glg.Errorf("stack does not have endpoint id")
+		return -1, fmt.Errorf("stack does not have endpoint id")
+	} else if valInt, ok := val.(float64); !ok {
+		glg.Errorf("stack endpoint id is not a number")
+		return -1, fmt.Errorf("stack endpoint id is not a number")
+	} else if int(valInt) != endpointId {
+		glg.Errorf("stack endpoint id does not match")
+		return -1, fmt.Errorf("stack endpoint id does not match")
+	}
+
 	stackFileContent, err := getStackFile(stackId)
 	if err != nil {
 		glg.Errorf("Failed to get stack file: %s", err)
 		return -1, err
 	}
 	type RequestBody struct {
-		Env             []string `json:"Env"`
-		Id              int      `json:"id"`
-		Prune           bool     `json:"Prune"`
-		PullImage       bool     `json:"PullImage"`
+		Env              interface{} `json:"Env"`
+		Id               int      `json:"id"`
+		Prune            bool     `json:"Prune"`
+		PullImage        bool     `json:"PullImage"`
 		StackFileContent string   `json:"StackFileContent"`
-		Webhook         string   `json:"Webhook"`
+		Webhook          string   `json:"Webhook"`
 	}
 
-	reqBodyRaw := fmt.Sprintf(`{"Env":[],"id":%d,"Prune":%t,"PullImage":%t,"StackFileContent":"%s","Webhook":null}`, stackId, prune, pullImage, stackFileContent)
+	envData, ok := stackData["Env"]
+	if !ok {
+		glg.Errorf("stack does not have env data")
+		return -1, fmt.Errorf("stack does not have env data")
+	}
+	webhook, ok := stackData["Webhook"]
+	if !ok {
+		glg.Errorf("stack does not have webhook data")
+		return -1, fmt.Errorf("stack does not have webhook data")
+	}
+	envDataByte, err := json.Marshal(envData)
+	if err != nil {
+		glg.Errorf("Failed to marshal env data: %s", err)
+		return -1, err
+	}
+
+	envDataString := string(envDataByte)
+	reqBodyRaw := fmt.Sprintf(`{"Env":%s,"id":%d,"Prune":%t,"PullImage":%t,"StackFileContent":"%s","Webhook":"%s"}`,
+		envDataString, stackId, prune, pullImage, stackFileContent, webhook)
+	//glg.Logf("%+v", reqBodyRaw)
 	reqBodyByte := []byte(reqBodyRaw)
 
 	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/stacks/%d", appState.PortainerUrl, stackId), bytes.NewBuffer(reqBodyByte))
@@ -423,6 +470,38 @@ func UpdateStack(endpointId int, stackId int, prune bool, pullImage bool) (float
 	}
 	glg.Infof("Stack %s updated", stack["Name"])
 	return stack["Id"].(float64), nil
+}
+
+func getStackRaw(stackId int) (map[string]interface{}, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks/%d", appState.PortainerUrl, stackId), nil)
+	if err != nil {
+		glg.Errorf("Failed to create request: %s", err)
+		return nil, err
+	}
+
+	req.Header.Add("X-API-Key", appState.PortainerSecret)
+	resp, err := client.Do(req)
+	if err != nil {
+		glg.Errorf("Failed to send request: %s", err)
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		glg.Errorf("Failed to read response: %s", err)
+		return nil, err
+	}
+
+	var stack map[string]interface{}
+	err = json.Unmarshal(body, &stack)
+	if err != nil {
+		glg.Errorf("Failed to unmarshal JSON: %s", err)
+		return nil, err
+	}
+	return stack, nil
 }
 
 func getStackFile(stackId int) (string, error) {
