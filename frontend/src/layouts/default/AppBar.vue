@@ -6,13 +6,13 @@
       </v-list-item>
     </v-list>
   </v-navigation-drawer>
-  <v-app-bar :floating="clipped">
+  <v-app-bar :absolute="clipped">
     <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
     <v-btn icon @click.stop="miniVariant = !miniVariant">
       <v-icon>mdi-{{ `chevron-${miniVariant ? "right" : "left"}` }}</v-icon>
     </v-btn>
     <v-btn icon @click.stop="clipped = !clipped">
-      <v-icon>mdi-server</v-icon>
+      <v-icon>mdi-washing-machine</v-icon>
     </v-btn>
 
     <v-toolbar-title class="ml-4" v-text="title" />

@@ -1,6 +1,8 @@
 <template>
-    <p>rosig</p>
+    <StackTable />
 </template>
 
 <script lang="ts" setup>
+import StackTable from '@/components/StackTable.vue';
+
 </script>
