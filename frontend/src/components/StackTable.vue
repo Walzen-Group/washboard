@@ -190,7 +190,12 @@ function updateContainer(stackId: number) {
 function updateSelected() {
     console.log(selectedRows.value);
     for (let selectedRow of selectedRows.value) {
-        updateContainer(selectedRow);
+        const stack = items.value.find((item: Stack) => item.id === selectedRow);
+        if (stack?.updateStatus.some((container: any) => container.status === "outdated")) {
+            updateContainer(selectedRow);
+        } else {
+            console.log(`no update necessary for stack ${stack?.name}`);
+        }
     }
 }
 
