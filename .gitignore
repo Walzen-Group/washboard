@@ -1,6 +1,9 @@
 # secrets
 secrets.yaml
 
+# logging
+*/log/
+
 .DS_Store
 node_modules/
 .env
