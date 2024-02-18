@@ -313,7 +313,7 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 
 func GetStackImagesStatus(stackId int) (string, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/docker/stacks/%d/images_status", appState.Config.PortainerUrl, stackId), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks/%d/images_status", appState.Config.PortainerUrl, stackId), nil)
 	if err != nil {
 		glg.Errorf("Failed to create request: %s", err)
 		return "", err
