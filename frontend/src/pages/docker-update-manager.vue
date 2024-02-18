@@ -143,6 +143,9 @@ onMounted(() => {
         .then((response) => {
             items.value = response.data;
             loading.value = false;
+
+            // TODO: remove orphaned containers from dockerUpdateManagerSettings.value.ignoredImages
+            // iterate through dockeruPdateManagerSettings.value.ignoredImages and remove all that are not present in the current stacks
         })
         .catch((error) => {
             console.log(error);
