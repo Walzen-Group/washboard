@@ -1,12 +1,5 @@
 <template>
-  <v-navigation-drawer v-model="drawer" :rail="miniVariant">
-    <v-list>
-      <v-list-item v-for="(item, i) in items" :key="i" :to="item.to" :prepend-icon="item.icon" :title="item.title" router
-        exact>
-      </v-list-item>
-    </v-list>
-  </v-navigation-drawer>
-  <v-app-bar :absolute="clipped">
+  <v-app-bar elevation="1" density="compact" color="washboard-appbar">
     <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
     <v-btn icon @click.stop="miniVariant = !miniVariant">
       <v-icon>mdi-{{ `chevron-${miniVariant ? "right" : "left"}` }}</v-icon>
@@ -21,6 +14,15 @@
       <v-icon>mdi-theme-light-dark</v-icon>
     </v-btn>
   </v-app-bar>
+  <v-navigation-drawer width="230" floating mobile-breakpoint="sm" v-model="drawer"
+                       :rail="miniVariant">
+    <v-list nav density="compact">
+      <v-list-item v-for="(item, i) in items" :key="i" :to="item.to" :prepend-icon="item.icon"
+                   :title="item.title" router
+                   exact>
+      </v-list-item>
+    </v-list>
+  </v-navigation-drawer>
 </template>
 
 <script lang="ts" setup>
@@ -58,15 +60,15 @@ onMounted(() => {
 })
 
 function handleSystemThemeUpdate(e: any) {
-      console.log(`updating theme based on system preference ${e.matches ? "dark" : "light"}`);
-      if (e.matches) {
-        theme.global.name.value = "dark";
-      } else {
-        theme.global.name.value = "light";
-      }
+  console.log(`updating theme based on system preference ${e.matches ? "dark" : "light"}`);
+  if (e.matches) {
+    theme.global.name.value = "dark";
+  } else {
+    theme.global.name.value = "light";
+  }
 }
 
-function toggleTheme () {
+function toggleTheme() {
   theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
 }
 

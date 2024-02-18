@@ -3,6 +3,7 @@ package portainer
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,8 +18,8 @@ import (
 )
 
 type EndpointDto struct {
-	Id         int         `json:"id"`
-	Name       string      `json:"name"`
+	Id         int            `json:"id"`
+	Name       string         `json:"name"`
 	Containers []ContainerDto `json:"containers"`
 }
 
@@ -33,21 +34,28 @@ type ContainerDto struct {
 }
 
 type StackDto struct {
-	Id         int         `json:"id"`
-	Name       string      `json:"name"`
+	Id         int            `json:"id"`
+	Name       string         `json:"name"`
 	Containers []ContainerDto `json:"containers"`
+}
+
+type StackUpdateStatus struct {
+	EndpointId int    `json:"endpointId"`
+	StackId    int    `json:"stackId"`
+	Status     string `json:"status"`
+	Details    string `json:"details"`
 }
 
 // GetEndpointId returns the id of the endpoint with the given name, which is also the environment in Portainer
 func GetEndpointId(endpointName string) (int, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/endpoints", appState.PortainerUrl), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/endpoints", appState.Config.PortainerUrl), nil)
 	if err != nil {
 		glg.Errorf("Failed to create request: %s", err)
 		return -1, err
 	}
 
-	req.Header.Add("X-API-Key", appState.PortainerSecret)
+	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
 	resp, err := client.Do(req)
 	if err != nil {
 		glg.Errorf("Failed to send request: %s", err)
@@ -82,7 +90,7 @@ func GetEndpointId(endpointName string) (int, error) {
 // GetStacks returns the stacks for the given endpoint
 func GetStacks(endpointId int) ([]StackDto, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks", appState.PortainerUrl), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks", appState.Config.PortainerUrl), nil)
 	if err != nil {
 		glg.Errorf("Failed to create request: %s", err)
 		return nil, err
@@ -91,7 +99,7 @@ func GetStacks(endpointId int) ([]StackDto, error) {
 	q := req.URL.Query()
 	q.Add("filters", fmt.Sprintf("{\"EndpointId\":%d}", endpointId))
 	req.URL.RawQuery = q.Encode()
-	req.Header.Add("X-API-Key", appState.PortainerSecret)
+	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -134,7 +142,7 @@ func GetStacks(endpointId int) ([]StackDto, error) {
 // GetContainers returns the containers for the given endpoint. If stackLabel is provided, only the containers of the stack with the given label are returned, otherwise all containers are returned
 func GetContainers(endpointId int, stackLabel string) ([]ContainerDto, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/endpoints/%d/docker/containers/json", appState.PortainerUrl, endpointId), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/endpoints/%d/docker/containers/json", appState.Config.PortainerUrl, endpointId), nil)
 	if err != nil {
 		glg.Errorf("Failed to create request: %s", err)
 		return nil, err
@@ -147,7 +155,7 @@ func GetContainers(endpointId int, stackLabel string) ([]ContainerDto, error) {
 	}
 	//?filter="{"label":["com.docker.compose.project=stackName"]}"
 	req.URL.RawQuery = q.Encode()
-	req.Header.Add("X-API-Key", appState.PortainerSecret)
+	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -266,9 +274,7 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 				liveStatus, err := GetImageStatus(endpointId, container.Id)
 				if err != nil {
 					glg.Errorf("Error fetching image status for container id %s", container.Id)
-					// TODO: Make it debug? Remove it? idk, it's annoying :D
-					// glg.Debugf("Error fetching UpToDate status for container %s: %v\n", container.Id, err)
-					portainerCache.Set(container.Id, liveStatus, time.Minute * 5)
+					portainerCache.Set(container.Id, liveStatus, time.Minute*5)
 					return
 				}
 				portainerCache.Set(container.Id, liveStatus, cache.DefaultExpiration)
@@ -303,13 +309,13 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 
 func GetImageStatus(endpointId int, containerId string) (string, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/docker/%d/containers/%s/image_status", appState.PortainerUrl, endpointId, containerId), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/docker/%d/containers/%s/image_status", appState.Config.PortainerUrl, endpointId, containerId), nil)
 	if err != nil {
 		glg.Errorf("Failed to create request: %s", err)
 		return "", err
 	}
 
-	req.Header.Add("X-API-Key", appState.PortainerSecret)
+	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
 	resp, err := client.Do(req)
 	if err != nil {
 		glg.Errorf("Failed to send request: %s", err)
@@ -341,13 +347,13 @@ func UpdateContainer(endpointId int, containerId string, pullImage bool) (string
 	client := &http.Client{}
 	reqBody := []byte(fmt.Sprintf("{\"PullImage\":%t}", pullImage))
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/docker/%d/containers/%s/recreate", appState.PortainerUrl, endpointId, containerId), bytes.NewBuffer(reqBody))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/docker/%d/containers/%s/recreate", appState.Config.PortainerUrl, endpointId, containerId), bytes.NewBuffer(reqBody))
 	if err != nil {
 		glg.Errorf("Failed to create request: %s", err)
 		return "", err
 	}
 
-	req.Header.Add("X-API-Key", appState.PortainerSecret)
+	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
 	resp, err := client.Do(req)
 	if err != nil {
 		glg.Errorf("Failed to send request: %s", err)
@@ -376,15 +382,43 @@ func UpdateContainer(endpointId int, containerId string, pullImage bool) (string
 	return container["Id"].(string), nil
 }
 
-func UpdateStack(endpointId int, stackId int, prune bool, pullImage bool) (float64, error) {
-	glg.Infof("updating stack id: %d", stackId)
-	client := &http.Client{}
+func getUpdateOperationId(endpointId int, stackId int) string {
+	return fmt.Sprintf("update-stack-%d-%d", endpointId, stackId)
+}
+
+// EnqueueUpdateStack enqueues a stack update operation. If the operation is already queued, it is not enqueued again
+// Parameters:
+//
+// Query Parameters:
+// - endpointId: the id of the endpoint
+//   where the stack is running
+// - stackId: the id of the stack to update
+// - prune: whether to prune the stack
+// - pullImage: whether to pull the image´
+//
+// Creates a StackUpdateStatus object with the following values depending on the result of the operation:
+// - Status: "queued", "done",
+//   "error"
+// - Details: the error message if the operation fails
+//
+func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool) (float64, error) {
+	id := getUpdateOperationId(endpointId, stackId)
+	if val, ok := appState.StackUpdateQueue.Get(id); ok {
+		data := val.(StackUpdateStatus)
+		if data.Status != "error" && data.Status != "done"{
+			glg.Infof("stack update already queued: %s", val)
+			retErr := errors.New("stack update already queued")
+			return -1, retErr
+		}
+	}
+	glg.Infof("enqueueing stack id: %d", stackId)
+
 	stackData, err := getStackRaw(stackId)
 	if err != nil {
 		glg.Errorf("Failed to get stack data: %s", err)
 		return -1, err
 	}
-	if val, ok := stackData["EndpointId"] ; !ok {
+	if val, ok := stackData["EndpointId"]; !ok {
 		glg.Errorf("stack does not have endpoint id")
 		return -1, fmt.Errorf("stack does not have endpoint id")
 	} else if valInt, ok := val.(float64); !ok {
@@ -400,14 +434,16 @@ func UpdateStack(endpointId int, stackId int, prune bool, pullImage bool) (float
 		glg.Errorf("Failed to get stack file: %s", err)
 		return -1, err
 	}
-	type RequestBody struct {
-		Env              interface{} `json:"Env"`
-		Id               int      `json:"id"`
-		Prune            bool     `json:"Prune"`
-		PullImage        bool     `json:"PullImage"`
-		StackFileContent string   `json:"StackFileContent"`
-		Webhook          string   `json:"Webhook"`
-	}
+
+	//
+	//type RequestBody struct {
+	//	Env              interface{} `json:"Env"`
+	//	Id               int         `json:"id"`
+	//	Prune            bool        `json:"Prune"`
+	//	PullImage        bool        `json:"PullImage"`
+	//	StackFileContent string      `json:"StackFileContent"`
+	//	Webhook          string      `json:"Webhook"`
+	//}
 
 	envData, ok := stackData["Env"]
 	if !ok {
@@ -431,7 +467,32 @@ func UpdateStack(endpointId int, stackId int, prune bool, pullImage bool) (float
 	//glg.Logf("%+v", reqBodyRaw)
 	reqBodyByte := []byte(reqBodyRaw)
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/stacks/%d", appState.PortainerUrl, stackId), bytes.NewBuffer(reqBodyByte))
+	go func() {
+		updateStatus := StackUpdateStatus{
+			EndpointId: endpointId,
+			StackId:    stackId,
+			Status:     "queued",
+			Details:    "",
+		}
+		appState.StackUpdateQueue.Set(id, updateStatus, time.Minute*30)
+		_, err := updateStack(endpointId, stackId, reqBodyByte)
+		if err != nil {
+			glg.Errorf("Failed to update stack: %s", err)
+			updateStatus.Status = "error"
+			updateStatus.Details = err.Error()
+		} else {
+			updateStatus.Status = "done"
+		}
+		appState.StackUpdateQueue.Set(id, updateStatus, cache.DefaultExpiration)
+	}()
+
+	return float64(stackId), nil
+}
+
+func updateStack(endpointId int, stackId int, reqBodyByte []byte) (float64, error) {
+	client := &http.Client{}
+
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/stacks/%d", appState.Config.PortainerUrl, stackId), bytes.NewBuffer(reqBodyByte))
 	if err != nil {
 		glg.Errorf("Failed to create request: %s", err)
 		return -1, err
@@ -441,7 +502,7 @@ func UpdateStack(endpointId int, stackId int, prune bool, pullImage bool) (float
 	q.Add("endpointId", fmt.Sprintf("%d", endpointId))
 	req.URL.RawQuery = q.Encode()
 
-	req.Header.Add("X-API-Key", appState.PortainerSecret)
+	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
 	req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -474,13 +535,13 @@ func UpdateStack(endpointId int, stackId int, prune bool, pullImage bool) (float
 
 func getStackRaw(stackId int) (map[string]interface{}, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks/%d", appState.PortainerUrl, stackId), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks/%d", appState.Config.PortainerUrl, stackId), nil)
 	if err != nil {
 		glg.Errorf("Failed to create request: %s", err)
 		return nil, err
 	}
 
-	req.Header.Add("X-API-Key", appState.PortainerSecret)
+	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
 	resp, err := client.Do(req)
 	if err != nil {
 		glg.Errorf("Failed to send request: %s", err)
@@ -506,13 +567,13 @@ func getStackRaw(stackId int) (map[string]interface{}, error) {
 
 func getStackFile(stackId int) (string, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks/%d/file", appState.PortainerUrl, stackId), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks/%d/file", appState.Config.PortainerUrl, stackId), nil)
 	if err != nil {
 		glg.Errorf("Failed to create request: %s", err)
 		return "", err
 	}
 
-	req.Header.Add("X-API-Key", appState.PortainerSecret)
+	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
 	resp, err := client.Do(req)
 	if err != nil {
 		glg.Errorf("Failed to send request: %s", err)

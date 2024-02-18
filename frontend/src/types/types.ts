@@ -18,3 +18,18 @@ interface Stack {
 interface ContainerView {
 
 }
+
+interface Snackbar {
+  id: number;
+  message: string;
+  color: string;
+  show: boolean;
+}
+
+interface AppSettings {
+  dockerUpdateManagerSettings: DockerUpdateManagerSettings;
+}
+
+interface DockerUpdateManagerSettings {
+  ignoredImages: { [key: string]: boolean },
+}

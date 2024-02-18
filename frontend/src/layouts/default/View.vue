@@ -11,6 +11,6 @@
 
 <style>
 .max-container-width {
-  max-width: 1700px !important;
+  max-width: 1500px !important;
 }
 </style>

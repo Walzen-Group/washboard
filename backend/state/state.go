@@ -5,8 +5,10 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/kpango/glg"
+	"github.com/robfig/go-cache"
 	"gopkg.in/yaml.v2"
 )
 
@@ -21,11 +23,13 @@ func Instance() *Data {
 			glg.Fatal(err)
 		}
 		instance = new(Data)
+		instance.Config = Config{}
+		instance.StackUpdateQueue = cache.New(5*time.Minute, 10*time.Minute)
 		reflectionPath = filepath.Dir(ex)
 		fmt.Println(ex)
 		// check if secrets file exists
 		if _, err := os.Stat(filepath.Join(reflectionPath, "secrets.yaml")); os.IsNotExist(err) {
-			encoded, err := yaml.Marshal(instance)
+			encoded, err := yaml.Marshal(instance.Config)
 			if err != nil {
 				glg.Fatal("could not marshal base config file")
 			}
@@ -38,7 +42,8 @@ func Instance() *Data {
 		if err != nil {
 			panic(err)
 		}
-		err = yaml.Unmarshal(yamlFile, &instance)
+
+		err = yaml.Unmarshal(yamlFile, &instance.Config)
 		if err != nil {
 			panic(err)
 		}
@@ -50,8 +55,13 @@ func ReflectionPath() string {
 	return reflectionPath
 }
 
-type Data struct {
+type Config struct {
 	// secrets
 	PortainerSecret string `yaml:"portainer_secret"`
 	PortainerUrl string `yaml:"portainer_url"`
+}
+
+type Data struct {
+	Config Config
+	StackUpdateQueue *cache.Cache
 }

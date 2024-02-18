@@ -15,14 +15,16 @@ const washboardThemeLight: ThemeDefinition = {
   colors: {
     primary: '#039BE5',
     updated: '#42A5F5',
-    surface: '#f5f5f5',
+    surface: '#fafafa',
+    "washboard-appbar": "#0288D1",
   },
 }
 
 const washboardThemeDark: ThemeDefinition = {
   colors: {
     primary: '#64B5F6',
-    updated: '#64B5F6'
+    updated: '#0277BD',
+    "washboard-appbar": "#01579B",
   },
 }
 
