@@ -123,6 +123,10 @@ func GetStacks(endpointId int) ([]StackDto, error) {
 	}
 	var stacksDict = make(map[string]map[string]interface{})
 	for _, stack := range stacks {
+		// TODO: add key to stack with all images status with caching. If the status here is updated, we can skip individual container checks
+		// allImagesStatus, err := GetStackImagesStatus(stackId int)
+
+
 		if stackName, ok := stack["Name"]; !ok {
 			glg.Warnf("stack does not have name key")
 			continue
@@ -305,6 +309,41 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 	}
 	glg.Logf("cached images: %d, uncached images: %d", cachedCount, uncachedCount)
 	return containersDto
+}
+
+func GetStackImagesStatus(stackId int) (string, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/docker/stacks/%d/images_status", appState.Config.PortainerUrl, stackId), nil)
+	if err != nil {
+		glg.Errorf("Failed to create request: %s", err)
+		return "", err
+	}
+
+	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
+	resp, err := client.Do(req)
+	if err != nil {
+		glg.Errorf("Failed to send request: %s", err)
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		glg.Errorf("Failed to read response: %s", err)
+		return "", err
+	}
+
+	var imagesStatus map[string]interface{}
+	err = json.Unmarshal(body, &imagesStatus)
+	if err != nil {
+		glg.Errorf("Failed to unmarshal JSON: %s", err)
+		return "", err
+	}
+	if _, ok := imagesStatus["message"]; ok {
+		errorMessage := fmt.Sprintf("%s: %s", imagesStatus["message"], imagesStatus["details"])
+		return "", fmt.Errorf(errorMessage)
+	}
+	return imagesStatus["Status"].(string), nil
 }
 
 func GetImageStatus(endpointId int, containerId string) (string, error) {
