@@ -373,6 +373,7 @@ func PortainerUpdateStack(c *gin.Context) {
 		return
 	}
 
+
 	res, err := portainer.EnqueueUpdateStack(endpointId, stackId, prune, pullImage)
 	if err != nil {
 		glg.Errorf("Failed to update stack: %s", err)

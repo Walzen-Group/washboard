@@ -82,16 +82,6 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
-    <div>
-        <v-snackbar v-for="(snackbar, index) in snackbars" :key="index" :model-value="snackbar.show"
-                    :color="snackbar.color"
-                    :timeout=-1 @update:model-value="value => closeSnackbar(snackbar.id, value)"
-                    :style="{ 'margin-bottom': calcSnackbarMargin(index) }" location="bottom right"
-                    close-on-content-click
-                    multiline>
-            {{ snackbar.message }}
-        </v-snackbar>
-    </div>
 </template>
 
 <script lang="ts" setup>
@@ -99,12 +89,17 @@ import { updateStack } from '@/api/lib';
 import StackTable from '@/components/StackTable.vue';
 import axios from 'axios';
 import { useLocalStore } from '@/store/local';
-import { ref, Ref, onMounted, computed } from 'vue'
+import { useSnackbarStore } from '@/store/snackbar';
+import { ref, Ref, onMounted, computed } from 'vue';
 import { storeToRefs } from 'pinia';
 
 
 const localStore = useLocalStore();
 const { dockerUpdateManagerSettings: dockerUpdateManagerSettings } = storeToRefs(localStore);
+
+const snackbarsStore = useSnackbarStore();
+const { snackbars: snackbars } = storeToRefs(snackbarsStore);
+
 
 const dialogUpdate: Ref<boolean> = ref(false);
 const loadingUpdateButton: Ref<boolean> = ref(false);
@@ -114,8 +109,6 @@ const selectedRows: Ref<number[]> = ref([]);
 const selectedStackNames: Ref<string[]> = ref([]);
 const items: Ref<Stack[]> = ref([]);
 const loading: Ref<boolean> = ref(true);
-const snackbars: Ref<Snackbar[]> = ref([]);
-const timeout = 5000;
 const containersNeedUpdate = computed(() => {
     for (let stack of items.value) {
         if (stack.containers.some((container: any) => container.upToDate === "outdated")) {
@@ -175,13 +168,13 @@ async function updateSelected() {
                 const response = await updateStack(stackId);
                 console.log(response);
                 currentProgress.value += 1;
-                addSnackbar(stackId, `Stack ${stack?.name} enqueued successfully`);
+                snackbarsStore.addSnackbar(stackId, `Stack ${stack?.name} enqueued successfully`, "success");
             } catch (error) {
                 console.error(error);
             }
         } else {
             console.log(`No update necessary for stack ${stack?.name}`);
-            addSnackbar(stackId, `No update necessary for Stack ${stack?.name}`, "warning");
+            snackbarsStore.addSnackbar(stackId, `No update necessary for stack ${stack?.name}`, "warning");
         }
     }
 
@@ -192,28 +185,6 @@ async function updateSelected() {
 function confirmUpdateSelected() {
     totalStacksToUpdate.value = selectedRows.value.length;
     dialogUpdate.value = true;
-}
-
-function addSnackbar(id: number, message: string, color: string = "success", show: boolean = true) {
-    snackbars.value.push({ id, message, color, show });
-    setTimeout(() => {
-        closeSnackbar(id, false);
-    }, timeout);
-}
-
-function closeSnackbar(id: number, value: boolean) {
-    if (!value) {
-        setTimeout(() => {
-            const index = snackbars.value.findIndex((snackbar: Snackbar) => snackbar.id === id);
-            if (index !== -1) {
-                snackbars.value.splice(index, 1);
-            }
-        }, 300);
-    }
-}
-
-function calcSnackbarMargin(index: number) {
-    return `${index * 60 + 10}px`;
 }
 
 function handleIndicatorClick(container: any) {

@@ -36,7 +36,7 @@ type ContainerDto struct {
 type StackDto struct {
 	Id         int            `json:"id"`
 	Name       string         `json:"name"`
-	Containers []ContainerDto `json:"containers"`
+	Containers []*ContainerDto `json:"containers"`
 }
 
 type StackUpdateStatus struct {
@@ -45,6 +45,13 @@ type StackUpdateStatus struct {
 	Status     string `json:"status"`
 	Details    string `json:"details"`
 }
+
+const (
+	Outdated string = "outdated"
+	Updated  string = "updated"
+	Skipped  string = "skipped"
+	Error    string = "error"
+)
 
 // GetEndpointId returns the id of the endpoint with the given name, which is also the environment in Portainer
 func GetEndpointId(endpointName string) (int, error) {
@@ -121,11 +128,37 @@ func GetStacks(endpointId int) ([]StackDto, error) {
 		glg.Errorf("Failed to unmarshal JSON: %s", err)
 		return nil, err
 	}
+
+	countCached := 0
+	countUncached := 0
 	var stacksDict = make(map[string]map[string]interface{})
 	for _, stack := range stacks {
 		// TODO: add key to stack with all images status with caching. If the status here is updated, we can skip individual container checks
-		// allImagesStatus, err := GetStackImagesStatus(stackId int)
-
+		stackId := -1
+		if id, ok := stack["Id"]; !ok {
+			glg.Warnf("stack does not have id key")
+			continue
+		} else if val, ok := id.(float64); ok {
+			stackId = int(val)
+		}
+		if stackId == -1 {
+			glg.Warnf("stack id is not a number")
+			continue
+		}
+		var allImagesStatus string
+		if val, ok := portainerCache.Get(fmt.Sprintf("stack-%d-images-status", stackId)); ok {
+			allImagesStatus = val.(string)
+			countCached++
+		} else {
+			allImagesStatus, err = GetStackImagesStatus(stackId)
+			if err != nil {
+				glg.Errorf("Failed to get stack images status: %s", err)
+				allImagesStatus = "error"
+			}
+			portainerCache.Set(fmt.Sprintf("stack-%d-images-status", stackId), allImagesStatus, cache.DefaultExpiration)
+			countUncached++
+		}
+		stack["allImagesStatus"] = allImagesStatus
 
 		if stackName, ok := stack["Name"]; !ok {
 			glg.Warnf("stack does not have name key")
@@ -138,13 +171,15 @@ func GetStacks(endpointId int) ([]StackDto, error) {
 		}
 	}
 
-	stacksDto, err := buildStackDto(stacksDict, endpointId)
+	glg.Infof("cached stack images status: %d, uncached stack images status: %d", countCached, countUncached)
+
+	stacksDto, err := buildStacksDto(stacksDict, endpointId)
 
 	return stacksDto, err
 }
 
 // GetContainers returns the containers for the given endpoint. If stackLabel is provided, only the containers of the stack with the given label are returned, otherwise all containers are returned
-func GetContainers(endpointId int, stackLabel string) ([]ContainerDto, error) {
+func GetContainers(endpointId int, stackLabel string) ([]*ContainerDto, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/endpoints/%d/docker/containers/json", appState.Config.PortainerUrl, endpointId), nil)
 	if err != nil {
@@ -182,12 +217,12 @@ func GetContainers(endpointId int, stackLabel string) ([]ContainerDto, error) {
 		return nil, err
 	}
 
-	containersDto := buildStackContainerDto(containers, endpointId)
+	containersDto := buildContainerDto(containers, endpointId)
 
 	return containersDto, nil
 }
 
-func buildStackDto(stacks map[string]map[string]interface{}, endpointId int) ([]StackDto, error) {
+func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([]StackDto, error) {
 	var stacksDto = make(map[string]*StackDto)
 	containers, err := GetContainers(endpointId, "")
 	if err != nil {
@@ -195,8 +230,10 @@ func buildStackDto(stacks map[string]map[string]interface{}, endpointId int) ([]
 		return nil, err
 	}
 
+	queryImageStatusContainers := make([]*ContainerDto, 0, len(containers))
+
 	for _, container := range containers {
-		var label string
+		var stackName string
 
 		if labelRaw, ok := container.Labels["com.docker.compose.project"]; !ok {
 			continue
@@ -204,19 +241,28 @@ func buildStackDto(stacks map[string]map[string]interface{}, endpointId int) ([]
 			glg.Warnf("label %s is not a string", labelRaw)
 			continue
 		} else {
-			label = labelParsed
+			stackName = labelParsed
 		}
-		if val, ok := stacksDto[label]; ok {
-			val.Containers = append(val.Containers, container)
-		} else {
-			if val, ok := stacks[label]; ok {
-				stacksDto[label] = &StackDto{
-					Id:         int(val["Id"].(float64)),
-					Name:       val["Name"].(string),
-					Containers: []ContainerDto{container},
-				}
+		if val, ok := stacks[stackName]["allImagesStatus"]; ok {
+			if val.(string) != Updated {
+				queryImageStatusContainers = append(queryImageStatusContainers, container)
+			} else {
+				container.UpToDate = Updated
 			}
 		}
+		if val, ok := stacksDto[stackName]; ok {
+			val.Containers = append(val.Containers, container)
+		} else if val, ok := stacks[stackName]; ok {
+			stacksDto[stackName] = &StackDto{
+				Id:         int(val["Id"].(float64)),
+				Name:       val["Name"].(string),
+				Containers: []*ContainerDto{container},
+			}
+		}
+	}
+
+	if len(queryImageStatusContainers) > 0 {
+		queryContainerImageStatus(endpointId, queryImageStatusContainers)
 	}
 
 	stacksDtoList := make([]StackDto, 0, len(stacksDto))
@@ -227,8 +273,8 @@ func buildStackDto(stacks map[string]map[string]interface{}, endpointId int) ([]
 	return stacksDtoList, nil
 }
 
-func buildStackContainerDto(containers []map[string]interface{}, endpointId int) []ContainerDto {
-	var containersDto []ContainerDto
+func buildContainerDto(containers []map[string]interface{}, endpointId int) []*ContainerDto {
+	var containersDto []*ContainerDto
 	for _, container := range containers {
 		portsData := container["Ports"].([]interface{})
 		// Get unique public ports
@@ -245,7 +291,7 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 		}
 		name := container["Names"].([]interface{})[0].(string)
 		name = helper.RemoveFirstIfMatch(name, "/")
-		containersDto = append(containersDto, ContainerDto{
+		containersDto = append(containersDto, &ContainerDto{
 			Id:       container["Id"].(string),
 			Name:     name,
 			Image:    container["Image"].(string),
@@ -256,6 +302,10 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 		})
 	}
 
+	return containersDto
+}
+
+func queryContainerImageStatus(endpointId int, containersDto []*ContainerDto) {
 	// Fetch UpToDate status for each container
 	var wg sync.WaitGroup
 	statusChan := make(chan struct {
@@ -266,7 +316,7 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 
 	for i, container := range containersDto {
 		wg.Add(1)
-		go func(i int, container ContainerDto) {
+		go func(i int, container *ContainerDto) {
 			defer wg.Done()
 
 			cachedStatus, found := portainerCache.Get(container.Id)
@@ -279,7 +329,6 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 				if err != nil {
 					glg.Errorf("Error fetching image status for container id %s", container.Id)
 					portainerCache.Set(container.Id, liveStatus, time.Minute*5)
-					return
 				}
 				portainerCache.Set(container.Id, liveStatus, cache.DefaultExpiration)
 				status = liveStatus
@@ -307,8 +356,7 @@ func buildStackContainerDto(containers []map[string]interface{}, endpointId int)
 			uncachedCount++
 		}
 	}
-	glg.Logf("cached images: %d, uncached images: %d", cachedCount, uncachedCount)
-	return containersDto
+	glg.Infof("cached container image statuses: %d, uncached container images statuses: %d", cachedCount, uncachedCount)
 }
 
 func GetStackImagesStatus(stackId int) (string, error) {
@@ -429,22 +477,21 @@ func getUpdateOperationId(endpointId int, stackId int) string {
 // Parameters:
 //
 // Query Parameters:
-// - endpointId: the id of the endpoint
-//   where the stack is running
-// - stackId: the id of the stack to update
-// - prune: whether to prune the stack
-// - pullImage: whether to pull the image´
+//   - endpointId: the id of the endpoint
+//     where the stack is running
+//   - stackId: the id of the stack to update
+//   - prune: whether to prune the stack
+//   - pullImage: whether to pull the image´
 //
 // Creates a StackUpdateStatus object with the following values depending on the result of the operation:
-// - Status: "queued", "done",
-//   "error"
-// - Details: the error message if the operation fails
-//
+//   - Status: "queued", "done",
+//     "error"
+//   - Details: the error message if the operation fails
 func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool) (float64, error) {
 	id := getUpdateOperationId(endpointId, stackId)
 	if val, ok := appState.StackUpdateQueue.Get(id); ok {
 		data := val.(StackUpdateStatus)
-		if data.Status != "error" && data.Status != "done"{
+		if data.Status != "error" && data.Status != "done" {
 			glg.Infof("stack update already queued: %s", val)
 			retErr := errors.New("stack update already queued")
 			return -1, retErr
