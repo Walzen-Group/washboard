@@ -166,7 +166,7 @@ onMounted(() => {
                     }
                 }
                 if (!found) {
-                    console.log(`Removing orphaned ignored image from  ${ignoredImage}`)
+                    console.log(`Removing orphaned ignored image from ${ignoredImage}`)
                     delete dockerUpdateManagerSettings.value.ignoredImages[ignoredImage];
                 }
                 setIgnoreData();
@@ -197,7 +197,6 @@ async function updateSelected() {
         if (true || stack?.containers.some((container: any) => container.upToDate === "outdated" && !container.upToDateIgnored)) {
             try {
                 const response = await updateStack(stackId);
-                console.log(response);
                 let data = response.data;
                 switch (response.status) {
                     case 200:
@@ -237,7 +236,6 @@ function handleIndicatorClick(container: any) {
     localStore.updateDockerUpdateManagerSettings({
         ignoredImages: dockerUpdateManagerSettings.value.ignoredImages
     });
-    console.log(dockerUpdateManagerSettings.value.ignoredImages);
     setIgnoreData();
 }
 

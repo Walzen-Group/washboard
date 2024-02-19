@@ -33,11 +33,15 @@
                    :title="item.title" router
                    exact>
       </v-list-item>
-      <div class="d-flex flex-column align-end pa-4">
+    </v-list>
+
+    <template v-slot:append>
+      <v-divider v-if="!smAndUp" class="mb-1"></v-divider>
+      <div class="d-flex align-center justify-center">
         <v-tooltip v-if="!smAndUp"
                    location="bottom">
           <template v-slot:activator="{ props }">
-            <v-btn rounded="xl" :ripple="false" v-bind="props">
+            <v-btn elevation="0" class="ma-2 text-none" :ripple="false" v-bind="props">
               Queued Stacks: {{ queuedStacks.length }}
             </v-btn>
           </template>
@@ -45,7 +49,12 @@
           <span v-else>Empty</span>
         </v-tooltip>
       </div>
-    </v-list>
+
+    </template>
+
+
+
+
   </v-navigation-drawer>
 </template>
 
