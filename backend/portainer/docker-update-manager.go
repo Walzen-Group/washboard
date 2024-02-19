@@ -327,7 +327,7 @@ func queryContainerImageStatus(endpointId int, containersDto []*ContainerDto) {
 			} else {
 				liveStatus, err := GetImageStatus(endpointId, container.Id)
 				if err != nil {
-					glg.Errorf("Error fetching image status for container id %s", container.Id)
+					glg.Warnf("Error fetching image status for container id %s", container.Id)
 					portainerCache.Set(container.Id, liveStatus, time.Minute*5)
 				}
 				portainerCache.Set(container.Id, liveStatus, cache.DefaultExpiration)

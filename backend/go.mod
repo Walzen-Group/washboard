@@ -8,6 +8,8 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 )
 
+require github.com/gorilla/websocket v1.5.1 // indirect
+
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20230124162541-5f7a7d875746 // indirect
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
