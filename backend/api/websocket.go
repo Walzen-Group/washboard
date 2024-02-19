@@ -12,6 +12,14 @@ import (
 	"github.com/kpango/glg"
 )
 
+type WsState struct {
+	StackUpdateInProgressIds []int `json:"stackUpdateInProgressIds"`
+}
+
+const (
+	CMD_STOP = "CMD_STOP"
+)
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -20,40 +28,53 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-func wsHandler(c *gin.Context, in interface{}) {
+func WsHandler(c *gin.Context) {
+	glg.Infof("WS connection from %s", c.ClientIP())
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	glg.Infof("Upgraded to websocket")
 	if err != nil {
+		glg.Errorf("error while upgrading to websocket: %s", err)
 		return
 	}
 	glg.Infof("Client %s connected", c.ClientIP())
 
+	wsState := &WsState{}
+
 	oniiChan := make(chan string)
-	go readData(ws, oniiChan)
-	go pushData(ws, in, oniiChan)
+	go readData(ws, oniiChan, wsState)
+	go pushData(ws, oniiChan, wsState)
 }
 
-func readData(ws *websocket.Conn, oniiChan chan string) {
+func readData(ws *websocket.Conn, oniiChan chan string, wsState *WsState) {
 	for {
 		_, message, err := ws.ReadMessage()
 		if err != nil {
+			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseNoStatusReceived, websocket.CloseAbnormalClosure) {
+				glg.Infof("client %s disconnected from websocket", ws.RemoteAddr())
+			} else {
+				glg.Warnf("error while writing to websocket: %s", err)
+			}
+			oniiChan <- CMD_STOP
 			return
 		}
 		glg.Infof("Received message: %s", message)
 	}
 }
 
-func pushData(ws *websocket.Conn, in interface{}, oniiChan chan string) {
+func pushData(ws *websocket.Conn, oniiChan chan string, wsState *WsState) {
 	defer ws.Close()
 	for {
 		select {
 		case msg := <-oniiChan:
-			if msg == "STOP" {
+			if msg == CMD_STOP {
 				glg.Debugf("stopping websocket push")
 				return
 			}
 		default:
 		}
-		out, err := encodeJson(in)
+
+		items := appState.StackUpdateQueue.Items()
+		out, err := encodeJson(items)
 		if err != nil {
 			glg.Warnf("error while marshaling encoder to json: %s", err)
 			break

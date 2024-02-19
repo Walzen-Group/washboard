@@ -27,8 +27,8 @@
                         <template v-slot:activator="{ props }">
                             <v-icon class="clickable-indicator" size="x-large" v-bind="props"
                                     @click="indicatorClicked(elem)"
-                                    :icon="getIcon(elem.upToDate)"
-                                    :color="getColor(elem.upToDate)"></v-icon>
+                                    :icon="getIcon(elem)"
+                                    :color="getColor(elem)"></v-icon>
                         </template>
                     </v-tooltip>
                 </div>
@@ -39,9 +39,9 @@
                         <!-- @vue-ignore -->
                         <v-data-table items-per-page="-1" :headers="containerTableHeaders"
                                       :items="item.containers">
-                            <template v-slot:item.upToDate="{ value }">
-                                <v-chip variant="tonal" :color="getColor(value)">
-                                    {{ value.length > 0 ? value : "unavailable" }}
+                            <template v-slot:item.upToDate="{ item }">
+                                <v-chip variant="tonal" :color="getColor(item)">
+                                    {{ item.upToDate.length > 0 ? item.upToDate : "unavailable" }}
                                 </v-chip>
                             </template>
                             <template #bottom></template>
@@ -55,7 +55,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, Ref, onUnmounted, defineProps, watch } from 'vue'
+import { ref, onMounted, Ref, onUnmounted, watch } from 'vue'
 
 let keyDownHandler: any;
 let keyUpHandler: any;
@@ -126,19 +126,25 @@ function updateSorting(sortByRequest: any) {
     });
 }
 
-function getColor(status: string) {
-    if (status === "outdated") return 'yellow-darken-3'
-    else if (status === "updated") return 'updated'
-    else if (status === "skipped") return 'grey'
-    else if (status === "error") return 'red'
+function getColor(elem: Container) {
+    if (elem.upToDateIgnored) {
+        return 'light-green-lighten-1';
+    }
+    if (elem.upToDate === "outdated") return 'yellow-darken-3'
+    else if (elem.upToDate === "updated") return 'updated'
+    else if (elem.upToDate === "skipped") return 'grey'
+    else if (elem.upToDate === "error") return 'red'
     else return 'grey'
 }
 
-function getIcon(status: string) {
-    if (status === "outdated") return 'mdi-chevron-up-circle-outline'
-    else if (status === "updated") return 'mdi-check-circle-outline'
-    else if (status === "skipped") return 'mdi-minus-circle-outline'
-    else if (status === "error") return 'mdi-close-circle-outline'
+function getIcon(elem: Container) {
+    if (elem.upToDateIgnored) {
+        return 'mdi-pause-circle-outline';
+    }
+    if (elem.upToDate === "outdated") return 'mdi-chevron-up-circle-outline'
+    else if (elem.upToDate === "updated") return 'mdi-check-circle-outline'
+    else if (elem.upToDate === "skipped") return 'mdi-minus-circle-outline'
+    else if (elem.upToDate === "error") return 'mdi-close-circle-outline'
     else return 'mdi-circle-outline'
 }
 
@@ -174,9 +180,9 @@ function indicatorClicked(elem: Container) {
 
 function selectOutdated() {
     selectedRows.value = []
-    for (let item of itemsInternal.value) {
-        if (item.updateStatus.some((container: any) => container.status === "outdated")) {
-            selectedRows.value.push(item.id);
+    for (let stack of itemsInternal.value as Stack[]) {
+        if (stack.containers.some((container: Container) => container.upToDate === "outdated")) {
+            selectedRows.value.push(stack.id);
         }
     }
 }

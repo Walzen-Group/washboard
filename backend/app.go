@@ -48,7 +48,7 @@ func main() {
 	store := persistence.NewInMemoryStore(time.Second)
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowOrigins:     []string{"http://localhost:3000", "http://192.168.0.38:3000", "http://10.10.194.2:3000"},
 		AllowMethods:     []string{"*, PUT"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -62,6 +62,7 @@ func main() {
 	router.GET("/portainer-get-image-status", cache.CachePage(store, time.Minute * 10, api.PortainerGetImageStatus))
 	router.POST("/portainer-update-container", api.PortainerUpdateContainer)
 	router.PUT("/portainer-update-stack", api.PortainerUpdateStack)
+	router.GET("/ws/stacks-update", api.WsHandler)
 	ret := router.Run()
 	if ret != nil {
 		panic(ret)

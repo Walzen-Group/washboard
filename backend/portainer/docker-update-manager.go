@@ -494,7 +494,7 @@ func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool)
 		if data.Status != "error" && data.Status != "done" {
 			glg.Infof("stack update already queued: %s", val)
 			retErr := errors.New("stack update already queued")
-			return -1, retErr
+			return -2, retErr
 		}
 	}
 	glg.Infof("enqueueing stack id: %d", stackId)
@@ -563,13 +563,13 @@ func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool)
 		appState.StackUpdateQueue.Set(id, updateStatus, time.Minute*30)
 		_, err := updateStack(endpointId, stackId, reqBodyByte)
 		if err != nil {
-			glg.Errorf("Failed to update stack: %s", err)
+			glg.Errorf("No operation performed: %s", err)
 			updateStatus.Status = "error"
 			updateStatus.Details = err.Error()
 		} else {
 			updateStatus.Status = "done"
 		}
-		appState.StackUpdateQueue.Set(id, updateStatus, cache.DefaultExpiration)
+		appState.StackUpdateQueue.Set(id, updateStatus, time.Hour * 24 * 7)
 	}()
 
 	return float64(stackId), nil
@@ -616,6 +616,8 @@ func updateStack(endpointId int, stackId int, reqBodyByte []byte) (float64, erro
 		return -1, fmt.Errorf(errorMessage)
 	}
 	glg.Infof("Stack %s updated", stack["Name"])
+	// remove cached images status when an update was performed
+	portainerCache.Delete(fmt.Sprintf("stack-%d-images-status", stackId))
 	return stack["Id"].(float64), nil
 }
 

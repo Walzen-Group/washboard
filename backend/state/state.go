@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/kpango/glg"
-	"github.com/robfig/go-cache"
+	"github.com/patrickmn/go-cache"
 	"gopkg.in/yaml.v2"
 )
 

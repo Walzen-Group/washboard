@@ -8,7 +8,10 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 )
 
-require github.com/gorilla/websocket v1.5.1 // indirect
+require (
+	github.com/gorilla/websocket v1.5.1
+	github.com/robfig/go-cache v0.0.0-20130306151617-9fc39e0dbf62 // indirect
+)
 
 require (
 	github.com/bradfitz/gomemcache v0.0.0-20230124162541-5f7a7d875746 // indirect
@@ -19,7 +22,6 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/memcachier/mc/v3 v3.0.3 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
-	github.com/robfig/go-cache v0.0.0-20130306151617-9fc39e0dbf62 // indirect
 )
 
 require (

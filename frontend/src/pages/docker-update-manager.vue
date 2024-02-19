@@ -1,6 +1,12 @@
 <template>
     <h2 class="mt-2 mb-4">Manage Stack Images</h2>
-    <v-alert v-if="!containersNeedUpdate" variant="tonal" type="success" color="blue"
+    <v-alert v-if="loading" variant="tonal" type="info"
+             title="Refreshing...">
+        <template v-slot:prepend>
+            <v-progress-circular size="26" color="deep-blue-lighten-2" indeterminate></v-progress-circular>
+        </template>
+    </v-alert>
+    <v-alert v-else-if="!containersNeedUpdate" variant="tonal" type="success" color="blue"
              title="You're all good"></v-alert>
     <v-alert v-else variant="tonal" type="warning" title="Updates available"></v-alert>
 
@@ -9,11 +15,17 @@
             <v-col>
                 <v-hover>
                     <template v-slot:default="{ isHovering, props }">
-                        <v-card v-bind="props" :color="isHovering ? 'surface-variant' : undefined"
+                        <v-skeleton-loader v-if="loading"
+                                           class="mx-auto border"
+                                           type="image">
+                        </v-skeleton-loader>
+                        <v-card v-else v-bind="props"
+                                :color="isHovering ? 'surface-variant' : undefined"
                                 elevation="0"
                                 variant="tonal" class="fill-height" min-width="220">
                             <template v-slot:append>
-                                <v-icon icon="mdi-autorenew" size="x-large" color="warning"></v-icon>
+                                <v-icon icon="mdi-autorenew" size="x-large"
+                                        color="warning"></v-icon>
                             </template>
                             <template v-slot:title>
                                 Can Be Updated
@@ -29,7 +41,12 @@
             <v-col>
                 <v-hover>
                     <template v-slot:default="{ isHovering, props }">
-                        <v-card v-bind="props" :color="isHovering ? 'surface-variant' : undefined"
+                        <v-skeleton-loader v-if="loading"
+                                           class="mx-auto border"
+                                           type="image">
+                        </v-skeleton-loader>
+                        <v-card v-else v-bind="props"
+                                :color="isHovering ? 'surface-variant' : undefined"
                                 elevation="0" variant="tonal" class="fill-height" min-width="220">
                             <template v-slot:append>
                                 <v-icon icon="mdi-hand-okay" size="x-large" color="success"></v-icon>
@@ -48,7 +65,8 @@
         </v-row>
 
     </div>
-    <StackTable @click:indicator="handleIndicatorClick" @update:selectedRows="updateSelectedRows" :items="items" :loading="loading">
+    <StackTable @click:indicator="handleIndicatorClick" @update:selectedRows="updateSelectedRows"
+                :items="items" :loading="loading">
         <template v-slot:controls>
             <v-btn variant="tonal" @click="confirmUpdateSelected" color="primary"
                    :disabled="!selectedRows.length"
@@ -66,14 +84,14 @@
                 <v-btn density="compact" icon="mdi-close" @click="dialogUpdate = false"></v-btn>
             </v-toolbar>
             <v-card-text class="mt-2">
-                Do you want to update {{ totalStacksToUpdate }} stack{{ totalStacksToUpdate > 1 ? "s" : ""}}?
+                Do you want to update {{ totalStacksToUpdate }} stack{{ totalStacksToUpdate > 1 ? "s" :
+                    "" }}?
                 <v-list lines="one">
                     <v-list-item
-                        v-for="name in selectedStackNames"
-                        :key="name"
-                        :title="name"
-                        density="compact"
-                    ></v-list-item>
+                                 v-for="name in selectedStackNames"
+                                 :key="name"
+                                 :title="name"
+                                 density="compact"></v-list-item>
                 </v-list>
             </v-card-text>
             <v-card-actions class="mb-2 mr-2">
@@ -98,8 +116,6 @@ const localStore = useLocalStore();
 const { dockerUpdateManagerSettings: dockerUpdateManagerSettings } = storeToRefs(localStore);
 
 const snackbarsStore = useSnackbarStore();
-const { snackbars: snackbars } = storeToRefs(snackbarsStore);
-
 
 const dialogUpdate: Ref<boolean> = ref(false);
 const loadingUpdateButton: Ref<boolean> = ref(false);
@@ -137,10 +153,30 @@ onMounted(() => {
             items.value = response.data;
             loading.value = false;
 
+            for (let [ignoredImage] of Object.entries(dockerUpdateManagerSettings.value.ignoredImages)) {
+                let found = true;
+                for (let stack of items.value) {
+                    for (let container of stack.containers) {
+                        container.upToDateIgnored = false;
+                        if (container.image === ignoredImage) {
+                            found = true;
+                            container.upToDateIgnored = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    console.log(`Removing orphaned ignored image from  ${ignoredImage}`)
+                    delete dockerUpdateManagerSettings.value.ignoredImages[ignoredImage];
+                }
+                setIgnoreData();
+            }
+
             // TODO: remove orphaned containers from dockerUpdateManagerSettings.value.ignoredImages
             // iterate through dockeruPdateManagerSettings.value.ignoredImages and remove all that are not present in the current stacks
         })
         .catch((error) => {
+            loading.value = false;
             console.log(error);
         });
 });
@@ -154,27 +190,32 @@ async function updateSelected() {
     loadingUpdateButton.value = true;
     const selectedRowsValue = selectedRows.value;
     dialogUpdate.value = false;
-    // let wsAddr = `${axios.defaults.baseURL}/ws/stacks-update`.replace('http://', 'ws://').replace('https://', 'wss://');
-    // let socket = new WebSocket(wsAddr);
-    // socket.onmessage = function (event) {
-    //     let data = JSON.parse(event.data);
-    //     console.log(data);
-    // };
     for (let idx in selectedRowsValue) {
         const stackId = selectedRowsValue[idx];
         const stack = items.value.find((item: Stack) => item.id === stackId);
-        if (stack?.containers.some((container: any) => container.upToDate === "outdated")) {
+
+        if (true || stack?.containers.some((container: any) => container.upToDate === "outdated" && !container.upToDateIgnored)) {
             try {
                 const response = await updateStack(stackId);
                 console.log(response);
-                currentProgress.value += 1;
-                snackbarsStore.addSnackbar(stackId, `Stack ${stack?.name} enqueued successfully`, "success");
+                let data = response.data;
+                switch (response.status) {
+                    case 200:
+                        currentProgress.value += 1;
+                        snackbarsStore.addSnackbar(stackId, `Stack ${stack?.name} enqueued successfully`, "success");
+                        break;
+                    case 202:
+                        snackbarsStore.addSnackbar(stackId, `Stack ${stack?.name} already queued`, "warning");
+                        break;
+                    default:
+                        snackbarsStore.addSnackbar(stackId, `Failed to enqueue stack ${stack?.name}: ${data.error}`, "error");
+                }
             } catch (error) {
                 console.error(error);
             }
         } else {
             console.log(`No update necessary for stack ${stack?.name}`);
-            snackbarsStore.addSnackbar(stackId, `No update necessary for stack ${stack?.name}`, "warning");
+            snackbarsStore.addSnackbar(stackId, `No update necessary for stack ${stack?.name}`, "info");
         }
     }
 
@@ -190,13 +231,25 @@ function confirmUpdateSelected() {
 function handleIndicatorClick(container: any) {
     if (container.image in dockerUpdateManagerSettings.value.ignoredImages) {
         delete dockerUpdateManagerSettings.value.ignoredImages[container.image];
-        //let stack = items.value.find((stack: Stack) => stack.id === item.);
     } else {
         dockerUpdateManagerSettings.value.ignoredImages[container.image] = true;
     }
     localStore.updateDockerUpdateManagerSettings({
-       ignoredImages: dockerUpdateManagerSettings.value.ignoredImages
+        ignoredImages: dockerUpdateManagerSettings.value.ignoredImages
     });
     console.log(dockerUpdateManagerSettings.value.ignoredImages);
+    setIgnoreData();
+}
+
+function setIgnoreData() {
+    for (let stack of items.value) {
+        for (let container of stack.containers) {
+            if (container.image in dockerUpdateManagerSettings.value.ignoredImages) {
+                container.upToDateIgnored = true;
+            } else {
+                container.upToDateIgnored = false;
+            }
+        }
+    }
 }
 </script>

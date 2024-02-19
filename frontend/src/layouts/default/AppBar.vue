@@ -9,7 +9,19 @@
     </v-btn>
 
     <v-toolbar-title class="ml-4" v-text="title" />
+    <v-tooltip v-if="smAndUp"
+               location="bottom">
+      <template v-slot:activator="{ props }">
+        <v-btn rounded="xl" :ripple="false" v-bind="props">
+          Queued Stacks: {{ queuedStacks.length }}
+        </v-btn>
+      </template>
+      <span v-if="queuedStacks.length > 0">{{ queuedStacks.join(", ") }}</span>
+      <span v-else>Empty</span>
+    </v-tooltip>
     <v-spacer />
+
+
     <v-btn icon @click.stop="toggleTheme">
       <v-icon>mdi-theme-light-dark</v-icon>
     </v-btn>
@@ -21,12 +33,27 @@
                    :title="item.title" router
                    exact>
       </v-list-item>
+      <div class="d-flex flex-column align-end pa-4">
+        <v-tooltip v-if="!smAndUp"
+                   location="bottom">
+          <template v-slot:activator="{ props }">
+            <v-btn rounded="xl" :ripple="false" v-bind="props">
+              Queued Stacks: {{ queuedStacks.length }}
+            </v-btn>
+          </template>
+          <span v-if="queuedStacks.length > 0">{{ queuedStacks.join(", ") }}</span>
+          <span v-else>Empty</span>
+        </v-tooltip>
+      </div>
     </v-list>
   </v-navigation-drawer>
 </template>
 
 <script lang="ts" setup>
+import { useDisplay } from 'vuetify'
+const { smAndUp } = useDisplay()
 import { ref, onMounted } from 'vue';
+import axios from 'axios';
 import { useTheme } from 'vuetify'
 const title = "Washboard"
 let mediaEvent;
@@ -45,6 +72,7 @@ const items: any[] = [
 const clipped = ref(false);
 const drawer = ref(false);
 const miniVariant = ref(false);
+const queuedStacks = ref([]);
 
 const theme = useTheme();
 
@@ -56,7 +84,19 @@ onMounted(() => {
   } else {
     theme.global.name.value = "light";
   }
-  console.log(mediaEvent);
+
+  let wsAddr = `${axios.defaults.baseURL}/ws/stacks-update`.replace('http://', 'ws://').replace('https://', 'wss://');
+  let socket = new WebSocket(wsAddr);
+  socket.onmessage = function (event) {
+    let data: UpdateStackQueue = JSON.parse(event.data);
+    const queuedStacks: number[] = [];
+    for (let updateStackId in data) {
+      const stack = data[updateStackId].Object;
+      if (stack.status === "queued") {
+        queuedStacks.push(stack.stackId);
+      }
+    }
+  };
 })
 
 function handleSystemThemeUpdate(e: any) {
@@ -71,5 +111,6 @@ function handleSystemThemeUpdate(e: any) {
 function toggleTheme() {
   theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
 }
+
 
 </script>

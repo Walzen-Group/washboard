@@ -21,7 +21,7 @@ const app = createApp(App)
 
 axios.defaults.withCredentials = true
 if (process.env.NODE_ENV !== 'production') {
-  axios.defaults.baseURL = 'http://localhost:8080';
+  axios.defaults.baseURL = `http://${location.hostname}:8080`;
   console.log("Development mode, base url: " + axios.defaults.baseURL);
 }
 else {

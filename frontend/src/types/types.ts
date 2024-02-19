@@ -3,6 +3,7 @@ interface Container {
   name: string;
   image: string;
   upToDate: string;
+  upToDateIgnored: boolean,
   status: string;
   ports: number[];
   labels: { [key: string]: string };
@@ -30,6 +31,22 @@ interface AppSettings {
   dockerUpdateManagerSettings: DockerUpdateManagerSettings;
 }
 
+interface IgnoredImages {
+  [key: string]: boolean;
+}
+
 interface DockerUpdateManagerSettings {
-  ignoredImages: { [key: string]: boolean },
+  ignoredImages: IgnoredImages;
+}
+
+interface UpdateStackQueue {
+  [key: string]: {
+    Expiration: number;
+    Object: {
+      details: string;
+      status: string;
+      endpointId: number;
+      stackId: number;
+    }
+  };
 }

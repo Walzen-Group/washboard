@@ -375,6 +375,15 @@ func PortainerUpdateStack(c *gin.Context) {
 
 
 	res, err := portainer.EnqueueUpdateStack(endpointId, stackId, prune, pullImage)
+
+	if res == -2 {
+		glg.Errorf("Endpoint: %d, Stack: %d, %s", endpointId, stackId, err)
+		c.JSON(http.StatusAccepted, gin.H{
+			"message": "Failed to update stack",
+			"error":  err.Error(),
+		})
+		return
+	}
 	if err != nil {
 		glg.Errorf("Failed to update stack: %s", err)
 		c.JSON(http.StatusNotFound, gin.H{
@@ -385,6 +394,6 @@ func PortainerUpdateStack(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id": res,
+		"status": res,
 	})
 }
