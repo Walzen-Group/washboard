@@ -8,13 +8,13 @@
       <v-icon>mdi-washing-machine</v-icon>
     </v-btn>
 
-    <v-toolbar-title class="ml-4" v-text="title" />
+    <v-toolbar-title class="ml-4 mr-4" v-text="title" />
     <v-tooltip v-if="smAndUp"
                location="bottom">
       <template v-slot:activator="{ props }">
-        <v-btn rounded="xl" :ripple="false" v-bind="props">
+        <span rounded="xl" elevation="0" class="ma-2 text-none" :ripple="false" v-bind="props">
           Queued Stacks: {{ queuedStacks.length }}
-        </v-btn>
+        </span>
       </template>
       <span v-if="queuedStacks.length > 0">{{ queuedStacks.join(", ") }}</span>
       <span v-else>Empty</span>
@@ -41,9 +41,9 @@
         <v-tooltip v-if="!smAndUp"
                    location="bottom">
           <template v-slot:activator="{ props }">
-            <v-btn elevation="0" class="ma-2 text-none" :ripple="false" v-bind="props">
+            <span elevation="0" class="ma-2 text-none" :ripple="false" v-bind="props">
               Queued Stacks: {{ queuedStacks.length }}
-            </v-btn>
+            </span>
           </template>
           <span v-if="queuedStacks.length > 0">{{ queuedStacks.join(", ") }}</span>
           <span v-else>Empty</span>
@@ -51,21 +51,21 @@
       </div>
 
     </template>
-
-
-
-
   </v-navigation-drawer>
 </template>
 
 <script lang="ts" setup>
 import { useDisplay } from 'vuetify'
 const { smAndUp } = useDisplay()
-import { ref, onMounted } from 'vue';
-import axios from 'axios';
+import { ref } from 'vue';
 import { useTheme } from 'vuetify'
+import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
+import { storeToRefs } from 'pinia';
+const updateQuelelelStore = useUpdateQuelelelStore();
+const { queue: updateQueue} = storeToRefs(updateQuelelelStore);
+
 const title = "Washboard"
-let mediaEvent;
+
 const items: any[] = [
   {
     icon: "mdi-home-account",
@@ -84,38 +84,6 @@ const miniVariant = ref(false);
 const queuedStacks = ref([]);
 
 const theme = useTheme();
-
-onMounted(() => {
-  mediaEvent = window.matchMedia("(prefers-color-scheme: dark)");
-  mediaEvent.addEventListener("change", handleSystemThemeUpdate);
-  if (mediaEvent.matches) {
-    theme.global.name.value = "dark";
-  } else {
-    theme.global.name.value = "light";
-  }
-
-  let wsAddr = `${axios.defaults.baseURL}/ws/stacks-update`.replace('http://', 'ws://').replace('https://', 'wss://');
-  let socket = new WebSocket(wsAddr);
-  socket.onmessage = function (event) {
-    let data: UpdateStackQueue = JSON.parse(event.data);
-    const queuedStacks: number[] = [];
-    for (let updateStackId in data) {
-      const stack = data[updateStackId].Object;
-      if (stack.status === "queued") {
-        queuedStacks.push(stack.stackId);
-      }
-    }
-  };
-})
-
-function handleSystemThemeUpdate(e: any) {
-  console.log(`updating theme based on system preference ${e.matches ? "dark" : "light"}`);
-  if (e.matches) {
-    theme.global.name.value = "dark";
-  } else {
-    theme.global.name.value = "light";
-  }
-}
 
 function toggleTheme() {
   theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'

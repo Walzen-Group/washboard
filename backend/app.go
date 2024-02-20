@@ -56,11 +56,13 @@ func main() {
 		MaxAge: 12 * time.Hour,
 	  }))
 
-	router.GET("/portainer-get-endpoints", api.PortainerGetEndpoints)
+	router.GET("/portainer-get-endpoint", api.PortainerGetEndpoint)
 	router.GET("/portainer-get-stacks", api.PortainerGetStacks)
 	router.GET("/portainer-get-containers", api.PortainerGetContainers)
 	router.GET("/portainer-get-image-status", cache.CachePage(store, time.Minute * 10, api.PortainerGetImageStatus))
 	router.POST("/portainer-update-container", api.PortainerUpdateContainer)
+	router.POST("/portainer-stop-stack", api.PortainerStopStack)
+	router.POST("/portainer-start-stack", api.PortainerStartStack)
 	router.PUT("/portainer-update-stack", api.PortainerUpdateStack)
 	router.GET("/ws/stacks-update", api.WsHandler)
 	ret := router.Run()

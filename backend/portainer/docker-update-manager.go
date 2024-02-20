@@ -42,6 +42,7 @@ type StackDto struct {
 type StackUpdateStatus struct {
 	EndpointId int    `json:"endpointId"`
 	StackId    int    `json:"stackId"`
+	StackName  string `json:"stackName"`
 	Status     string `json:"status"`
 	Details    string `json:"details"`
 }
@@ -51,6 +52,8 @@ const (
 	Updated  string = "updated"
 	Skipped  string = "skipped"
 	Error    string = "error"
+	Done	 string = "done"
+	Queued   string = "queued"
 )
 
 // GetEndpointId returns the id of the endpoint with the given name, which is also the environment in Portainer
@@ -104,7 +107,7 @@ func GetStacks(endpointId int) ([]StackDto, error) {
 	}
 
 	q := req.URL.Query()
-	q.Add("filters", fmt.Sprintf("{\"EndpointId\":%d}", endpointId))
+	q.Add("filters", fmt.Sprintf(`{"EndpointId":%d}`, endpointId))
 	req.URL.RawQuery = q.Encode()
 	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
 
@@ -260,6 +263,17 @@ func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([
 			}
 		}
 	}
+
+	for key, value := range stacks {
+		if _, ok := stacksDto[key]; !ok {
+			stacksDto[key] = &StackDto{
+				Id:         int(value["Id"].(float64)),
+				Name:       value["Name"].(string),
+				Containers: make([]*ContainerDto, 0),
+			}
+		}
+	}
+
 
 	if len(queryImageStatusContainers) > 0 {
 		queryContainerImageStatus(endpointId, queryImageStatusContainers)
@@ -469,6 +483,59 @@ func UpdateContainer(endpointId int, containerId string, pullImage bool) (string
 	return container["Id"].(string), nil
 }
 
+func StartOrStopStack(endpointId int, stackId int, starOrStop string) (string, error) {
+	client := &http.Client{}
+	reqBody := []byte(fmt.Sprintf(`{"endpointId":%d,"id":"%d"}`, endpointId, stackId))
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/stacks/%d/%s", appState.Config.PortainerUrl, stackId, starOrStop), bytes.NewBuffer(reqBody))
+	if err != nil {
+		glg.Errorf("Failed to create request: %s", err)
+		return "", err
+	}
+
+	q := req.URL.Query()
+	q.Add("endpointId", fmt.Sprintf("%d", endpointId))
+	req.URL.RawQuery = q.Encode()
+
+
+	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
+	resp, err := client.Do(req)
+	if err != nil {
+		glg.Errorf("Failed to send request: %s", err)
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		glg.Errorf("Failed to read response: %s", err)
+		return "", err
+	}
+
+	var responseStack map[string]interface{}
+	err = json.Unmarshal(body, &responseStack)
+	if err != nil {
+		glg.Errorf("Failed to unmarshal JSON: %s", err)
+		return "", err
+	}
+
+
+	switch resp.StatusCode {
+	case 200:
+		if responseId, ok := responseStack["Id"].(float64); ok {
+			return fmt.Sprintf("%d", int(responseId)), nil
+		}
+		return "", fmt.Errorf("response id is not a number")
+	case 409:
+		return "", fmt.Errorf("%s: %d", responseStack["message"], stackId)
+	default:
+		errorMessage := fmt.Sprintf("%s: %d. %s", responseStack["message"], stackId, responseStack["details"])
+		glg.Error(errorMessage)
+		return "", fmt.Errorf(errorMessage)
+	}
+}
+
 func getUpdateOperationId(endpointId int, stackId int) string {
 	return fmt.Sprintf("update-stack-%d-%d", endpointId, stackId)
 }
@@ -491,7 +558,7 @@ func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool)
 	id := getUpdateOperationId(endpointId, stackId)
 	if val, ok := appState.StackUpdateQueue.Get(id); ok {
 		data := val.(StackUpdateStatus)
-		if data.Status != "error" && data.Status != "done" {
+		if data.Status != Error && data.Status != Done {
 			glg.Infof("stack update already queued: %s", val)
 			retErr := errors.New("stack update already queued")
 			return -2, retErr
@@ -514,6 +581,16 @@ func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool)
 		glg.Errorf("stack endpoint id does not match")
 		return -1, fmt.Errorf("stack endpoint id does not match")
 	}
+
+	var stackNameString string
+	if stackName, ok := stackData["Name"]; !ok {
+		glg.Errorf("stack does not have name data")
+		return -1, fmt.Errorf("stack does not have name data")
+	} else if stackNameString, ok = stackName.(string); !ok {
+		glg.Errorf("stack name is not a string")
+		return -1, fmt.Errorf("stack name is not a string")
+	}
+
 
 	stackFileContent, err := getStackFile(stackId)
 	if err != nil {
@@ -547,6 +624,9 @@ func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool)
 		return -1, err
 	}
 
+
+
+
 	envDataString := string(envDataByte)
 	reqBodyRaw := fmt.Sprintf(`{"Env":%s,"id":%d,"Prune":%t,"PullImage":%t,"StackFileContent":"%s","Webhook":"%s"}`,
 		envDataString, stackId, prune, pullImage, stackFileContent, webhook)
@@ -557,17 +637,18 @@ func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool)
 		updateStatus := StackUpdateStatus{
 			EndpointId: endpointId,
 			StackId:    stackId,
-			Status:     "queued",
+			StackName:  stackNameString,
+			Status:     Queued,
 			Details:    "",
 		}
 		appState.StackUpdateQueue.Set(id, updateStatus, time.Minute*30)
 		_, err := updateStack(endpointId, stackId, reqBodyByte)
 		if err != nil {
 			glg.Errorf("No operation performed: %s", err)
-			updateStatus.Status = "error"
+			updateStatus.Status = Error
 			updateStatus.Details = err.Error()
 		} else {
-			updateStatus.Status = "done"
+			updateStatus.Status = Done
 		}
 		appState.StackUpdateQueue.Set(id, updateStatus, time.Hour * 24 * 7)
 	}()

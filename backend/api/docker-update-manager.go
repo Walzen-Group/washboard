@@ -12,7 +12,7 @@ import (
 	"github.com/kpango/glg"
 )
 
-// PortainerGetEndpoints handles an HTTP GET request to retrieve the identifier of a Portainer endpoint
+// PortainerGetEndpoint handles an HTTP GET request to retrieve the identifier of a Portainer endpoint
 // based on the provided endpoint name. It attempts to fetch the endpoint ID using the 'endpointName' query
 // parameter. If the 'endpointName' parameter is not provided in the request, a default value of "Quasar" is used.
 // The function queries the Portainer API to find the endpoint ID corresponding to the given endpoint name.
@@ -35,7 +35,7 @@ import (
 // is employed to record any errors encountered during the operation. This function ensures efficient
 // communication with the Portainer API and provides clear feedback to the client regarding the operation's
 // outcome.
-func PortainerGetEndpoints(c *gin.Context) {
+func PortainerGetEndpoint(c *gin.Context) {
 	endpointName := c.DefaultQuery("endpoint", "Quasar")
 	res, err := portainer.GetEndpointId(endpointName)
 	if err != nil {
@@ -395,5 +395,69 @@ func PortainerUpdateStack(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": res,
+	})
+}
+
+
+func PortainerStartStack(c *gin.Context) {
+	portainerStartOrStopStack(c, "start")
+}
+
+func PortainerStopStack(c *gin.Context) {
+	portainerStartOrStopStack(c, "stop")
+}
+
+func portainerStartOrStopStack(c *gin.Context, startOrStop string) {
+	var reqBody map[string]interface{}
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		errorMessage := "Failed to bind json. Check the request body and ensure that the pullImage field is present."
+		glg.Errorf("%s %s", errorMessage, err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": errorMessage,
+			"error": err,
+		})
+		return
+	}
+
+
+	var endpointId int
+	var id int
+
+	if endpointRaw, ok := reqBody["endpointId"]; !ok {
+		glg.Warn("endpointId field is missing")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "endpointId field is missing"})
+		return
+	} else if endpointIdFloat, ok := endpointRaw.(float64); !ok {
+		glg.Warn("endpointId field is not an int")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "endpointId field is not an int"})
+		return
+	} else {
+		endpointId = int(endpointIdFloat)
+	}
+
+	if idRaw, ok := reqBody["id"]; !ok {
+		glg.Warn("id field is missing")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "id field is missing"})
+		return
+	} else if idFloat, ok := idRaw.(float64); !ok {
+		glg.Warn("id field is not a string")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "id field is not a number"})
+		return
+	} else {
+		id = int(idFloat)
+	}
+
+	res, err := portainer.StartOrStopStack(endpointId, id, startOrStop)
+	if err != nil {
+		glg.Errorf("Failed to %s stack: %s", startOrStop, err)
+		c.JSON(http.StatusNotFound, gin.H{
+			"message":  fmt.Sprintf("Failed to %s stack", startOrStop),
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id": res,
 	})
 }

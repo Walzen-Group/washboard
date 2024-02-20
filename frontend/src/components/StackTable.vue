@@ -4,12 +4,21 @@
             <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify" single-line
                           variant="filled" density="compact"
                           hide-details></v-text-field>
-            <div class="d-flex flex-row mt-4">
-                <v-btn variant="tonal" class="mr-2" @click="selectOutdated" color="primary">Select
-                    Outdated</v-btn>
+            <div class="d-flex flex-row flex-wrap mt-4">
+                <v-btn class="mr-2 mb-2" variant="tonal" @click="selectOutdated"
+                       color="primary">Select
+                    Outdated
+                </v-btn>
                 <slot name="controls"></slot>
             </div>
         </template>
+        <div>
+            <v-checkbox-btn class="ml-2" v-model="showStoppedStacks"
+                            @update:model-value="showInactiveStacks(showStoppedStacks)"
+                            label="Show inactive stacks"></v-checkbox-btn>
+        </div>
+        <v-divider class="mt-2 mb-1"></v-divider>
+
         <div v-if="loading">
             <v-skeleton-loader type="list-item"></v-skeleton-loader>
             <v-skeleton-loader type="table-thead"></v-skeleton-loader>
@@ -21,6 +30,12 @@
                       :headers="headers" v-model="selectedRows" :items="itemsInternal" item-value="id"
                       @update:modelValue="bulkSelect"
                       show-select show-expand>
+            <template v-slot:item.link="{ item }">
+                <v-btn elevation="0" size="x-small" icon :href="getPortainerUrl(item)" target="_blank"
+                       class="mr-2">
+                    <v-icon>mdi-open-in-new</v-icon>
+                </v-btn>
+            </template>
             <template v-slot:item.updateStatus="{ item }">
                 <div class="d-flex flex-row">
                     <v-tooltip v-for="elem in item.containers" :text="elem.name" location="top">
@@ -53,7 +68,6 @@
         </v-data-table>
     </v-card>
 </template>
-
 <script lang="ts" setup>
 import { ref, onMounted, Ref, onUnmounted, watch } from 'vue'
 
@@ -64,9 +78,11 @@ let shiftKeyOn: boolean = false;
 const emit = defineEmits(["update:selectedRows", "click:indicator"]);
 const props = defineProps<{
     items: Stack[],
-    loading: boolean
+    loading: boolean,
+    itemUrl: string
 }>();
 
+const showStoppedStacks: Ref<boolean> = ref(false);
 const search: Ref<string> = ref("");
 const selectedRows: Ref<number[]> = ref([]);
 const itemsInternal: Ref<Stack[]> = ref([]);
@@ -74,7 +90,8 @@ const sortBy: Ref<any[]> = ref([{ key: 'name', order: 'asc' }]);
 const headers = [
     { title: "Stack Name", key: "name", value: "name" },
     { title: "Update Status", value: "updateStatus" },
-    { title: "ID", key: "id", value: "id" }
+    { title: "ID", key: "id", value: "id" },
+    { title: "Link", value: "link"}
 ];
 const containerTableHeaders = [
     { title: "Image Status", value: "upToDate" },
@@ -86,6 +103,7 @@ const containerTableHeaders = [
 watch(() => props.items, (newVal, _) => {
     itemsInternal.value = newVal;
     updateSorting(sortBy.value);
+    showInactiveStacks(showStoppedStacks.value);
 });
 
 watch(selectedRows, (newVal, _) => {
@@ -108,6 +126,14 @@ onUnmounted(() => {
     window.removeEventListener("keyup", keyUpHandler);
 }
 );
+
+function showInactiveStacks(show: boolean) {
+    if (show) {
+        itemsInternal.value = props.items;
+    } else {
+        itemsInternal.value = props.items.filter((item: Stack) => item.containers.length > 0);
+    }
+}
 
 function updateSorting(sortByRequest: any) {
     if (sortByRequest.length === 0) {
@@ -166,6 +192,7 @@ function bulkSelect(e: any) {
                 end = temp;
             }
             for (let i = start; i <= end; i++) {
+                if (!showInactiveStacks && itemsInternal.value[i].containers.length === 0) continue;
                 if (!selectedRows.value.includes(itemsInternal.value[i].id)) {
                     selectedRows.value.push(itemsInternal.value[i].id);
                 }
@@ -185,6 +212,10 @@ function selectOutdated() {
             selectedRows.value.push(stack.id);
         }
     }
+}
+
+function getPortainerUrl(item: Stack) {
+    return props.itemUrl.replace('${stackId}', item.id.toString()).replace('${stackName}', item.name);
 }
 </script>
 

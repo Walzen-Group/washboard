@@ -13,5 +13,6 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     StackTable: typeof import('./src/components/StackTable.vue')['default']
     Test: typeof import('./src/components/Test.vue')['default']
+    UpdateQuelelel: typeof import('./src/components/UpdateQuelelel.vue')['default']
   }
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+	"washboard/portainer"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -74,7 +75,20 @@ func pushData(ws *websocket.Conn, oniiChan chan string, wsState *WsState) {
 		}
 
 		items := appState.StackUpdateQueue.Items()
-		out, err := encodeJson(items)
+
+		// group items by status and create new map[string]map[string]cache.Item
+		groupedItems := make(map[string]map[string]portainer.StackUpdateStatus)
+		for _, item := range items {
+			stackUpdateStatus := item.Object.(portainer.StackUpdateStatus)
+
+			status := stackUpdateStatus.Status
+			if _, ok := groupedItems[status]; !ok {
+				groupedItems[status] = make(map[string]portainer.StackUpdateStatus)
+			}
+			groupedItems[status][stackUpdateStatus.StackName] = stackUpdateStatus
+		}
+
+		out, err := encodeJson(groupedItems)
 		if err != nil {
 			glg.Warnf("error while marshaling encoder to json: %s", err)
 			break

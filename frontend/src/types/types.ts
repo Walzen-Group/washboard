@@ -6,7 +6,7 @@ interface Container {
   upToDateIgnored: boolean,
   status: string;
   ports: number[];
-  labels: { [key: string]: string };
+  labels: Record<string, string>;
 }
 
 interface Stack {
@@ -31,22 +31,24 @@ interface AppSettings {
   dockerUpdateManagerSettings: DockerUpdateManagerSettings;
 }
 
-interface IgnoredImages {
-  [key: string]: boolean;
-}
+interface IgnoredImages extends Record<string, boolean> { }
 
 interface DockerUpdateManagerSettings {
   ignoredImages: IgnoredImages;
 }
 
-interface UpdateStackQueue {
-  [key: string]: {
-    Expiration: number;
-    Object: {
-      details: string;
-      status: string;
-      endpointId: number;
-      stackId: number;
-    }
-  };
+interface UpdateQueue extends Record<QueueStatus, Record<string, QueueItem>> { }
+
+enum QueueStatus {
+  error = "error",
+  queued = "queued",
+  done = "done"
+}
+
+interface QueueItem {
+  details: string;
+  status: QueueStatus;
+  stackName: string;
+  endpointId: number;
+  stackId: number;
 }

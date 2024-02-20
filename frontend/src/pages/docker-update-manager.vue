@@ -3,7 +3,8 @@
     <v-alert v-if="loading" variant="tonal" type="info"
              title="Refreshing...">
         <template v-slot:prepend>
-            <v-progress-circular size="26" color="deep-blue-lighten-2" indeterminate></v-progress-circular>
+            <v-progress-circular size="26" color="deep-blue-lighten-2"
+                                 indeterminate></v-progress-circular>
         </template>
     </v-alert>
     <v-alert v-else-if="!containersNeedUpdate" variant="tonal" type="success" color="blue"
@@ -65,15 +66,29 @@
         </v-row>
 
     </div>
-    <StackTable @click:indicator="handleIndicatorClick" @update:selectedRows="updateSelectedRows"
-                :items="items" :loading="loading">
-        <template v-slot:controls>
-            <v-btn variant="tonal" @click="confirmUpdateSelected" color="primary"
-                   :disabled="!selectedRows.length"
-                   :loading="loadingUpdateButton">Update
-                Selected</v-btn>
-        </template>
-    </StackTable>
+
+    <v-row dense>
+        <v-col cols="12" lg="9">
+            <StackTable @click:indicator="handleIndicatorClick"
+                        @update:selectedRows="updateSelectedRows"
+                        :item-url="portainerStackUrl"
+                        :items="items" :loading="loading">
+                <template v-slot:controls>
+                    <v-btn variant="tonal" @click="confirmUpdateSelected" color="primary"
+                           :disabled="!selectedRows.length"
+                           :loading="loadingUpdateButton">Update
+                        Selected</v-btn>
+                </template>
+            </StackTable>
+        </v-col>
+        <v-col cols="12" lg="3">
+            <UpdateQuelelel :loading="loading" :queue="queue">
+
+            </UpdateQuelelel>
+        </v-col>
+    </v-row>
+
+
     <v-dialog transition="dialog-top-transition" :scrim="false" v-model="dialogUpdate" width="auto">
         <v-card>
             <v-toolbar
@@ -86,13 +101,15 @@
             <v-card-text class="mt-2">
                 Do you want to update {{ totalStacksToUpdate }} stack{{ totalStacksToUpdate > 1 ? "s" :
                     "" }}?
-                <v-list lines="one">
-                    <v-list-item
-                                 v-for="name in selectedStackNames"
-                                 :key="name"
-                                 :title="name"
-                                 density="compact"></v-list-item>
-                </v-list>
+                <v-virtual-scroll
+                                  class="mt-2"
+                                  :max-height="200"
+                                  :items="selectedStackNames">
+                    <template v-slot:default="{ item }">
+                        {{ item }}
+                    </template>
+                </v-virtual-scroll>
+
             </v-card-text>
             <v-card-actions class="mb-2 mr-2">
                 <v-spacer></v-spacer>
@@ -103,19 +120,28 @@
 </template>
 
 <script lang="ts" setup>
-import { updateStack } from '@/api/lib';
 import StackTable from '@/components/StackTable.vue';
+import UpdateQuelelel from '@/components/UpdateQuelelel.vue';
 import axios from 'axios';
+import { updateStack } from '@/api/lib';
 import { useLocalStore } from '@/store/local';
 import { useSnackbarStore } from '@/store/snackbar';
-import { ref, Ref, onMounted, computed } from 'vue';
+import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
 import { storeToRefs } from 'pinia';
-
+import { ref, Ref, onMounted, computed } from 'vue';
 
 const localStore = useLocalStore();
 const { dockerUpdateManagerSettings: dockerUpdateManagerSettings } = storeToRefs(localStore);
 
+const updateQuelelelStore = useUpdateQuelelelStore();
+const { queue } = storeToRefs(updateQuelelelStore);
+
 const snackbarsStore = useSnackbarStore();
+
+const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
+const portainerStackUrl = computed(() => {
+    return process.env.PORTAINER_BASE_URL?.replace("${endpointId}", defaultEndpointId) || process.env.BASE_URL || "";
+});
 
 const dialogUpdate: Ref<boolean> = ref(false);
 const loadingUpdateButton: Ref<boolean> = ref(false);
@@ -147,9 +173,10 @@ const updateStatusCounts = computed(() => {
     return { outdated, upToDate };
 });
 
-onMounted(() => {
+function leeroad() {
     axios.get('/portainer-get-stacks')
         .then((response) => {
+            console.log("leeroaded");
             items.value = response.data;
             loading.value = false;
 
@@ -179,6 +206,10 @@ onMounted(() => {
             loading.value = false;
             console.log(error);
         });
+}
+
+onMounted(() => {
+    leeroad();
 });
 
 function updateSelectedRows(data: number[]) {
