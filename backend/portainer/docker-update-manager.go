@@ -34,8 +34,8 @@ type ContainerDto struct {
 }
 
 type StackDto struct {
-	Id         int            `json:"id"`
-	Name       string         `json:"name"`
+	Id         int             `json:"id"`
+	Name       string          `json:"name"`
 	Containers []*ContainerDto `json:"containers"`
 }
 
@@ -45,6 +45,7 @@ type StackUpdateStatus struct {
 	StackName  string `json:"stackName"`
 	Status     string `json:"status"`
 	Details    string `json:"details"`
+	Timestamp  int64  `json:"timestamp"`
 }
 
 const (
@@ -52,7 +53,7 @@ const (
 	Updated  string = "updated"
 	Skipped  string = "skipped"
 	Error    string = "error"
-	Done	 string = "done"
+	Done     string = "done"
 	Queued   string = "queued"
 )
 
@@ -273,7 +274,6 @@ func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([
 			}
 		}
 	}
-
 
 	if len(queryImageStatusContainers) > 0 {
 		queryContainerImageStatus(endpointId, queryImageStatusContainers)
@@ -497,7 +497,6 @@ func StartOrStopStack(endpointId int, stackId int, starOrStop string) (string, e
 	q.Add("endpointId", fmt.Sprintf("%d", endpointId))
 	req.URL.RawQuery = q.Encode()
 
-
 	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
 	resp, err := client.Do(req)
 	if err != nil {
@@ -519,7 +518,6 @@ func StartOrStopStack(endpointId int, stackId int, starOrStop string) (string, e
 		glg.Errorf("Failed to unmarshal JSON: %s", err)
 		return "", err
 	}
-
 
 	switch resp.StatusCode {
 	case 200:
@@ -591,7 +589,6 @@ func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool)
 		return -1, fmt.Errorf("stack name is not a string")
 	}
 
-
 	stackFileContent, err := getStackFile(stackId)
 	if err != nil {
 		glg.Errorf("Failed to get stack file: %s", err)
@@ -624,9 +621,6 @@ func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool)
 		return -1, err
 	}
 
-
-
-
 	envDataString := string(envDataByte)
 	reqBodyRaw := fmt.Sprintf(`{"Env":%s,"id":%d,"Prune":%t,"PullImage":%t,"StackFileContent":"%s","Webhook":"%s"}`,
 		envDataString, stackId, prune, pullImage, stackFileContent, webhook)
@@ -639,6 +633,7 @@ func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool)
 			StackId:    stackId,
 			StackName:  stackNameString,
 			Status:     Queued,
+			Timestamp:  int64(time.Now().Unix()),
 			Details:    "",
 		}
 		appState.StackUpdateQueue.Set(id, updateStatus, time.Minute*30)
@@ -650,7 +645,8 @@ func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool)
 		} else {
 			updateStatus.Status = Done
 		}
-		appState.StackUpdateQueue.Set(id, updateStatus, time.Hour * 24 * 7)
+		updateStatus.Timestamp = int64(time.Now().Unix())
+		appState.StackUpdateQueue.Set(id, updateStatus, time.Hour*24*7)
 	}()
 
 	return float64(stackId), nil

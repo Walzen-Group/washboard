@@ -7,8 +7,11 @@
                                  indeterminate></v-progress-circular>
         </template>
     </v-alert>
+    <v-alert v-else-if="connectionFailed" variant="tonal" type="error"
+             title="No data"></v-alert>
     <v-alert v-else-if="!containersNeedUpdate" variant="tonal" type="success" color="blue"
              title="You're all good"></v-alert>
+
     <v-alert v-else variant="tonal" type="warning" title="Updates available"></v-alert>
 
     <div class="d-flex justify-center">
@@ -21,7 +24,7 @@
                                            type="image">
                         </v-skeleton-loader>
                         <v-card v-else v-bind="props"
-                                :color="isHovering ? 'surface-variant' : undefined"
+                                :color="isHovering ? undefined : 'surface-variant'"
                                 elevation="0"
                                 variant="tonal" class="fill-height" min-width="220">
                             <template v-slot:append>
@@ -47,7 +50,7 @@
                                            type="image">
                         </v-skeleton-loader>
                         <v-card v-else v-bind="props"
-                                :color="isHovering ? 'surface-variant' : undefined"
+                                :color="isHovering ? undefined : 'surface-variant'"
                                 elevation="0" variant="tonal" class="fill-height" min-width="220">
                             <template v-slot:append>
                                 <v-icon icon="mdi-hand-okay" size="x-large" color="success"></v-icon>
@@ -129,6 +132,7 @@ import { useSnackbarStore } from '@/store/snackbar';
 import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
 import { storeToRefs } from 'pinia';
 import { ref, Ref, onMounted, computed } from 'vue';
+import { Stack, Container } from '@/types/types';
 
 const localStore = useLocalStore();
 const { dockerUpdateManagerSettings: dockerUpdateManagerSettings } = storeToRefs(localStore);
@@ -143,6 +147,7 @@ const portainerStackUrl = computed(() => {
     return process.env.PORTAINER_BASE_URL?.replace("${endpointId}", defaultEndpointId) || process.env.BASE_URL || "";
 });
 
+const connectionFailed: Ref<boolean> = ref(false);
 const dialogUpdate: Ref<boolean> = ref(false);
 const loadingUpdateButton: Ref<boolean> = ref(false);
 const currentProgress: Ref<number> = ref(0);
@@ -179,6 +184,7 @@ function leeroad() {
             console.log("leeroaded");
             items.value = response.data;
             loading.value = false;
+            connectionFailed.value = false;
 
             for (let [ignoredImage] of Object.entries(dockerUpdateManagerSettings.value.ignoredImages)) {
                 let found = true;
@@ -204,6 +210,7 @@ function leeroad() {
         })
         .catch((error) => {
             loading.value = false;
+            connectionFailed.value = true;
             console.log(error);
         });
 }
@@ -232,7 +239,7 @@ async function updateSelected() {
                 switch (response.status) {
                     case 200:
                         currentProgress.value += 1;
-                        snackbarsStore.addSnackbar(stackId, `Stack ${stack?.name} enqueued successfully`, "success");
+                        snackbarsStore.addSnackbar(stackId, `Stack ${stack?.name} enqueued successfully`, "info");
                         break;
                     case 202:
                         snackbarsStore.addSnackbar(stackId, `Stack ${stack?.name} already queued`, "warning");

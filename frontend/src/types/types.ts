@@ -51,4 +51,19 @@ interface QueueItem {
   stackName: string;
   endpointId: number;
   stackId: number;
+  timestamp: number;
 }
+
+export {
+  QueueStatus
+};
+export type {
+  Container,
+  Stack,
+  ContainerView,
+  Snackbar,
+  AppSettings,
+  DockerUpdateManagerSettings,
+  IgnoredImages,
+  UpdateQueue, QueueItem
+};

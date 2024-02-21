@@ -25,6 +25,7 @@ import { storeToRefs } from 'pinia';
 import { useTheme } from 'vuetify'
 import { onMounted } from 'vue';
 import axios from 'axios';
+import { UpdateQueue, QueueStatus, QueueItem } from './types/types';
 
 const snackbarStore = useSnackbarStore();
 const { snackbars: snackbars } = storeToRefs(snackbarStore);
@@ -80,26 +81,6 @@ onMounted(() => {
             break;
         }
       }
-
-      /*
-       const queueItem = data["Object"].Object;
-      newQueueItems.push(queueItem);
-      switch (queueItem.status) {
-        case "queued":
-          break;
-        case "done":
-          if (queuedStacks.value.includes(queueItem.stackName)) {
-            snackbarsStore.addSnackbar(queueItem.stackId, `Stack ${queueItem.stackName} updated successfully`, "success");
-          }
-          break;
-        case "error":
-          if (queuedStacks.value.includes(queueItem.stackName)) {
-            snackbarsStore.addSnackbar(queueItem.stackId, `Stack ${queueItem.stackName} update failed`, "error");
-          }
-          break;
-        queueI
-      }
-      */
     }
     updateQuelelelStore.update(data);
   };

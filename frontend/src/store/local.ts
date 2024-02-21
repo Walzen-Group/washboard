@@ -1,3 +1,4 @@
+import { DockerUpdateManagerSettings } from '@/types/types'
 import { defineStore } from 'pinia'
 
 const STORE_NAME = 'local'

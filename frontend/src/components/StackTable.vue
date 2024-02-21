@@ -18,7 +18,7 @@
                             label="Show inactive stacks"></v-checkbox-btn>
         </div>
         <v-divider class="mt-2 mb-1"></v-divider>
-
+        <!-- <v-fade-transition mode="out-in"> -->
         <div v-if="loading">
             <v-skeleton-loader type="list-item"></v-skeleton-loader>
             <v-skeleton-loader type="table-thead"></v-skeleton-loader>
@@ -27,11 +27,13 @@
         </div>
         <v-data-table v-else items-per-page="-1" v-model:sort-by="sortBy" :search=search
                       @update:sortBy="updateSorting"
-                      :headers="headers" v-model="selectedRows" :items="itemsInternal" item-value="id"
+                      :headers="headers" v-model="selectedRows" :items="itemsInternal"
+                      item-value="id"
                       @update:modelValue="bulkSelect"
                       show-select show-expand>
             <template v-slot:item.link="{ item }">
-                <v-btn elevation="0" size="x-small" icon :href="getPortainerUrl(item)" target="_blank"
+                <v-btn elevation="0" size="x-small" icon :href="getPortainerUrl(item)"
+                       target="_blank"
                        class="mr-2">
                     <v-icon>mdi-open-in-new</v-icon>
                 </v-btn>
@@ -66,9 +68,11 @@
             </template>
 
         </v-data-table>
+        <!-- </v-fade-transition>-->
     </v-card>
 </template>
 <script lang="ts" setup>
+import { Container, Stack } from '@/types/types';
 import { ref, onMounted, Ref, onUnmounted, watch } from 'vue'
 
 let keyDownHandler: any;
@@ -91,7 +95,7 @@ const headers = [
     { title: "Stack Name", key: "name", value: "name" },
     { title: "Update Status", value: "updateStatus" },
     { title: "ID", key: "id", value: "id" },
-    { title: "Link", value: "link"}
+    { title: "Link", value: "link" }
 ];
 const containerTableHeaders = [
     { title: "Image Status", value: "upToDate" },

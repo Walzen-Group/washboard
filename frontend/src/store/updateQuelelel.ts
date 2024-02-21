@@ -1,3 +1,4 @@
+import { QueueItem, QueueStatus, UpdateQueue } from "@/types/types";
 import { defineStore } from "pinia";
 import { ref, Ref } from 'vue';
 
