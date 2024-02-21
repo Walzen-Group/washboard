@@ -13,10 +13,11 @@ import { createVuetify, type ThemeDefinition } from 'vuetify'
 
 const washboardThemeLight: ThemeDefinition = {
   colors: {
+    background: '#F3F4F6',
     primary: '#039BE5',
     updated: '#42A5F5',
-    surface: '#fafafa',
-    "washboard-appbar": "#0288D1",
+    surface: '#fbfbfb',
+    "washboard-appbar": "#0277BD",
   },
 }
 

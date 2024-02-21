@@ -40,6 +40,7 @@ import type {
 declare module 'vue-router/auto/routes' {
   export interface RouteNamedMap {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
+    '/docker-manager': RouteRecordInfo<'/docker-manager', '/docker-manager', Record<never, never>, Record<never, never>>,
     '/docker-update-manager': RouteRecordInfo<'/docker-update-manager', '/docker-update-manager', Record<never, never>, Record<never, never>>,
   }
 }

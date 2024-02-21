@@ -13,4 +13,10 @@ const router = createRouter({
   extendRoutes: setupLayouts,
 })
 
+router.onError((error: any, to: any) => {
+  if (error.message.includes('Failed to fetch dynamically imported module') || error.message.includes("Importing a module script failed")) {
+    window.location = to.fullPath
+  }
+})
+
 export default router

@@ -1,5 +1,5 @@
 <template>
-    <h2 class="mt-2 mb-4">Manage Stack Images</h2>
+    <h2 class="mt-2 mb-4">Update Stack Images</h2>
     <div class="mb-2">
         <v-alert v-if="loading" variant="tonal" type="info"
                  title="Refreshing...">
@@ -39,7 +39,7 @@
                                     </template>
 
                                     <v-card-text>
-                                        <h2>{{ updateStatusCounts.outdated }}</h2>
+                                        <h2>{{ tweeenedOutdated.number.toFixed(0) }}</h2>
                                     </v-card-text>
                                 </v-card>
                             </template>
@@ -65,7 +65,7 @@
                                     </template>
 
                                     <v-card-text>
-                                        <h2>{{ updateStatusCounts.upToDate }}</h2>
+                                        <h2>{{ tweeenedUpToDate.number.toFixed(0) }}</h2>
                                     </v-card-text>
                                 </v-card>
                             </template>
@@ -77,13 +77,15 @@
             <StackTable @click:indicator="handleIndicatorClick"
                         @update:selectedRows="updateSelectedRows"
                         @update:items-per-page="calculateItemsPerPage"
+                        @update:stack-modified="leeroad"
                         :item-url="portainerStackUrl"
                         :items="items" :loading="loading">
                 <template v-slot:controls>
                     <v-btn variant="tonal" @click="confirmUpdateSelected" color="primary"
                            :disabled="!selectedRows.length"
-                           :loading="loadingUpdateButton">Update
-                        Selected</v-btn>
+                           :loading="loadingUpdateButton">
+                        Update Selected
+                    </v-btn>
                 </template>
             </StackTable>
         </v-col>
@@ -129,26 +131,30 @@
 import StackTable from '@/components/StackTable.vue';
 import UpdateQuelelel from '@/components/UpdateQuelelel.vue';
 import axios from 'axios';
+import gsap from 'gsap';
 import { updateStack } from '@/api/lib';
 import { useLocalStore } from '@/store/local';
 import { useSnackbarStore } from '@/store/snackbar';
 import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
 import { storeToRefs } from 'pinia';
-import { ref, Ref, onMounted, computed } from 'vue';
+import { ref, Ref, onMounted, computed, watch, reactive } from 'vue';
 import { Stack, Container, UpdateQueue, QueueStatus } from '@/types/types';
 
+const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
+
+// stores
 const localStore = useLocalStore();
 const { dockerUpdateManagerSettings: dockerUpdateManagerSettings } = storeToRefs(localStore);
 
 const updateQuelelelStore = useUpdateQuelelelStore();
-const { queue } = storeToRefs(updateQuelelelStore);
+const { queue, queueCount } = storeToRefs(updateQuelelelStore);
 
 const snackbarsStore = useSnackbarStore();
 
-const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
-const portainerStackUrl = computed(() => {
-    return process.env.PORTAINER_BASE_URL?.replace("${endpointId}", defaultEndpointId) || process.env.BASE_URL || "";
-});
+
+// update card values
+const tweeenedOutdated = reactive({ number: 0 });
+const tweeenedUpToDate = reactive({ number: 0 });
 
 // widget controls
 const hideWidget: Ref<boolean> = ref(false);
@@ -163,6 +169,13 @@ const selectedRows: Ref<number[]> = ref([]);
 const selectedStackNames: Ref<string[]> = ref([]);
 const items: Ref<Stack[]> = ref([]);
 const loading: Ref<boolean> = ref(true);
+
+
+// computed properties
+const portainerStackUrl = computed(() => {
+    return process.env.PORTAINER_BASE_URL?.replace("${endpointId}", defaultEndpointId) || process.env.BASE_URL || "";
+});
+
 const containersNeedUpdate = computed(() => {
     for (let stack of items.value) {
         if (stack.containers.some((container: any) => container.upToDate === "outdated")) {
@@ -170,7 +183,24 @@ const containersNeedUpdate = computed(() => {
         }
     }
 });
-const updateStatusCounts = computed(() => {
+
+
+// hooks
+onMounted(() => {
+    leeroad();
+});
+
+// watches
+watch(queueCount, (newVal, oldVal) => {
+    // TODO: check if this needs a delay
+    if (newVal === 0 && oldVal !== 0) {
+        leeroad();
+    }
+});
+
+// functions
+
+function updateStatusCounts() {
     let outdated = 0;
     let upToDate = 0;
     for (let stack of items.value) {
@@ -182,8 +212,12 @@ const updateStatusCounts = computed(() => {
             }
         }
     }
+    setTimeout(() => {
+        gsap.to(tweeenedOutdated, { duration: 0.5, number: Number(outdated) || 0 })
+        gsap.to(tweeenedUpToDate, { duration: 0.5, number: Number(upToDate) || 0 })
+    }, 200);
     return { outdated, upToDate };
-});
+}
 
 function leeroad() {
     axios.get('/portainer-get-stacks')
@@ -211,6 +245,8 @@ function leeroad() {
                 }
                 setIgnoreData();
             }
+            updateStatusCounts();
+
 
             // TODO: remove orphaned containers from dockerUpdateManagerSettings.value.ignoredImages
             // iterate through dockeruPdateManagerSettings.value.ignoredImages and remove all that are not present in the current stacks
@@ -222,9 +258,8 @@ function leeroad() {
         });
 }
 
-onMounted(() => {
-    leeroad();
-});
+
+
 
 function updateSelectedRows(data: number[]) {
     selectedRows.value = data;
@@ -246,20 +281,20 @@ async function updateSelected() {
                 switch (response.status) {
                     case 200:
                         currentProgress.value += 1;
-                        snackbarsStore.addSnackbar(stackId, `Stack ${stack?.name} enqueued successfully`, "info");
+                        // snackbarsStore.addSnackbar(stackId, `Stack ${stack?.name} enqueued successfully`, "info");
                         break;
                     case 202:
-                        snackbarsStore.addSnackbar(stackId, `Stack ${stack?.name} already queued`, "warning");
+                        snackbarsStore.addSnackbar(`${stackId}_queued`, `Stack ${stack?.name} already queued`, "warning");
                         break;
                     default:
-                        snackbarsStore.addSnackbar(stackId, `Failed to enqueue stack ${stack?.name}: ${data.error}`, "error");
+                        snackbarsStore.addSnackbar(`${stackId}_error`, `Failed to enqueue stack ${stack?.name}: ${data.error}`, "error");
                 }
             } catch (error) {
                 console.error(error);
             }
         } else {
             console.log(`No update necessary for stack ${stack?.name}`);
-            snackbarsStore.addSnackbar(stackId, `No update necessary for stack ${stack?.name}`, "info");
+            snackbarsStore.addSnackbar(`${stackId}_noup`, `No update necessary for stack ${stack?.name}`, "info");
         }
     }
 
@@ -296,10 +331,8 @@ function setIgnoreData() {
     }
 }
 
-
 function calculateItemsPerPage(itemsPerPage: number) {
-    let val = Math.ceil(itemsPerPage * 0.61);
-    console.log(`calculated items per page: ${val}`)
+    let val = Math.round(itemsPerPage * 0.55);
     updateWidgetItemsPerPage.value = val + 2;
 
     if (!loading.value) {

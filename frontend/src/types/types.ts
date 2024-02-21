@@ -21,7 +21,7 @@ interface ContainerView {
 }
 
 interface Snackbar {
-  id: number;
+  id: string;
   message: string;
   color: string;
   show: boolean;

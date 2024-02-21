@@ -74,12 +74,17 @@ const items: any[] = [
   },
   {
     icon: "mdi-docker",
-    title: "Stack Updater",
+    title: "Update Stacks",
     to: "/docker-update-manager",
+  },
+  {
+    icon: "mdi-toolbox",
+    title: "Manage Stacks",
+    to: "/docker-manager",
   }
 ];
 const clipped = ref(false);
-const drawer = ref(false);
+const drawer = ref(true);
 const miniVariant = ref(false);
 const queuedStacks = ref([]);
 

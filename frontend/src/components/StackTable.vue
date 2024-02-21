@@ -1,13 +1,12 @@
 <template>
-    <v-card variant="flat">
+    <v-card class="mt-1" variant="flat">
         <template v-slot:text>
             <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify" single-line
                           variant="filled" density="compact"
                           hide-details></v-text-field>
             <div class="d-flex flex-row flex-wrap mt-4">
                 <v-btn class="mr-2 mb-2" variant="tonal" @click="selectOutdated"
-                       color="primary">Select
-                    Outdated
+                       color="primary">Select Outdated
                 </v-btn>
                 <slot name="controls"></slot>
             </div>
@@ -29,6 +28,7 @@
                       @update:items-per-page="setItemsPerPage"
                       @update:sortBy="updateSorting"
                       :headers="headers" v-model="selectedRows" :items="itemsInternal"
+                      density="comfortable"
                       item-value="id"
                       @update:modelValue="bulkSelect"
                       show-select show-expand>
@@ -54,16 +54,30 @@
             <template v-slot:expanded-row="{ columns, item }">
                 <tr>
                     <td :colspan="columns.length">
-                        <!-- @vue-ignore -->
-                        <v-data-table items-per-page="-1" :headers="containerTableHeaders"
-                                      :items="item.containers">
-                            <template v-slot:item.upToDate="{ item }">
-                                <v-chip variant="tonal" :color="getColor(item)">
-                                    {{ item.upToDate.length > 0 ? item.upToDate : "unavailable" }}
-                                </v-chip>
-                            </template>
-                            <template #bottom></template>
-                        </v-data-table>
+                        <div class="d-flex flex-row flex-wrap mt-4">
+                            <v-btn v-if="item.containers.length === 0"
+                                   :loading="loaderState[item.id]" class="mr-2 mb-2" variant="tonal"
+                                   prepend-icon="mdi-arrow-right-drop-circle-outline"
+                                   @click="startOrStopStack(item, 'start')">Start Stack</v-btn>
+                            <v-btn v-else :loading="loaderState[item.id]" class="mr-2 mb-2"
+                                   variant="tonal" prepend-icon="mdi-stop-circle-outline"
+                                   @click="startOrStopStack(item, 'stop')">Stop Stack</v-btn>
+                        </div>
+                        <v-card class="mb-3" border flat>
+                            <v-data-table :loading="loaderState[item.id]" items-per-page="-1"
+                                          density="comfortable"
+                                          :headers="containerTableHeaders"
+                                          :items="item.containers">
+                                <template v-slot:item.upToDate="{ item }">
+                                    <v-chip variant="tonal" :color="getColor(item)">
+                                        {{ item.upToDate.length > 0 ? item.upToDate : "unavailable"
+                                        }}
+                                    </v-chip>
+                                </template>
+                                <template #bottom></template>
+                            </v-data-table>
+
+                        </v-card>
                     </td>
                 </tr>
             </template>
@@ -74,19 +88,23 @@
 </template>
 <script lang="ts" setup>
 import { Container, Stack } from '@/types/types';
-import { ref, onMounted, Ref, onUnmounted, watch } from 'vue'
+import { ref, onMounted, Ref, onUnmounted, watch, reactive } from 'vue'
+import { startStack, stopStack } from '@/api/lib';
+import { useSnackbarStore } from '@/store/snackbar';
 
 let keyDownHandler: any;
 let keyUpHandler: any;
 let shiftKeyOn: boolean = false;
 
-const emit = defineEmits(["update:selectedRows", "click:indicator", "update:itemsPerPage"]);
+const emit = defineEmits(["update:selectedRows", "click:indicator", "update:itemsPerPage", "update:stackModified"]);
 const props = defineProps<{
     items: Stack[],
     loading: boolean,
     itemUrl: string
 }>();
 
+
+const snackbarsStore = useSnackbarStore();
 const initCompleted: Ref<boolean> = ref(false);
 const itemsPerPage: Ref<number> = ref(-1);
 const showStoppedStacks: Ref<boolean> = ref(false);
@@ -96,7 +114,7 @@ const itemsInternal: Ref<Stack[]> = ref([]);
 const sortBy: Ref<any[]> = ref([{ key: 'name', order: 'asc' }]);
 const headers = [
     { title: "Stack Name", key: "name", value: "name" },
-    { title: "Update Status", value: "updateStatus" },
+    { title: "Update Status", key:"updateStatus", value: "updateStatus" },
     { title: "ID", key: "id", value: "id" },
     { title: "Link", value: "link" }
 ];
@@ -104,11 +122,13 @@ const containerTableHeaders = [
     { title: "Image Status", value: "upToDate" },
     { title: "Name", key: "name", value: "name" },
     { title: "Status", value: "status" },
-    { title: "Image", key: "image", value: "image" },
+    { title: "Image", key: "image", value: "image" }
 ];
+let loaderState: Record<string, boolean> = reactive({});
 
 watch(() => props.items, (newVal, _) => {
     itemsInternal.value = newVal;
+    loaderState = createLoaderState(itemsInternal.value);
     updateSorting(sortBy.value);
     showInactiveStacks(showStoppedStacks.value);
     if (!initCompleted.value) {
@@ -142,6 +162,15 @@ onUnmounted(() => {
 }
 );
 
+
+function createLoaderState(items: Stack[]) {
+    const data: Record<string, boolean> = {};
+    for (let item of items) {
+        data[item.id] = false;
+    }
+    return reactive(data);
+}
+
 function showInactiveStacks(show: boolean) {
     if (show) {
         itemsInternal.value = props.items;
@@ -150,9 +179,48 @@ function showInactiveStacks(show: boolean) {
     }
 }
 
+async function startOrStopStack(stack: Stack, startOrStop: string) {
+    loaderState[stack.id] = true;
+    let response;
+    if (startOrStop === "start") {
+        response = await startStack(stack.id);
+    } else if (startOrStop === "stop") {
+        response = await stopStack(stack.id);
+    } else {
+        snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Failed to ${startOrStopStack} ${stack?.name}, action should be "start" or "stop"`, "error");
+        return;
+    }
+    const data = response.data;
+    switch (response.status) {
+        case 200:
+            snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Successfully ${startOrStop}ed ${stack?.name}`, "success");
+            emit("update:stackModified", stack.id);
+            break;
+        default:
+            snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Failed to ${startOrStop} ${stack?.name}`, "error");
+            break;
+    }
+    loaderState[stack.id] = false;
+}
+
 function updateSorting(sortByRequest: any) {
     if (sortByRequest.length === 0) {
         sortByRequest = [{ key: 'name', order: 'asc' }];
+    }
+    if (sortByRequest[0].key == "updateStatus") {
+        // check if any container has an image with status outdated, if so it should be at the top of th elist
+        itemsInternal.value.sort((a: any, b: any) => {
+            if (sortByRequest[0].order === "asc") {
+                if (a.containers.some((container: Container) => container.upToDate === "outdated")) return -1;
+                if (b.containers.some((container: Container) => container.upToDate !== "outdated")) return 1;
+                return 0;
+            } else {
+                if (a.containers.some((container: Container) => container.upToDate === "outdated")) return 1;
+                if (b.containers.some((container: Container) => container.upToDate !== "outdated")) return -1;
+                return 0;
+            }
+        });
+        return;
     }
     itemsInternal.value.sort((a: any, b: any) => {
         if (sortByRequest[0].order === "asc") {

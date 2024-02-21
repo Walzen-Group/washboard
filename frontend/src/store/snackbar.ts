@@ -9,7 +9,7 @@ export const useSnackbarStore = defineStore(STORE_NAME, () => {
     const snackbars: Ref<Snackbar[]> = ref([]);
 
     function addSnackbar(
-        id: number,
+        id: string,
         message: string,
         color: string = "success",
         show: boolean = true
@@ -21,7 +21,7 @@ export const useSnackbarStore = defineStore(STORE_NAME, () => {
         }, TIMEOUT);
     }
 
-    function removeSnackbar(id: number) {
+    function removeSnackbar(id: string) {
         setTimeout(function () {
             const index = snackbars.value.findIndex(
                 (snackbar: Snackbar) => snackbar.id === id

@@ -11,12 +11,13 @@
                     </v-skeleton-loader>
                 </v-card>
             </div>
-            <div class="px-2 pb-2" v-else>
+            <div class="px-2" v-else>
                 <v-data-iterator
                                  :items="items"
                                  :items-per-page="itemsPerPage">
                     <template v-slot:default="{ items }">
                         <v-fade-transition group hide-on-leave>
+
                             <div
                                  v-for="item in (items as any)"
                                  :key="item.raw.stackId"
@@ -28,16 +29,19 @@
                                                location="start">{{ item.raw.details }}</v-tooltip>
                                     <v-list-item :subtitle="item.raw.status">
                                         <template v-slot:append>
-                                            <v-icon v-if="item.raw.status == QueueStatus.done" size="35"
-                                                    icon="mdi-robot-happy" class="mr-2" />
+                                            <v-icon v-if="item.raw.status == QueueStatus.done"
+                                                    size="35"
+                                                    icon="mdi-robot-happy"
+                                                    class="mr-2" />
                                             <v-icon v-else-if="item.raw.status == QueueStatus.queued"
                                                     size="35"
                                                     icon="mdi-robot-confused-outline"
-                                                    class="mr-2 loader" />
+                                                    :class="`mr-2 loader`" />
                                             <v-icon v-else-if="item.raw.status == QueueStatus.error"
                                                     size="35"
                                                     icon="mdi-robot-dead-outline" class="mr-2" />
-                                            <v-icon v-else size="35" icon="mdi-robot" class="mr-2" />
+                                            <v-icon v-else size="35" icon="mdi-robot"
+                                                    class="mr-2" />
                                         </template>
                                         <template v-slot:title>
                                             <strong class="text-h6">{{ item.raw.stackName }}</strong>
@@ -94,10 +98,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, ComputedRef } from 'vue';
+import { computed, ComputedRef, Ref, ref } from 'vue';
 import { VDataIterator } from 'vuetify/components';
 import { QueueStatus, QueueItem, UpdateQueue } from '@/types/types';
+import { onMounted } from 'vue';
+import { TransitionGroup } from 'vue';
 
+
+const useLoaderStop: Ref<string | undefined> = ref(undefined);
 
 function getColorClass(status: QueueStatus) {
     return "text-" + getColor(status);
@@ -115,6 +123,12 @@ function getColor(status: QueueStatus) {
             return undefined;
     }
 }
+
+onMounted(() => {
+    setInterval(() => {
+        useLoaderStop.value = "loader-stop";
+    }, 3000);
+});
 
 function timeAgo(unixTimestampInSeconds: number) {
     const timestampInMilliseconds = unixTimestampInSeconds * 1000;
@@ -191,7 +205,7 @@ const props = defineProps<{
 
 <style scoped>
 .loader {
-    animation: spin 2s linear infinite;
+    animation: spin 3s linear infinite;
 }
 
 @keyframes spin {

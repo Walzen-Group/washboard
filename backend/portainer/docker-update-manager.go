@@ -17,46 +17,6 @@ import (
 	"github.com/patrickmn/go-cache"
 )
 
-type EndpointDto struct {
-	Id         int            `json:"id"`
-	Name       string         `json:"name"`
-	Containers []ContainerDto `json:"containers"`
-}
-
-type ContainerDto struct {
-	Id       string                 `json:"id"`
-	Name     string                 `json:"name"`
-	Image    string                 `json:"image"`
-	UpToDate string                 `json:"upToDate"`
-	Status   string                 `json:"status"`
-	Ports    []int                  `json:"ports"`
-	Labels   map[string]interface{} `json:"labels"`
-}
-
-type StackDto struct {
-	Id         int             `json:"id"`
-	Name       string          `json:"name"`
-	Containers []*ContainerDto `json:"containers"`
-}
-
-type StackUpdateStatus struct {
-	EndpointId int    `json:"endpointId"`
-	StackId    int    `json:"stackId"`
-	StackName  string `json:"stackName"`
-	Status     string `json:"status"`
-	Details    string `json:"details"`
-	Timestamp  int64  `json:"timestamp"`
-}
-
-const (
-	Outdated string = "outdated"
-	Updated  string = "updated"
-	Skipped  string = "skipped"
-	Error    string = "error"
-	Done     string = "done"
-	Queued   string = "queued"
-)
-
 // GetEndpointId returns the id of the endpoint with the given name, which is also the environment in Portainer
 func GetEndpointId(endpointName string) (int, error) {
 	client := &http.Client{}
@@ -483,56 +443,6 @@ func UpdateContainer(endpointId int, containerId string, pullImage bool) (string
 	return container["Id"].(string), nil
 }
 
-func StartOrStopStack(endpointId int, stackId int, starOrStop string) (string, error) {
-	client := &http.Client{}
-	reqBody := []byte(fmt.Sprintf(`{"endpointId":%d,"id":"%d"}`, endpointId, stackId))
-
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/stacks/%d/%s", appState.Config.PortainerUrl, stackId, starOrStop), bytes.NewBuffer(reqBody))
-	if err != nil {
-		glg.Errorf("Failed to create request: %s", err)
-		return "", err
-	}
-
-	q := req.URL.Query()
-	q.Add("endpointId", fmt.Sprintf("%d", endpointId))
-	req.URL.RawQuery = q.Encode()
-
-	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
-	resp, err := client.Do(req)
-	if err != nil {
-		glg.Errorf("Failed to send request: %s", err)
-		return "", err
-	}
-
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		glg.Errorf("Failed to read response: %s", err)
-		return "", err
-	}
-
-	var responseStack map[string]interface{}
-	err = json.Unmarshal(body, &responseStack)
-	if err != nil {
-		glg.Errorf("Failed to unmarshal JSON: %s", err)
-		return "", err
-	}
-
-	switch resp.StatusCode {
-	case 200:
-		if responseId, ok := responseStack["Id"].(float64); ok {
-			return fmt.Sprintf("%d", int(responseId)), nil
-		}
-		return "", fmt.Errorf("response id is not a number")
-	case 409:
-		return "", fmt.Errorf("%s: %d", responseStack["message"], stackId)
-	default:
-		errorMessage := fmt.Sprintf("%s: %d. %s", responseStack["message"], stackId, responseStack["details"])
-		glg.Error(errorMessage)
-		return "", fmt.Errorf(errorMessage)
-	}
-}
 
 func getUpdateOperationId(endpointId int, stackId int) string {
 	return fmt.Sprintf("update-stack-%d-%d", endpointId, stackId)
