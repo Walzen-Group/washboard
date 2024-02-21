@@ -1,79 +1,82 @@
 <template>
     <h2 class="mt-2 mb-4">Manage Stack Images</h2>
-    <v-alert v-if="loading" variant="tonal" type="info"
-             title="Refreshing...">
-        <template v-slot:prepend>
-            <v-progress-circular size="26" color="deep-blue-lighten-2"
-                                 indeterminate></v-progress-circular>
-        </template>
-    </v-alert>
-    <v-alert v-else-if="connectionFailed" variant="tonal" type="error"
-             title="No data"></v-alert>
-    <v-alert v-else-if="!containersNeedUpdate" variant="tonal" type="success" color="blue"
-             title="You're all good"></v-alert>
+    <div class="mb-2">
+        <v-alert v-if="loading" variant="tonal" type="info"
+                 title="Refreshing...">
+            <template v-slot:prepend>
+                <v-progress-circular size="26" color="deep-blue-lighten-2"
+                                     indeterminate></v-progress-circular>
+            </template>
+        </v-alert>
+        <v-alert v-else-if="connectionFailed" variant="tonal" type="error"
+                 title="No data"></v-alert>
+        <v-alert v-else-if="!containersNeedUpdate" variant="tonal" type="success" color="blue"
+                 title="You're all good"></v-alert>
 
-    <v-alert v-else variant="tonal" type="warning" title="Updates available"></v-alert>
-
-    <div class="d-flex justify-center">
-        <v-row dense class="mt-2 mb-2">
-            <v-col>
-                <v-hover>
-                    <template v-slot:default="{ isHovering, props }">
-                        <v-skeleton-loader v-if="loading"
-                                           class="mx-auto border"
-                                           type="image">
-                        </v-skeleton-loader>
-                        <v-card v-else v-bind="props"
-                                :color="isHovering ? undefined : 'surface-variant'"
-                                elevation="0"
-                                variant="tonal" class="fill-height" min-width="220">
-                            <template v-slot:append>
-                                <v-icon icon="mdi-autorenew" size="x-large"
-                                        color="warning"></v-icon>
-                            </template>
-                            <template v-slot:title>
-                                Can Be Updated
-                            </template>
-
-                            <v-card-text>
-                                <h2>{{ updateStatusCounts.outdated }}</h2>
-                            </v-card-text>
-                        </v-card>
-                    </template>
-                </v-hover>
-            </v-col>
-            <v-col>
-                <v-hover>
-                    <template v-slot:default="{ isHovering, props }">
-                        <v-skeleton-loader v-if="loading"
-                                           class="mx-auto border"
-                                           type="image">
-                        </v-skeleton-loader>
-                        <v-card v-else v-bind="props"
-                                :color="isHovering ? undefined : 'surface-variant'"
-                                elevation="0" variant="tonal" class="fill-height" min-width="220">
-                            <template v-slot:append>
-                                <v-icon icon="mdi-hand-okay" size="x-large" color="success"></v-icon>
-                            </template>
-                            <template v-slot:title>
-                                Gucci
-                            </template>
-
-                            <v-card-text>
-                                <h2>{{ updateStatusCounts.upToDate }}</h2>
-                            </v-card-text>
-                        </v-card>
-                    </template>
-                </v-hover>
-            </v-col>
-        </v-row>
-
+        <v-alert v-else variant="tonal" type="warning" title="Updates available"></v-alert>
     </div>
-
     <v-row dense>
         <v-col cols="12" lg="9">
+            <div class="d-flex justify-center">
+                <v-row dense class="mb-1">
+                    <v-col>
+                        <v-hover>
+                            <template v-slot:default="{ isHovering, props }">
+                                <v-skeleton-loader v-if="loading"
+                                                   class="mx-auto border"
+                                                   type="image">
+                                </v-skeleton-loader>
+                                <v-card v-else v-bind="props"
+                                        :color="isHovering ? undefined : 'surface-variant'"
+                                        elevation="0"
+                                        variant="tonal" class="fill-height" min-width="220">
+                                    <template v-slot:append>
+                                        <v-icon icon="mdi-autorenew" size="x-large"
+                                                color="warning"></v-icon>
+                                    </template>
+                                    <template v-slot:title>
+                                        Can Be Updated
+                                    </template>
+
+                                    <v-card-text>
+                                        <h2>{{ updateStatusCounts.outdated }}</h2>
+                                    </v-card-text>
+                                </v-card>
+                            </template>
+                        </v-hover>
+                    </v-col>
+                    <v-col>
+                        <v-hover>
+                            <template v-slot:default="{ isHovering, props }">
+                                <v-skeleton-loader v-if="loading"
+                                                   class="mx-auto border"
+                                                   type="image">
+                                </v-skeleton-loader>
+                                <v-card v-else v-bind="props"
+                                        :color="isHovering ? undefined : 'surface-variant'"
+                                        elevation="0" variant="tonal" class="fill-height"
+                                        min-width="220">
+                                    <template v-slot:append>
+                                        <v-icon icon="mdi-hand-okay" size="x-large"
+                                                color="success"></v-icon>
+                                    </template>
+                                    <template v-slot:title>
+                                        Gucci
+                                    </template>
+
+                                    <v-card-text>
+                                        <h2>{{ updateStatusCounts.upToDate }}</h2>
+                                    </v-card-text>
+                                </v-card>
+                            </template>
+                        </v-hover>
+                    </v-col>
+                </v-row>
+
+            </div>
             <StackTable @click:indicator="handleIndicatorClick"
                         @update:selectedRows="updateSelectedRows"
+                        @update:items-per-page="calculateItemsPerPage"
                         :item-url="portainerStackUrl"
                         :items="items" :loading="loading">
                 <template v-slot:controls>
@@ -85,8 +88,8 @@
             </StackTable>
         </v-col>
         <v-col cols="12" lg="3">
-            <UpdateQuelelel :loading="loading" :queue="queue">
-
+            <UpdateQuelelel :loading="loading" :queue="queue"
+                            :itemsPerPage="updateWidgetItemsPerPage" :hide="hideWidget">
             </UpdateQuelelel>
         </v-col>
     </v-row>
@@ -132,7 +135,7 @@ import { useSnackbarStore } from '@/store/snackbar';
 import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
 import { storeToRefs } from 'pinia';
 import { ref, Ref, onMounted, computed } from 'vue';
-import { Stack, Container } from '@/types/types';
+import { Stack, Container, UpdateQueue, QueueStatus } from '@/types/types';
 
 const localStore = useLocalStore();
 const { dockerUpdateManagerSettings: dockerUpdateManagerSettings } = storeToRefs(localStore);
@@ -146,6 +149,10 @@ const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
 const portainerStackUrl = computed(() => {
     return process.env.PORTAINER_BASE_URL?.replace("${endpointId}", defaultEndpointId) || process.env.BASE_URL || "";
 });
+
+// widget controls
+const hideWidget: Ref<boolean> = ref(false);
+const updateWidgetItemsPerPage: Ref<number> = ref(4);
 
 const connectionFailed: Ref<boolean> = ref(false);
 const dialogUpdate: Ref<boolean> = ref(false);
@@ -289,37 +296,42 @@ function setIgnoreData() {
     }
 }
 
-const testValue = ref({
-    "done": {
-        "whoogle": {
-            "endpointId": 1,
-            "stackId": 91,
-            "stackName": "whoogle",
-            "status": "done",
-            "details": "",
-            "timestamp": 1708483615
-        },
 
-    },
-    "error": {
-        "ying-faff": {
-            "endpointId": 1,
-            "stackId": 95,
-            "stackName": "ying-faff",
-            "status": "error",
-            "details": "",
-            "timestamp": 1708483614
-        }
-    },
-    "queued": {
-        "test": {
-            "endpointId": 1,
-            "stackId": 94,
-            "stackName": "test",
-            "status": "queued",
-            "details": "",
-            "timestamp": 1708483619
-        }
+function calculateItemsPerPage(itemsPerPage: number) {
+    let val = Math.ceil(itemsPerPage * 0.61);
+    console.log(`calculated items per page: ${val}`)
+    updateWidgetItemsPerPage.value = val + 2;
+
+    if (!loading.value) {
+        hideWidget.value = true;
+        setTimeout(() => {
+            hideWidget.value = false;
+        }, 200);
     }
-});
+    return
+}
+
+function generateTestValues(num: number) {
+    const testItems: UpdateQueue = {
+        "done": {},
+        "error": {},
+        "queued": {}
+    };
+
+    for (let i = 0; i < num; i++) {
+        const status = Math.random() > 0.5 ? QueueStatus.done : Math.random() > 0.5 ? QueueStatus.error : QueueStatus.queued;
+        const stackName = `test-${i}`;
+        const stackId = i;
+        const timestamp = Math.floor(Math.random() * 1000000000);
+        testItems[status][stackName] = {
+            endpointId: 1,
+            stackId: stackId,
+            stackName: stackName,
+            status: status,
+            details: "Ich bin der Hämmerer",
+            timestamp: timestamp
+        };
+    }
+    return testItems;
+}
 </script>

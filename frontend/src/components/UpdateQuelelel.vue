@@ -1,16 +1,12 @@
 <template>
     <!-- class="fill-height" -->
-    <v-sheet rounded>
-        <v-container>
-            <h3>Update History</h3>
+    <v-sheet class="fill-height" rounded>
+        <h3 class="pt-4 pl-3 pb-4">Update History</h3>
 
-        </v-container>
         <v-fade-transition mode="out-in">
-
-            <div v-if="loading" class="pa-2">
+            <div v-if="loading || hide" class="pa-2">
                 <v-card class="mb-2" v-for="_ in 4" variant="tonal">
                     <v-skeleton-loader class="mx-auto"
-                                       max-width="360"
                                        type="article">
                     </v-skeleton-loader>
                 </v-card>
@@ -18,7 +14,7 @@
             <div class="px-2 pb-2" v-else>
                 <v-data-iterator
                                  :items="items"
-                                 :items-per-page="10">
+                                 :items-per-page="itemsPerPage">
                     <template v-slot:default="{ items }">
                         <v-fade-transition group hide-on-leave>
                             <div
@@ -27,13 +23,17 @@
                                  cols="auto"
                                  md="4">
                                 <v-card class="pb-1 pt-2 mb-2" border flat>
+                                    <v-tooltip v-if="item.raw.details"
+                                               activator="parent"
+                                               location="start">{{ item.raw.details }}</v-tooltip>
                                     <v-list-item :subtitle="item.raw.status">
                                         <template v-slot:append>
                                             <v-icon v-if="item.raw.status == QueueStatus.done" size="35"
                                                     icon="mdi-robot-happy" class="mr-2" />
                                             <v-icon v-else-if="item.raw.status == QueueStatus.queued"
                                                     size="35"
-                                                    icon="mdi-robot-confused-outline" class="mr-2 loader" />
+                                                    icon="mdi-robot-confused-outline"
+                                                    class="mr-2 loader" />
                                             <v-icon v-else-if="item.raw.status == QueueStatus.error"
                                                     size="35"
                                                     icon="mdi-robot-dead-outline" class="mr-2" />
@@ -122,13 +122,33 @@ function timeAgo(unixTimestampInSeconds: number) {
     const secondsPast = (now - timestampInMilliseconds) / 1000;
 
     if (secondsPast < 60) { // Less than a minute
-        return `${Math.floor(secondsPast)} seconds ago`;
+        const seconds = Math.floor(secondsPast);
+        if (seconds === 1) {
+            return `${seconds} second ago`;
+        } else {
+            return `${seconds} seconds ago`;
+        }
     } else if (secondsPast < 3600) { // Less than an hour
-        return `${Math.floor(secondsPast / 60)} minutes ago`;
+        const minutes = Math.floor(secondsPast / 60);
+        if (minutes === 1) {
+            return `${minutes} minute ago`;
+        } else {
+            return `${minutes} minutes ago`;
+        }
     } else if (secondsPast < 86400) { // Less than a day
-        return `${Math.floor(secondsPast / 3600)} hours ago`;
+        const hours = Math.floor(secondsPast / 3600);
+        if (hours === 1) {
+            return `${hours} hour ago`;
+        } else {
+            return `${hours} hours ago`;
+        }
     } else {
-        return `${Math.floor(secondsPast / 86400)} days ago`;
+        const days = Math.floor(secondsPast / 86400);
+        if (days === 1) {
+            return `${days} day ago`;
+        } else {
+            return `${days} days ago`;
+        }
     }
 }
 
@@ -164,6 +184,8 @@ const items: ComputedRef<QueueItem[]> = computed(() => {
 const props = defineProps<{
     loading: boolean
     queue: UpdateQueue
+    itemsPerPage: number
+    hide?: boolean
 }>();
 </script>
 

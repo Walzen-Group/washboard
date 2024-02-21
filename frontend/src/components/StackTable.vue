@@ -25,7 +25,8 @@
             <v-skeleton-loader type="table-tbody"></v-skeleton-loader>
             <v-skeleton-loader type="table-tfoot"></v-skeleton-loader>
         </div>
-        <v-data-table v-else items-per-page="-1" v-model:sort-by="sortBy" :search=search
+        <v-data-table v-else :items-per-page="itemsPerPage" v-model:sort-by="sortBy" :search=search
+                      @update:items-per-page="setItemsPerPage"
                       @update:sortBy="updateSorting"
                       :headers="headers" v-model="selectedRows" :items="itemsInternal"
                       item-value="id"
@@ -79,13 +80,15 @@ let keyDownHandler: any;
 let keyUpHandler: any;
 let shiftKeyOn: boolean = false;
 
-const emit = defineEmits(["update:selectedRows", "click:indicator"]);
+const emit = defineEmits(["update:selectedRows", "click:indicator", "update:itemsPerPage"]);
 const props = defineProps<{
     items: Stack[],
     loading: boolean,
     itemUrl: string
 }>();
 
+const initCompleted: Ref<boolean> = ref(false);
+const itemsPerPage: Ref<number> = ref(-1);
 const showStoppedStacks: Ref<boolean> = ref(false);
 const search: Ref<string> = ref("");
 const selectedRows: Ref<number[]> = ref([]);
@@ -108,10 +111,18 @@ watch(() => props.items, (newVal, _) => {
     itemsInternal.value = newVal;
     updateSorting(sortBy.value);
     showInactiveStacks(showStoppedStacks.value);
+    if (!initCompleted.value) {
+        emit("update:itemsPerPage", itemsInternal.value.length);
+    }
+    initCompleted.value = true;
 });
 
 watch(selectedRows, (newVal, _) => {
     emit("update:selectedRows", newVal);
+});
+
+watch(showStoppedStacks, (newVal, _) => {
+    emitItemsPerPage(itemsPerPage.value);
 });
 
 onMounted(() => {
@@ -207,6 +218,19 @@ function bulkSelect(e: any) {
 
 function indicatorClicked(elem: Container) {
     emit("click:indicator", elem);
+}
+
+function setItemsPerPage(e: number) {
+    itemsPerPage.value = e;
+    emitItemsPerPage(e);
+}
+
+function emitItemsPerPage(e: number) {
+    if (itemsPerPage.value === -1 || itemsPerPage.value > itemsInternal.value.length) {
+        emit("update:itemsPerPage", itemsInternal.value.length);
+    } else {
+        emit("update:itemsPerPage", e);
+    }
 }
 
 function selectOutdated() {

@@ -24,6 +24,7 @@ const washboardThemeDark: ThemeDefinition = {
   colors: {
     primary: '#64B5F6',
     updated: '#0277BD',
+    "surface-variant": "#c2c2c2",
     "washboard-appbar": "#01579B",
   },
 }
