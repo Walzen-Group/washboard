@@ -33,7 +33,7 @@
                                                     icon="mdi-robot-happy" class="mr-2" />
                                             <v-icon v-else-if="item.raw.status == QueueStatus.queued"
                                                     size="35"
-                                                    icon="mdi-robot-confused" class="mr-2 loader" />
+                                                    icon="mdi-robot-confused-outline" class="mr-2 loader" />
                                             <v-icon v-else-if="item.raw.status == QueueStatus.error"
                                                     size="35"
                                                     icon="mdi-robot-dead-outline" class="mr-2" />
@@ -47,7 +47,7 @@
                                                 <v-col cols="auto" xl="6">
                                                     <span :class="getColorClass(item.raw.status)">
                                                         {{ item.raw.status == QueueStatus.queued ?
-                                                            'inprogress' : item.raw.status }}
+                                                            'in progress' : item.raw.status }}
                                                     </span>
                                                 </v-col>
                                                 <v-spacer></v-spacer>
@@ -144,6 +144,10 @@ const items: ComputedRef<QueueItem[]> = computed(() => {
         if (a.status === QueueStatus.queued && b.status !== QueueStatus.queued) {
             return -1;
         } else if (a.status !== QueueStatus.queued && b.status === QueueStatus.queued) {
+            return 1;
+        } else if (a.status === QueueStatus.error && b.status !== QueueStatus.error) {
+            return -1;
+        } else if (a.status !== QueueStatus.error && b.status === QueueStatus.error) {
             return 1;
         }
 

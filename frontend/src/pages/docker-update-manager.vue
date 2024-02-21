@@ -288,4 +288,38 @@ function setIgnoreData() {
         }
     }
 }
+
+const testValue = ref({
+    "done": {
+        "whoogle": {
+            "endpointId": 1,
+            "stackId": 91,
+            "stackName": "whoogle",
+            "status": "done",
+            "details": "",
+            "timestamp": 1708483615
+        },
+
+    },
+    "error": {
+        "ying-faff": {
+            "endpointId": 1,
+            "stackId": 95,
+            "stackName": "ying-faff",
+            "status": "error",
+            "details": "",
+            "timestamp": 1708483614
+        }
+    },
+    "queued": {
+        "test": {
+            "endpointId": 1,
+            "stackId": 94,
+            "stackName": "test",
+            "status": "queued",
+            "details": "",
+            "timestamp": 1708483619
+        }
+    }
+});
 </script>
