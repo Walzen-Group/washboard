@@ -38,6 +38,12 @@ interface DockerUpdateManagerSettings {
   ignoredImages: IgnoredImages;
 }
 
+interface SidebarSettings {
+  show?: boolean;
+  mini?: boolean;
+  clipped?: boolean;
+}
+
 interface UpdateQueue extends Record<QueueStatus, Record<string, QueueItem>> { }
 
 enum QueueStatus {
@@ -66,5 +72,6 @@ export type {
   AppSettings,
   DockerUpdateManagerSettings,
   IgnoredImages,
-  UpdateQueue, QueueItem
+  UpdateQueue, QueueItem,
+  SidebarSettings
 };

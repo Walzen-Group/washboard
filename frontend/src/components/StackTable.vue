@@ -18,7 +18,7 @@
         </div>
         <v-divider class="mt-2 mb-1"></v-divider>
         <!-- <v-fade-transition mode="out-in"> -->
-        <div v-if="loading">
+        <div v-if="loading || mobileChromeLoader">
             <v-skeleton-loader type="list-item"></v-skeleton-loader>
             <v-skeleton-loader type="table-thead"></v-skeleton-loader>
             <v-skeleton-loader type="table-tbody"></v-skeleton-loader>
@@ -91,10 +91,13 @@ import { Container, Stack } from '@/types/types';
 import { ref, onMounted, Ref, onUnmounted, watch, reactive } from 'vue'
 import { startStack, stopStack, getContainers } from '@/api/lib';
 import { useSnackbarStore } from '@/store/snackbar';
+import { useDisplay } from 'vuetify';
 
 let keyDownHandler: any;
 let keyUpHandler: any;
 let shiftKeyOn: boolean = false;
+
+const { platform } = useDisplay();
 
 const emit = defineEmits(["update:selectedRows", "click:indicator", "update:itemsPerPage", "update:stackModified"]);
 const props = defineProps<{
@@ -103,7 +106,8 @@ const props = defineProps<{
     itemUrl: string
 }>();
 
-
+const isMobileChromeInitialized: Ref<boolean> = ref(false);
+const mobileChromeLoader: Ref<boolean> = ref(false);
 const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
 const snackbarsStore = useSnackbarStore();
 const initCompleted: Ref<boolean> = ref(false);
@@ -127,7 +131,15 @@ const containerTableHeaders = [
 ];
 let loaderState: Record<string, boolean> = reactive({});
 
-watch(() => props.items, (newVal, _) => {
+watch(() => props.items, async (newVal, _) => {
+    console.log("platform is chrome mobile: ", platform.value.chrome && platform.value.android)
+    // chrome mobile fix for laggy UI on page load
+    if (platform.value.chrome && platform.value.android && !isMobileChromeInitialized.value) {
+        mobileChromeLoader.value = true;
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        isMobileChromeInitialized.value = true;
+        mobileChromeLoader.value = false;
+    }
     itemsInternal.value = newVal;
     loaderState = createLoaderState(itemsInternal.value);
     updateSorting(sortBy.value);

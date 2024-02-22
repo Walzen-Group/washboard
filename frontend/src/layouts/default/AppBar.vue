@@ -1,10 +1,10 @@
 <template>
   <v-app-bar elevation="1" density="compact" color="washboard-appbar">
-    <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
-    <v-btn icon @click.stop="miniVariant = !miniVariant">
+    <v-app-bar-nav-icon @click.stop="switchDrawer" />
+    <v-btn icon @click.stop="switchMini">
       <v-icon>mdi-{{ `chevron-${miniVariant ? "right" : "left"}` }}</v-icon>
     </v-btn>
-    <v-btn icon @click.stop="clipped = !clipped">
+    <v-btn icon @click.stop="switchClipped">
       <v-icon>mdi-washing-machine</v-icon>
     </v-btn>
 
@@ -26,7 +26,8 @@
       <v-icon>mdi-theme-light-dark</v-icon>
     </v-btn>
   </v-app-bar>
-  <v-navigation-drawer width="230" floating mobile-breakpoint="md" v-model="drawer"
+  <v-navigation-drawer width="230" floating :temporary="!clipped" mobile-breakpoint="md"
+                       v-model="drawer"
                        :rail="miniVariant">
     <v-list nav density="compact">
       <v-list-item v-for="(item, i) in items" :key="i" :to="item.to" :prepend-icon="item.icon"
@@ -65,8 +66,10 @@ import { useTheme } from 'vuetify'
 import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
 import { storeToRefs } from 'pinia';
 import { onMounted } from 'vue';
+import { useLocalStore } from '@/store/local';
 const updateQuelelelStore = useUpdateQuelelelStore();
-const { queue: updateQueue } = storeToRefs(updateQuelelelStore);
+const localStore = useLocalStore();
+const { sidebarSettings } = storeToRefs(localStore);
 
 const title = "Washboard"
 
@@ -87,17 +90,50 @@ const items: any[] = [
     to: "/docker-manager",
   }
 ];
-const clipped = ref(false);
+const clipped = ref(true);
 const drawer = ref(false);
-const miniVariant = ref(false);
+const miniVariant = ref(true);
 const queuedStacks = ref([]);
 
 const theme = useTheme();
 
 
 onMounted(() => {
-  drawer.value = mdAndUp.value;
+  if (sidebarSettings.value.mini) {
+    miniVariant.value = sidebarSettings.value.mini;
+  } else {
+    miniVariant.value = false;
+  }
+  if (sidebarSettings.value.clipped === false) {
+    clipped.value = sidebarSettings.value.clipped;
+    drawer.value = false;
+    return;
+  }
+  if (mdAndUp.value) {
+    if (sidebarSettings.value.show !== undefined) {
+      drawer.value = sidebarSettings.value.show;
+    } else {
+      drawer.value = mdAndUp.value;
+    }
+  } else {
+    drawer.value = mdAndUp.value;
+  }
 });
+
+function switchDrawer() {
+  drawer.value = !drawer.value;
+  localStore.updateSidebarSettings({ show: drawer.value });
+}
+
+function switchMini() {
+  miniVariant.value = !miniVariant.value;
+  localStore.updateSidebarSettings({ mini: miniVariant.value });
+}
+
+function switchClipped() {
+  clipped.value = !clipped.value;
+  localStore.updateSidebarSettings({ clipped: clipped.value });
+}
 
 function toggleTheme() {
   theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'

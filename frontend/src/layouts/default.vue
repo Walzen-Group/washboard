@@ -10,6 +10,7 @@
 import DefaultBar from './default/AppBar.vue'
 import DefaultViewContainer from './default/ViewContainer.vue'
 import DefaultFooter from './default/Footer.vue'
+
 </script>
 
 

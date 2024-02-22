@@ -203,7 +203,9 @@ watch(queueCount, (newVal, oldVal) => {
 function updateStatusCounts() {
     let outdated = 0;
     let upToDate = 0;
+    let count = 0;
     for (let stack of items.value) {
+        //console.log(`stack name: ${stack.name}`);
         for (let container of stack.containers as Container[]) {
             if (container.upToDate === "outdated") {
                 outdated += 1;
