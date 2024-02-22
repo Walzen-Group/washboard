@@ -37,10 +37,11 @@ type StackUpdateStatus struct {
 }
 
 const (
-	Outdated string = "outdated"
-	Updated  string = "updated"
-	Skipped  string = "skipped"
-	Error    string = "error"
-	Done     string = "done"
-	Queued   string = "queued"
+	Outdated  string = "outdated"
+	Updated   string = "updated"
+	Preparing string = "preparing"
+	Skipped   string = "skipped"
+	Error     string = "error"
+	Done      string = "done"
+	Queued    string = "queued"
 )

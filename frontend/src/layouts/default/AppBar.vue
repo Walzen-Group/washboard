@@ -26,7 +26,7 @@
       <v-icon>mdi-theme-light-dark</v-icon>
     </v-btn>
   </v-app-bar>
-  <v-navigation-drawer width="230" floating mobile-breakpoint="sm" v-model="drawer"
+  <v-navigation-drawer width="230" floating mobile-breakpoint="md" v-model="drawer"
                        :rail="miniVariant">
     <v-list nav density="compact">
       <v-list-item v-for="(item, i) in items" :key="i" :to="item.to" :prepend-icon="item.icon"
@@ -36,19 +36,22 @@
     </v-list>
 
     <template v-slot:append>
-      <v-divider v-if="!smAndUp" class="mb-1"></v-divider>
-      <div class="d-flex align-center justify-center">
-        <v-tooltip v-if="!smAndUp"
-                   location="bottom">
-          <template v-slot:activator="{ props }">
-            <span elevation="0" class="ma-2 text-none" :ripple="false" v-bind="props">
-              Queued Stacks: {{ queuedStacks.length }}
-            </span>
-          </template>
-          <span v-if="queuedStacks.length > 0">{{ queuedStacks.join(", ") }}</span>
-          <span v-else>Empty</span>
-        </v-tooltip>
-      </div>
+      <v-divider v-if="!smAndUp && !miniVariant" class="mb-1"></v-divider>
+      <v-fade-transition hide-on-leave>
+        <div class="d-flex align-center justify-center" v-if="!miniVariant">
+          <v-tooltip v-if="!smAndUp"
+                     location="bottom">
+            <template v-slot:activator="{ props }">
+              <span elevation="0" class="ma-2 text-none" :ripple="false" v-bind="props">
+                Queued Stacks: {{ queuedStacks.length }}
+              </span>
+            </template>
+            <span v-if="queuedStacks.length > 0">{{ queuedStacks.join(", ") }}</span>
+            <span v-else>Empty</span>
+          </v-tooltip>
+        </div>
+      </v-fade-transition>
+
 
     </template>
   </v-navigation-drawer>
@@ -56,13 +59,14 @@
 
 <script lang="ts" setup>
 import { useDisplay } from 'vuetify'
-const { smAndUp } = useDisplay()
+const { smAndUp, mdAndUp } = useDisplay()
 import { ref } from 'vue';
 import { useTheme } from 'vuetify'
 import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
 import { storeToRefs } from 'pinia';
+import { onMounted } from 'vue';
 const updateQuelelelStore = useUpdateQuelelelStore();
-const { queue: updateQueue} = storeToRefs(updateQuelelelStore);
+const { queue: updateQueue } = storeToRefs(updateQuelelelStore);
 
 const title = "Washboard"
 
@@ -84,11 +88,16 @@ const items: any[] = [
   }
 ];
 const clipped = ref(false);
-const drawer = ref(true);
+const drawer = ref(false);
 const miniVariant = ref(false);
 const queuedStacks = ref([]);
 
 const theme = useTheme();
+
+
+onMounted(() => {
+  drawer.value = mdAndUp.value;
+});
 
 function toggleTheme() {
   theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'

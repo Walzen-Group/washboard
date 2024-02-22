@@ -27,4 +27,15 @@ async function startStack(stackId: number, endpointId: number = 1) {
     return response;
 }
 
-export { updateStack, stopStack, startStack};
+async function getContainers(stackName: string, endpointId: number = 1) {
+    const response = axios.get('/portainer-get-containers', {
+        params: {
+            endpointId: endpointId,
+            stackName: stackName
+        }
+    });
+    return response;
+
+}
+
+export { updateStack, stopStack, startStack, getContainers};

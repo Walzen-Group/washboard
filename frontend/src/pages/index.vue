@@ -4,6 +4,7 @@
            aspect-ratio="16/9"
            cover
            src="/img/washboard_v4.webp">
+      <div class="text-h1 pa-4 ma-16">Hello!</div>
     </v-img>
   </v-sheet>
   <!-- <Landing /> -->
@@ -17,6 +18,12 @@ onMounted(setup);
 function setup() {
 }
 </script>
+
+<style lang="scss" scoped>
+.transparent-header-card {
+  opacity: 0.6;
+}
+</style>
 
 <route lang="yaml">
   meta:

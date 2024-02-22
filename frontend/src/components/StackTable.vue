@@ -4,15 +4,15 @@
             <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify" single-line
                           variant="filled" density="compact"
                           hide-details></v-text-field>
-            <div class="d-flex flex-row flex-wrap mt-4">
-                <v-btn class="mr-2 mb-2" variant="tonal" @click="selectOutdated"
+            <div class="d-flex flex-row flex-wrap mt-4 ga-2">
+                <v-btn width="200" variant="tonal" @click="selectOutdated"
                        color="primary">Select Outdated
                 </v-btn>
                 <slot name="controls"></slot>
             </div>
         </template>
         <div>
-            <v-checkbox-btn class="ml-2" v-model="showStoppedStacks"
+            <v-checkbox-btn class="ml-2 mb-5" v-model="showStoppedStacks"
                             @update:model-value="showInactiveStacks(showStoppedStacks)"
                             label="Show inactive stacks"></v-checkbox-btn>
         </div>
@@ -33,7 +33,7 @@
                       @update:modelValue="bulkSelect"
                       show-select show-expand>
             <template v-slot:item.link="{ item }">
-                <v-btn elevation="0" size="x-small" icon :href="getPortainerUrl(item)"
+                <v-btn elevation="0" size="x-small" icon variant="text" :href="getPortainerUrl(item)"
                        target="_blank"
                        class="mr-2">
                     <v-icon>mdi-open-in-new</v-icon>
@@ -89,7 +89,7 @@
 <script lang="ts" setup>
 import { Container, Stack } from '@/types/types';
 import { ref, onMounted, Ref, onUnmounted, watch, reactive } from 'vue'
-import { startStack, stopStack } from '@/api/lib';
+import { startStack, stopStack, getContainers } from '@/api/lib';
 import { useSnackbarStore } from '@/store/snackbar';
 
 let keyDownHandler: any;
@@ -104,6 +104,7 @@ const props = defineProps<{
 }>();
 
 
+const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
 const snackbarsStore = useSnackbarStore();
 const initCompleted: Ref<boolean> = ref(false);
 const itemsPerPage: Ref<number> = ref(-1);
@@ -193,8 +194,29 @@ async function startOrStopStack(stack: Stack, startOrStop: string) {
     const data = response.data;
     switch (response.status) {
         case 200:
+            if (startOrStop === "start") {
+                const containersResponse = await getContainers(stack.name, parseInt(defaultEndpointId))
+                const containers: Container[] = containersResponse.data;
+                itemsInternal.value = itemsInternal.value.map((item: Stack) => {
+                    if (item.id === stack.id) {
+                        const oldUpdateStatus = item.containers.map((container: Container) => container.upToDate);
+                        containers.forEach((container: Container, index: number) => {
+                            container.upToDate = oldUpdateStatus[index];
+                        });
+                        item.containers = containers;
+                    }
+                    return item;
+                });
+            } else {
+                itemsInternal.value = itemsInternal.value.map((item: Stack) => {
+                    if (item.id === stack.id) {
+                        item.containers = [];
+                    }
+                    return item;
+                });
+            }
             snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Successfully ${startOrStop}ed ${stack?.name}`, "success");
-            emit("update:stackModified", stack.id);
+            // emit("update:stackModified", stack.id);
             break;
         default:
             snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Failed to ${startOrStop} ${stack?.name}`, "error");
@@ -202,6 +224,7 @@ async function startOrStopStack(stack: Stack, startOrStop: string) {
     }
     loaderState[stack.id] = false;
 }
+
 
 function updateSorting(sortByRequest: any) {
     if (sortByRequest.length === 0) {

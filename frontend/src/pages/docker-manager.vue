@@ -1,5 +1,5 @@
 <template>
-    <h2 class="mt-2 mb-4">Manage Stack Images</h2>
+    <div class="mt-2 mb-4 text-h4">Manage & Configure Stacks</div>
 </template>
 
 <script lang="ts" setup>

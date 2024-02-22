@@ -1,5 +1,5 @@
 <template>
-    <h2 class="mt-2 mb-4">Update Stack Images</h2>
+    <div class="mt-2 mb-4 text-h4">Update Stack Images</div>
     <div class="mb-2">
         <v-alert v-if="loading" variant="tonal" type="info"
                  title="Refreshing...">
@@ -18,7 +18,7 @@
     <v-row dense>
         <v-col cols="12" lg="9">
             <div class="d-flex justify-center">
-                <v-row dense class="mb-1">
+                <v-row dense class="mb-0">
                     <v-col>
                         <v-hover>
                             <template v-slot:default="{ isHovering, props }">
@@ -81,7 +81,7 @@
                         :item-url="portainerStackUrl"
                         :items="items" :loading="loading">
                 <template v-slot:controls>
-                    <v-btn variant="tonal" @click="confirmUpdateSelected" color="primary"
+                    <v-btn width="200" variant="tonal" @click="confirmUpdateSelected" color="primary"
                            :disabled="!selectedRows.length"
                            :loading="loadingUpdateButton">
                         Update Selected
@@ -218,6 +218,8 @@ function updateStatusCounts() {
     }, 200);
     return { outdated, upToDate };
 }
+
+
 
 function leeroad() {
     axios.get('/portainer-get-stacks')

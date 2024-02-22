@@ -51,7 +51,7 @@ func PortainerGetEndpoint(c *gin.Context) {
 }
 
 // PortainerGetContainers handles an HTTP GET request to retrieve a list of containers filtered by a specific
-// stack label within a specified Portainer endpoint. It extracts 'endpointId' and 'stackLabel' from the query
+// stack label within a specified Portainer endpoint. It extracts 'endpointId' and 'stackName' from the query
 // parameters, validates and converts 'endpointId' to an integer, and then queries the Portainer API to get
 // containers associated with the given stack label and endpoint. The function returns a list of containers
 // if successful or appropriate error messages and HTTP status codes in case of errors or if no containers are
@@ -60,7 +60,7 @@ func PortainerGetEndpoint(c *gin.Context) {
 // Query Parameters:
 // - endpointId (optional, default "1"): The unique identifier of the Portainer endpoint from which to retrieve
 //   containers. If not provided, a default value of "1" is assumed. It should be a valid integer.
-// - stackLabel (required): The label of the stack used to filter containers. Containers associated with this
+// - stackName (required): The label of the stack used to filter containers. Containers associated with this
 //   stack label within the specified endpoint are returned.
 //
 // Responses:
@@ -100,7 +100,6 @@ func PortainerGetStacks(c *gin.Context) {
 }
 
 func PortainerGetContainers(c *gin.Context) {
-	// Set endpointId
 	endpoint := c.DefaultQuery("endpointId", "1")
 	endpointId, err := strconv.Atoi(endpoint)
 	if err != nil {
@@ -112,9 +111,16 @@ func PortainerGetContainers(c *gin.Context) {
 		return
 	}
 
-	// Set stackLabel
-	stackLabel := c.Query("stackLabel")
-	res, err := portainer.GetContainers(endpointId, stackLabel)
+	stackName := c.Query("stackName")
+	if stackName == "" {
+		glg.Error("stackName is empty")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "stackName is empty",
+		})
+		return
+	}
+
+	res, err := portainer.GetContainers(endpointId, stackName)
 	if err != nil {
 		glg.Error("failed to get stacks")
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -123,13 +129,13 @@ func PortainerGetContainers(c *gin.Context) {
 		return
 	}
 
-	// Check if stack is empty
-	if len(res) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message": fmt.Sprintf("Stack \"%s\" not found in environment %d", stackLabel, endpointId),
-		})
-		return
-	}
+	// TODO: Need another check to check if the stack exists
+	// if len(res) == 0 {
+	// 	c.JSON(http.StatusNotFound, gin.H{
+	// 		"message": fmt.Sprintf("Stack \"%s\" not found in environment %d", stackName, endpointId),
+	// 	})
+	// 	return
+	// }
 	c.JSON(http.StatusOK, res)
 }
 

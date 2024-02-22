@@ -71,12 +71,12 @@ onMounted(() => {
             break;
           case "done":
             if (previousBucket && previousBucket != newStatus) {
-              snackbarsStore.addSnackbar(queueItem.stackId, `Stack ${queueItem.stackName} updated successfully`, "success");
+              snackbarsStore.addSnackbar(`${queueItem.stackId}_update`, `Stack ${queueItem.stackName} updated successfully`, "success");
             }
             break;
           case "error":
             if (previousBucket && previousBucket != newStatus) {
-              snackbarsStore.addSnackbar(queueItem.stackId, `Stack ${queueItem.stackName} update failed`, "error");
+              snackbarsStore.addSnackbar(`${queueItem.stackId}_update`, `Stack ${queueItem.stackName} update failed`, "error");
             }
             break;
         }

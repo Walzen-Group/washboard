@@ -1,6 +1,6 @@
 <template>
     <!-- class="fill-height" -->
-    <v-sheet class="fill-height" rounded>
+    <v-sheet class="fill-height" rounded="lg">
         <h3 class="pt-4 pl-3 pb-4">Update History</h3>
 
         <v-fade-transition mode="out-in">
@@ -32,6 +32,7 @@
                                             <v-icon v-if="item.raw.status == QueueStatus.done"
                                                     size="35"
                                                     icon="mdi-robot-happy"
+                                                    color="primary"
                                                     class="mr-2" />
                                             <v-icon v-else-if="item.raw.status == QueueStatus.queued"
                                                     size="35"
@@ -70,23 +71,22 @@
                     <template v-slot:header="{ page, pageCount, prevPage, nextPage }">
                         <div class="d-flex align-center justify-center px-4 pb-4">
                             <v-btn
+                                   class="mr-1"
                                    :disabled="page === 1"
                                    icon="mdi-arrow-left"
                                    density="comfortable"
                                    variant="tonal"
-                                   rounded
                                    @click="prevPage"></v-btn>
 
                             <div class="mx-2 text-caption">
                                 Page {{ page }} of {{ pageCount }}
                             </div>
 
-                            <v-btn
+                            <v-btn class="ml-1"
                                    :disabled="page >= pageCount"
                                    icon="mdi-arrow-right"
                                    density="comfortable"
                                    variant="tonal"
-                                   rounded
                                    @click="nextPage"></v-btn>
                         </div>
                     </template>
@@ -211,10 +211,13 @@ const props = defineProps<{
 @keyframes spin {
     0% {
         transform: rotate(0deg);
+        /* left center right top bottom */
+        transform-origin: center 56%;
     }
 
     100% {
         transform: rotate(360deg);
+        transform-origin: center 56%;
     }
 }
 </style>

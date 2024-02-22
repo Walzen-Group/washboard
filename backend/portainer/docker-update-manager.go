@@ -58,6 +58,7 @@ func GetEndpointId(endpointName string) (int, error) {
 	return -1, nil
 }
 
+
 // GetStacks returns the stacks for the given endpoint
 func GetStacks(endpointId int) ([]StackDto, error) {
 	client := &http.Client{}
@@ -142,8 +143,8 @@ func GetStacks(endpointId int) ([]StackDto, error) {
 	return stacksDto, err
 }
 
-// GetContainers returns the containers for the given endpoint. If stackLabel is provided, only the containers of the stack with the given label are returned, otherwise all containers are returned
-func GetContainers(endpointId int, stackLabel string) ([]*ContainerDto, error) {
+// GetContainers returns the containers for the given endpoint. If stackName is provided, only the containers of the stack with the given label are returned, otherwise all containers are returned
+func GetContainers(endpointId int, stackName string) ([]*ContainerDto, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/endpoints/%d/docker/containers/json", appState.Config.PortainerUrl, endpointId), nil)
 	if err != nil {
@@ -153,10 +154,9 @@ func GetContainers(endpointId int, stackLabel string) ([]*ContainerDto, error) {
 
 	q := req.URL.Query()
 	q.Add("all", "true")
-	if stackLabel != "" {
-		q.Add("filters", fmt.Sprintf("{\"label\":[\"com.docker.compose.project=%s\"]}", stackLabel))
+	if stackName != "" {
+		q.Add("filters", fmt.Sprintf(`{"label":["com.docker.compose.project=%s"]}`, stackName))
 	}
-	//?filter="{"label":["com.docker.compose.project=stackName"]}"
 	req.URL.RawQuery = q.Encode()
 	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
 
@@ -185,6 +185,7 @@ func GetContainers(endpointId int, stackLabel string) ([]*ContainerDto, error) {
 
 	return containersDto, nil
 }
+
 
 func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([]StackDto, error) {
 	var stacksDto = make(map[string]*StackDto)

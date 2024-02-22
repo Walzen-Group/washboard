@@ -50,7 +50,7 @@ func StartOrStopStack(endpointId int, stackId int, starOrStop string) (string, i
 	switch resp.StatusCode {
 	case 200:
 		if responseName, ok := responseStack["Name"].(string); ok {
-			return fmt.Sprintf("%s", string(responseName)), resp.StatusCode, nil
+			return responseName, resp.StatusCode, nil
 		}
 		return "", 500, fmt.Errorf("response id from portainer is not a number")
 	case 409:

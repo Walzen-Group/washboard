@@ -10,11 +10,13 @@ import 'vuetify/styles'
 
 // Composables
 import { createVuetify, type ThemeDefinition } from 'vuetify'
+import { md3 } from 'vuetify/blueprints'
+
 
 const washboardThemeLight: ThemeDefinition = {
   colors: {
     background: '#F3F4F6',
-    primary: '#039BE5',
+    primary: '#1E88E5',
     updated: '#42A5F5',
     surface: '#fbfbfb',
     "washboard-appbar": "#0277BD",
@@ -32,6 +34,7 @@ const washboardThemeDark: ThemeDefinition = {
 
 // https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
 export default createVuetify({
+  blueprint: md3,
   theme: {
     themes: {
       light: washboardThemeLight,
