@@ -285,43 +285,39 @@ function updateStatusCounts() {
 
 
 
-function leeroad() {
-    axios.get('/portainer-get-stacks')
-        .then((response) => {
-            console.log("leeroaded");
-            items.value = response.data;
-            loading.value = false;
-            connectionFailed.value = false;
+async function leeroad() {
+    try {
+        const response = await axios.get('/portainer-get-stacks');
+        
+        console.log("leeroaded");
+        items.value = response.data;
+        loading.value = false;
+        connectionFailed.value = false;
 
-            for (let [ignoredImage] of Object.entries(dockerUpdateManagerSettings.value.ignoredImages)) {
-                let found = true;
-                for (let stack of items.value) {
-                    for (let container of stack.containers) {
-                        container.upToDateIgnored = false;
-                        if (container.image === ignoredImage) {
-                            found = true;
-                            container.upToDateIgnored = true;
-                            break;
-                        }
+        for (let [ignoredImage] of Object.entries(dockerUpdateManagerSettings.value.ignoredImages)) {
+            let found = true;
+            for (let stack of items.value) {
+                for (let container of stack.containers) {
+                    container.upToDateIgnored = false;
+                    if (container.image === ignoredImage) {
+                        found = true;
+                        container.upToDateIgnored = true;
+                        break;
                     }
                 }
-                if (!found) {
-                    console.log(`Removing orphaned ignored image from ${ignoredImage}`)
-                    delete dockerUpdateManagerSettings.value.ignoredImages[ignoredImage];
-                }
-                setIgnoreData();
             }
-            updateStatusCounts();
-
-
-            // TODO: remove orphaned containers from dockerUpdateManagerSettings.value.ignoredImages
-            // iterate through dockeruPdateManagerSettings.value.ignoredImages and remove all that are not present in the current stacks
-        })
-        .catch((error) => {
-            loading.value = false;
-            connectionFailed.value = true;
-            console.log(error);
-        });
+            if (!found) {
+                console.log(`Removing orphaned ignored image from ${ignoredImage}`)
+                delete dockerUpdateManagerSettings.value.ignoredImages[ignoredImage];
+            }
+            setIgnoreData();
+        }
+        updateStatusCounts();
+    } catch (error) {
+        loading.value = false;
+        connectionFailed.value = true;
+        console.log(error);
+    }
 }
 
 
@@ -336,10 +332,10 @@ async function updateSelected() {
     loadingUpdateButton.value = true;
     const selectedRowsValue = selectedRows.value;
     dialogUpdate.value = false;
-    for (let idx in selectedRowsValue) {
-        const stackId = selectedRowsValue[idx];
+    for (let stackId of selectedRowsValue) {
         const stack = items.value.find((item: Stack) => item.id === stackId);
 
+        // TODO: remove the true from the if statement, it's just there for testing
         // eslint-disable-next-line no-constant-condition
         if (true || stack?.containers.some((container: any) => container.upToDate === "outdated" && !container.upToDateIgnored)) {
             try {
