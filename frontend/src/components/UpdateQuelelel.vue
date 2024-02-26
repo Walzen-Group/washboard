@@ -5,7 +5,7 @@
 
         <v-fade-transition mode="out-in">
             <div v-if="loading || hide" class="pa-2">
-                <v-card class="mb-2" v-for="_ in 4" variant="tonal">
+                <v-card class="mb-2" v-for="(item, index) in 4" :key="index" variant="tonal">
                     <v-skeleton-loader class="mx-auto"
                                        type="article">
                     </v-skeleton-loader>
@@ -29,16 +29,16 @@
                                                location="start">{{ item.raw.details }}</v-tooltip>
                                     <v-list-item :subtitle="item.raw.status">
                                         <template v-slot:append>
-                                            <v-icon v-if="item.raw.status == QueueStatus.done"
+                                            <v-icon v-if="item.raw.status == QueueStatus.Done"
                                                     size="35"
                                                     icon="mdi-robot-happy"
                                                     color="primary"
                                                     class="mr-2" />
-                                            <v-icon v-else-if="item.raw.status == QueueStatus.queued"
+                                            <v-icon v-else-if="item.raw.status == QueueStatus.Queued"
                                                     size="35"
                                                     icon="mdi-robot-confused-outline"
                                                     :class="`mr-2 loader`" />
-                                            <v-icon v-else-if="item.raw.status == QueueStatus.error"
+                                            <v-icon v-else-if="item.raw.status == QueueStatus.Error"
                                                     size="35"
                                                     icon="mdi-robot-dead-outline" class="mr-2" />
                                             <v-icon v-else size="35" icon="mdi-robot"
@@ -51,7 +51,7 @@
                                             <v-row dense>
                                                 <v-col cols="auto" xl="6">
                                                     <span :class="getColorClass(item.raw.status)">
-                                                        {{ item.raw.status == QueueStatus.queued ?
+                                                        {{ item.raw.status == QueueStatus.Queued ?
                                                             'in progress' : item.raw.status }}
                                                     </span>
                                                 </v-col>
@@ -102,7 +102,6 @@ import { computed, ComputedRef, Ref, ref } from 'vue';
 import { VDataIterator } from 'vuetify/components';
 import { QueueStatus, QueueItem, UpdateQueue } from '@/types/types';
 import { onMounted } from 'vue';
-import { TransitionGroup } from 'vue';
 
 
 const useLoaderStop: Ref<string | undefined> = ref(undefined);
@@ -113,11 +112,11 @@ function getColorClass(status: QueueStatus) {
 
 function getColor(status: QueueStatus) {
     switch (status) {
-        case QueueStatus.queued:
+        case QueueStatus.Queued:
             return 'blue';
-        case QueueStatus.done:
+        case QueueStatus.Done:
             return 'light-green-darken-2';
-        case QueueStatus.error:
+        case QueueStatus.Error:
             return 'red';
         default:
             return undefined;
@@ -135,7 +134,9 @@ function timeAgo(unixTimestampInSeconds: number) {
     const now = new Date().getTime();
     const secondsPast = (now - timestampInMilliseconds) / 1000;
 
-    if (secondsPast < 60) { // Less than a minute
+    if (secondsPast < 0) {
+        return "now";
+    } else if (secondsPast < 60) { // Less than a minute
         const seconds = Math.floor(secondsPast);
         if (seconds === 1) {
             return `${seconds} second ago`;
@@ -175,13 +176,13 @@ const items: ComputedRef<QueueItem[]> = computed(() => {
     }
     items.sort((a, b) => {
         // Prioritize items with status 'queued'
-        if (a.status === QueueStatus.queued && b.status !== QueueStatus.queued) {
+        if (a.status === QueueStatus.Queued && b.status !== QueueStatus.Queued) {
             return -1;
-        } else if (a.status !== QueueStatus.queued && b.status === QueueStatus.queued) {
+        } else if (a.status !== QueueStatus.Queued && b.status === QueueStatus.Queued) {
             return 1;
-        } else if (a.status === QueueStatus.error && b.status !== QueueStatus.error) {
+        } else if (a.status === QueueStatus.Error && b.status !== QueueStatus.Error) {
             return -1;
-        } else if (a.status !== QueueStatus.error && b.status === QueueStatus.error) {
+        } else if (a.status !== QueueStatus.Error && b.status === QueueStatus.Error) {
             return 1;
         }
 

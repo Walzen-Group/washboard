@@ -94,7 +94,6 @@ const items: any[] = [
 const clipped = ref(true);
 const drawer = ref(false);
 const miniVariant = ref(true);
-const queuedStacks = ref([]);
 
 const theme = useTheme();
 
