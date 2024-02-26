@@ -117,17 +117,19 @@
                        title="Update stacks">
                 <v-btn density="compact" icon="mdi-close" @click="dialogUpdate = false"></v-btn>
             </v-toolbar>
-            <v-card-text class="mt-2">
+            <v-card-text class="mt-2 text-subtitle-1">
                 Do you want to update {{ totalStacksToUpdate }} stack{{ totalStacksToUpdate > 1 ? "s" :
                     "" }}?
-                <v-virtual-scroll
-                                  class="mt-2"
-                                  :max-height="200"
+                    <v-card class="mt-2 pb-2 text-body-1" border><v-virtual-scroll
+                                  class="mt-2 pl-2"
+                                  :max-height="400"
+                                  :width="450"
                                   :items="selectedStackNames">
                     <template v-slot:default="{ item }">
                         {{ item }}
                     </template>
-                </v-virtual-scroll>
+                </v-virtual-scroll></v-card>
+                
 
             </v-card-text>
             <v-card-actions class="mb-2 mr-2">
