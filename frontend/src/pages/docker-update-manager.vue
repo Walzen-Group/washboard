@@ -87,6 +87,17 @@
                         Update Selected
                     </v-btn>
                 </template>
+                <template v-slot:inner-actions="{ item }">
+                    <div class="d-flex flex-row flex-wrap mt-4">
+                            <v-btn v-if="item.containers.length === 0"
+                                   :loading="loaderState[item.id]" class="mr-2 mb-2" variant="tonal"
+                                   prepend-icon="mdi-arrow-right-drop-circle-outline"
+                                   @click="startOrStopStack(item, 'start')">Start Stack</v-btn>
+                            <v-btn v-else :loading="loaderState[item.id]" class="mr-2 mb-2"
+                                   variant="tonal" prepend-icon="mdi-stop-circle-outline"
+                                   @click="startOrStopStack(item, 'stop')">Stop Stack</v-btn>
+                        </div>
+                </template>
             </StackTable>
         </v-col>
         <v-col cols="12" lg="3">
@@ -132,13 +143,13 @@ import StackTable from '@/components/StackTable.vue';
 import UpdateQuelelel from '@/components/UpdateQuelelel.vue';
 import axios from 'axios';
 import gsap from 'gsap';
-import { updateStack } from '@/api/lib';
+import { startStack, stopStack, updateStack, getContainers } from '@/api/lib';
 import { useLocalStore } from '@/store/local';
 import { useSnackbarStore } from '@/store/snackbar';
 import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
 import { storeToRefs } from 'pinia';
 import { ref, Ref, onMounted, computed, watch, reactive } from 'vue';
-import { Stack, Container, UpdateQueue, QueueStatus } from '@/types/types';
+import { Stack, Container, UpdateQueue, QueueStatus, ImageStatus, ContainerStatus } from '@/types/types';
 
 const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
 
@@ -151,6 +162,8 @@ const { queue, queueCount } = storeToRefs(updateQuelelelStore);
 
 const snackbarsStore = useSnackbarStore();
 
+
+let loaderState: Record<string, boolean> = reactive({});
 
 // update card values
 const tweeenedOutdated = reactive({ number: 0 });
@@ -178,10 +191,11 @@ const portainerStackUrl = computed(() => {
 
 const containersNeedUpdate = computed(() => {
     for (let stack of items.value) {
-        if (stack.containers.some((container: any) => container.upToDate === "outdated")) {
+        if (stack.containers.some((container: any) => container.upToDate === ImageStatus.Outdated)) {
             return true;
         }
     }
+    return false;
 });
 
 
@@ -200,10 +214,58 @@ watch(queueCount, (newVal, oldVal) => {
 
 // functions
 
+async function startOrStopStack(stack: Stack, action: string) {
+    loaderState[stack.id] = true;
+    if (!['start', 'stop'].includes(action)) {
+        throw new Error(`Action should be "start" or "stop", got "${action}"`);
+    }
+    try {
+        const response = await (action === 'start' ? startStack(stack.id) : stopStack(stack.id));
+        await handleResponse(stack, action, response);
+
+    } catch (error: any) {
+        snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Failed to ${action} ${stack?.name}: ${error.message}`, "error");
+    } finally {
+        loaderState[stack.id] = false;
+    }
+}
+
+async function handleResponse(stack: Stack, action: string, response: any) {
+    if (response.status === 200) {
+        if (action === 'start') {
+            await updateContainersOnStart(stack);
+        } else {
+            clearStackContainers(stack);
+        }
+        snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Successfully ${action}ed ${stack?.name}`, "success");
+    } else {
+        throw new Error(`Received unexpected response status: ${response.status}`);
+    }
+}
+
+async function updateContainersOnStart(stack: Stack) {
+    const containersResponse = await getContainers(stack.name, parseInt(defaultEndpointId, 10));
+    let containers: Container[] = containersResponse.data;
+    containers = await Promise.all(containers.map(async container => updateContainerStatus(container)));
+    items.value = items.value.map(item => (item.id === stack.id ? { ...item, containers } : item));
+}
+
+async function updateContainerStatus(container: Container) {
+    const containerImageStatusResponse = await axios.get(`/portainer-get-image-status`, {
+        params: { endpointId: defaultEndpointId, containerId: container.id }
+    });
+    const containerImageStatus = containerImageStatusResponse.data;
+    return { ...container, upToDate: containerImageStatus.status };
+}
+
+function clearStackContainers(stack: Stack) {
+    items.value = items.value.map(item => (item.id === stack.id ? { ...item, containers: [] } : item));
+}
+
+
 function updateStatusCounts() {
     let outdated = 0;
     let upToDate = 0;
-    let count = 0;
     for (let stack of items.value) {
         //console.log(`stack name: ${stack.name}`);
         for (let container of stack.containers as Container[]) {
@@ -278,6 +340,7 @@ async function updateSelected() {
         const stackId = selectedRowsValue[idx];
         const stack = items.value.find((item: Stack) => item.id === stackId);
 
+        // eslint-disable-next-line no-constant-condition
         if (true || stack?.containers.some((container: any) => container.upToDate === "outdated" && !container.upToDateIgnored)) {
             try {
                 const response = await updateStack(stackId);
@@ -348,6 +411,7 @@ function calculateItemsPerPage(itemsPerPage: number) {
     return
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function generateTestValues(num: number) {
     const testItems: UpdateQueue = {
         "done": {},
@@ -356,7 +420,7 @@ function generateTestValues(num: number) {
     };
 
     for (let i = 0; i < num; i++) {
-        const status = Math.random() > 0.5 ? QueueStatus.done : Math.random() > 0.5 ? QueueStatus.error : QueueStatus.queued;
+        const status = Math.random() > 0.5 ? QueueStatus.Done : Math.random() > 0.5 ? QueueStatus.Error : QueueStatus.Queued;
         const stackName = `test-${i}`;
         const stackId = i;
         const timestamp = Math.floor(Math.random() * 1000000000);
