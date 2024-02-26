@@ -214,7 +214,7 @@ watch(queueCount, (newVal, oldVal) => {
 
 // functions
 
-async function startOrStopStack(stack: Stack, action: string) {
+async function startOrStopStack(stack: Stack, action: Action) {
     loaderState[stack.id] = true;
     if (![Action.Start, Action.Stop].includes(action)) {
         throw new Error(`Action should be "${Action.Start}" or "${Action.Stop}", got "${action}"`);
@@ -344,7 +344,6 @@ async function updateSelected() {
                 switch (response.status) {
                     case 200:
                         currentProgress.value += 1;
-                        // snackbarsStore.addSnackbar(stackId, `Stack ${stack?.name} enqueued successfully`, "info");
                         break;
                     case 202:
                         snackbarsStore.addSnackbar(`${stackId}_queued`, `Stack ${stack?.name} already queued`, "warning");
