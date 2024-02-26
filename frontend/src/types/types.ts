@@ -65,6 +65,11 @@ enum ContainerStatus {
   Error = "error"
 }
 
+enum Action {
+  Start = "start",
+  Stop = "stop",
+}
+
 interface QueueItem {
   details: string;
   status: QueueStatus;
@@ -77,7 +82,8 @@ interface QueueItem {
 export {
   QueueStatus,
   ImageStatus,
-  ContainerStatus
+  ContainerStatus,
+  Action
 };
 export type {
   Container,

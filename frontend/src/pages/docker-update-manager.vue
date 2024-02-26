@@ -92,10 +92,10 @@
                             <v-btn v-if="item.containers.length === 0"
                                    :loading="loaderState[item.id]" class="mr-2 mb-2" variant="tonal"
                                    prepend-icon="mdi-arrow-right-drop-circle-outline"
-                                   @click="startOrStopStack(item, 'start')">Start Stack</v-btn>
+                                   @click="startOrStopStack(item, Action.Start)">Start Stack</v-btn>
                             <v-btn v-else :loading="loaderState[item.id]" class="mr-2 mb-2"
                                    variant="tonal" prepend-icon="mdi-stop-circle-outline"
-                                   @click="startOrStopStack(item, 'stop')">Stop Stack</v-btn>
+                                   @click="startOrStopStack(item, Action.Stop)">Stop Stack</v-btn>
                         </div>
                 </template>
             </StackTable>
@@ -149,7 +149,7 @@ import { useSnackbarStore } from '@/store/snackbar';
 import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
 import { storeToRefs } from 'pinia';
 import { ref, Ref, onMounted, computed, watch, reactive } from 'vue';
-import { Stack, Container, UpdateQueue, QueueStatus, ImageStatus, ContainerStatus } from '@/types/types';
+import { Stack, Container, UpdateQueue, QueueStatus, ImageStatus, Action } from '@/types/types';
 
 const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
 
@@ -216,11 +216,11 @@ watch(queueCount, (newVal, oldVal) => {
 
 async function startOrStopStack(stack: Stack, action: string) {
     loaderState[stack.id] = true;
-    if (!['start', 'stop'].includes(action)) {
-        throw new Error(`Action should be "start" or "stop", got "${action}"`);
+    if (![Action.Start, Action.Stop].includes(action)) {
+        throw new Error(`Action should be "${Action.Start}" or "${Action.Stop}", got "${action}"`);
     }
     try {
-        const response = await (action === 'start' ? startStack(stack.id) : stopStack(stack.id));
+        const response = await (action === Action.Start ? startStack(stack.id) : stopStack(stack.id));
         await handleResponse(stack, action, response);
 
     } catch (error: any) {
@@ -232,7 +232,7 @@ async function startOrStopStack(stack: Stack, action: string) {
 
 async function handleResponse(stack: Stack, action: string, response: any) {
     if (response.status === 200) {
-        if (action === 'start') {
+        if (action === Action.Start) {
             await updateContainersOnStart(stack);
         } else {
             clearStackContainers(stack);
