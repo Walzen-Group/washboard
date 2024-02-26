@@ -8,15 +8,15 @@
       <v-icon>mdi-washing-machine</v-icon>
     </v-btn>
 
-    <v-toolbar-title class="ml-4 mr-4" v-text="title" />
+    <v-toolbar-title class="ml-4 mr-4">{{ title }}</v-toolbar-title>
     <v-tooltip v-if="smAndUp"
                location="bottom">
       <template v-slot:activator="{ props }">
         <span rounded="xl" elevation="0" class="ma-2 text-none" :ripple="false" v-bind="props">
-          Queued Stacks: {{ queuedStacks.length }}
+          Queued Stacks: {{ updateQuelelelStore.queueCount }}
         </span>
       </template>
-      <span v-if="queuedStacks.length > 0">{{ queuedStacks.join(", ") }}</span>
+      <span v-if="updateQuelelelStore.queueCount > 0">{{ Object.keys(updateQuelelelStore.queue[QueueStatus.Queued]).join(", ") }}</span>
       <span v-else>Empty</span>
     </v-tooltip>
     <v-spacer />
@@ -44,10 +44,10 @@
                      location="bottom">
             <template v-slot:activator="{ props }">
               <span elevation="0" class="ma-2 text-none" :ripple="false" v-bind="props">
-                Queued Stacks: {{ queuedStacks.length }}
+                Queued Stacks: {{ updateQuelelelStore.queueCount }}
               </span>
             </template>
-            <span v-if="queuedStacks.length > 0">{{ queuedStacks.join(", ") }}</span>
+            <span v-if="updateQuelelelStore.queueCount > 0">{{ Object.keys(updateQuelelelStore.queue[QueueStatus.Queued]).join(", ") }}</span>
             <span v-else>Empty</span>
           </v-tooltip>
         </div>
@@ -67,6 +67,7 @@ import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
 import { storeToRefs } from 'pinia';
 import { onMounted } from 'vue';
 import { useLocalStore } from '@/store/local';
+import { QueueStatus } from "@/types/types";
 const updateQuelelelStore = useUpdateQuelelelStore();
 const localStore = useLocalStore();
 const { sidebarSettings } = storeToRefs(localStore);
