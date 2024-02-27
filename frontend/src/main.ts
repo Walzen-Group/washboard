@@ -5,31 +5,29 @@
  */
 
 // Plugins
-import { registerPlugins } from '@/plugins'
+import { registerPlugins } from "@/plugins";
 
 // Components
-import App from './App.vue'
+import App from "./App.vue";
 
 // Composables
-import { createApp } from 'vue'
+import { createApp } from "vue";
 
 // Axios
-import axios from 'axios'
+import axios from "axios";
 
-const app = createApp(App)
+const app = createApp(App);
 
-
-axios.defaults.withCredentials = true
-if (process.env.NODE_ENV !== 'production') {
+axios.defaults.withCredentials = true;
+if (process.env.NODE_ENV !== "production") {
   axios.defaults.baseURL = `http://${location.hostname}:8080`;
   console.log("Development mode, base url: " + axios.defaults.baseURL);
-}
-else {
+} else {
   axios.defaults.baseURL = `http://${location.hostname}:8080`;
   //axios.defaults.baseURL = location.protocol + '//' + location.host;
   console.log("Production mode, base urL: " + axios.defaults.baseURL);
 }
 
-registerPlugins(app)
+registerPlugins(app);
 
-app.mount('#app')
+app.mount("#app");
