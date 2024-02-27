@@ -134,7 +134,7 @@ function timeAgo(unixTimestampInSeconds: number) {
     const now = new Date().getTime();
     const secondsPast = (now - timestampInMilliseconds) / 1000;
 
-    if (secondsPast < 0) {
+    if (secondsPast < 1) {
         return "now";
     } else if (secondsPast < 60) { // Less than a minute
         const seconds = Math.floor(secondsPast);
