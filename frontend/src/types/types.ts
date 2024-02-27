@@ -47,9 +47,27 @@ interface SidebarSettings {
 interface UpdateQueue extends Record<QueueStatus, Record<string, QueueItem>> { }
 
 enum QueueStatus {
-  error = "error",
-  queued = "queued",
-  done = "done"
+  Error = "error",
+  Queued = "queued",
+  Done = "done"
+}
+
+enum ImageStatus {
+  Updated = "updated",
+  Outdated = "outdated",
+  Unavailable = "unavailable"
+}
+
+enum ContainerStatus {
+  Updated = "updated",
+  Outdated = "outdated",
+  Skipped = "skipped",
+  Error = "error"
+}
+
+enum Action {
+  Start = "start",
+  Stop = "stop",
 }
 
 interface QueueItem {
@@ -62,7 +80,10 @@ interface QueueItem {
 }
 
 export {
-  QueueStatus
+  QueueStatus,
+  ImageStatus,
+  ContainerStatus,
+  Action
 };
 export type {
   Container,

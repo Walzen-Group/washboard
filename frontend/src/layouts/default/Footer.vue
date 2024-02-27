@@ -10,7 +10,7 @@
 </template>
 
 <script lang="ts" setup>
-import { reactive, computed } from 'vue';
+import { computed } from 'vue';
 
 
 const commitHash = computed(() => {

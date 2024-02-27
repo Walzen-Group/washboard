@@ -87,6 +87,17 @@
                         Update Selected
                     </v-btn>
                 </template>
+                <template v-slot:inner-actions="{ item }">
+                    <div class="d-flex flex-row flex-wrap mt-4">
+                            <v-btn v-if="item.containers.length === 0"
+                                   :loading="loaderState[item.id]" class="mr-2 mb-2" variant="tonal"
+                                   prepend-icon="mdi-arrow-right-drop-circle-outline"
+                                   @click="startOrStopStack(item, Action.Start)">Start Stack</v-btn>
+                            <v-btn v-else :loading="loaderState[item.id]" class="mr-2 mb-2"
+                                   variant="tonal" prepend-icon="mdi-stop-circle-outline"
+                                   @click="startOrStopStack(item, Action.Stop)">Stop Stack</v-btn>
+                        </div>
+                </template>
             </StackTable>
         </v-col>
         <v-col cols="12" lg="3">
@@ -106,17 +117,19 @@
                        title="Update stacks">
                 <v-btn density="compact" icon="mdi-close" @click="dialogUpdate = false"></v-btn>
             </v-toolbar>
-            <v-card-text class="mt-2">
+            <v-card-text class="mt-2 text-subtitle-1">
                 Do you want to update {{ totalStacksToUpdate }} stack{{ totalStacksToUpdate > 1 ? "s" :
                     "" }}?
-                <v-virtual-scroll
-                                  class="mt-2"
-                                  :max-height="200"
+                    <v-card class="mt-2 pb-2 text-body-1" border><v-virtual-scroll
+                                  class="mt-2 pl-2"
+                                  :max-height="400"
+                                  :width="450"
                                   :items="selectedStackNames">
                     <template v-slot:default="{ item }">
                         {{ item }}
                     </template>
-                </v-virtual-scroll>
+                </v-virtual-scroll></v-card>
+                
 
             </v-card-text>
             <v-card-actions class="mb-2 mr-2">
@@ -132,13 +145,13 @@ import StackTable from '@/components/StackTable.vue';
 import UpdateQuelelel from '@/components/UpdateQuelelel.vue';
 import axios from 'axios';
 import gsap from 'gsap';
-import { updateStack } from '@/api/lib';
+import { startStack, stopStack, updateStack, getContainers } from '@/api/lib';
 import { useLocalStore } from '@/store/local';
 import { useSnackbarStore } from '@/store/snackbar';
 import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
 import { storeToRefs } from 'pinia';
 import { ref, Ref, onMounted, computed, watch, reactive } from 'vue';
-import { Stack, Container, UpdateQueue, QueueStatus } from '@/types/types';
+import { Stack, Container, UpdateQueue, QueueStatus, ImageStatus, Action } from '@/types/types';
 
 const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
 
@@ -151,6 +164,8 @@ const { queue, queueCount } = storeToRefs(updateQuelelelStore);
 
 const snackbarsStore = useSnackbarStore();
 
+
+let loaderState: Record<string, boolean> = reactive({});
 
 // update card values
 const tweeenedOutdated = reactive({ number: 0 });
@@ -178,10 +193,11 @@ const portainerStackUrl = computed(() => {
 
 const containersNeedUpdate = computed(() => {
     for (let stack of items.value) {
-        if (stack.containers.some((container: any) => container.upToDate === "outdated")) {
+        if (stack.containers.some((container: any) => container.upToDate === ImageStatus.Outdated)) {
             return true;
         }
     }
+    return false;
 });
 
 
@@ -200,10 +216,58 @@ watch(queueCount, (newVal, oldVal) => {
 
 // functions
 
+async function startOrStopStack(stack: Stack, action: Action) {
+    loaderState[stack.id] = true;
+    if (![Action.Start, Action.Stop].includes(action)) {
+        throw new Error(`Action should be "${Action.Start}" or "${Action.Stop}", got "${action}"`);
+    }
+    try {
+        const response = await (action === Action.Start ? startStack(stack.id) : stopStack(stack.id));
+        await handleResponse(stack, action, response);
+
+    } catch (error: any) {
+        snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Failed to ${action} ${stack?.name}: ${error.message}`, "error");
+    } finally {
+        loaderState[stack.id] = false;
+    }
+}
+
+async function handleResponse(stack: Stack, action: string, response: any) {
+    if (response.status === 200) {
+        if (action === Action.Start) {
+            await updateContainersOnStart(stack);
+        } else {
+            clearStackContainers(stack);
+        }
+        snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Successfully ${action}ed ${stack?.name}`, "success");
+    } else {
+        throw new Error(`Received unexpected response status: ${response.status}`);
+    }
+}
+
+async function updateContainersOnStart(stack: Stack) {
+    const containersResponse = await getContainers(stack.name, parseInt(defaultEndpointId, 10));
+    let containers: Container[] = containersResponse.data;
+    containers = await Promise.all(containers.map(async container => updateContainerStatus(container)));
+    items.value = items.value.map(item => (item.id === stack.id ? { ...item, containers } : item));
+}
+
+async function updateContainerStatus(container: Container) {
+    const containerImageStatusResponse = await axios.get(`/portainer-get-image-status`, {
+        params: { endpointId: defaultEndpointId, containerId: container.id }
+    });
+    const containerImageStatus = containerImageStatusResponse.data;
+    return { ...container, upToDate: containerImageStatus.status };
+}
+
+function clearStackContainers(stack: Stack) {
+    items.value = items.value.map(item => (item.id === stack.id ? { ...item, containers: [] } : item));
+}
+
+
 function updateStatusCounts() {
     let outdated = 0;
     let upToDate = 0;
-    let count = 0;
     for (let stack of items.value) {
         //console.log(`stack name: ${stack.name}`);
         for (let container of stack.containers as Container[]) {
@@ -223,43 +287,39 @@ function updateStatusCounts() {
 
 
 
-function leeroad() {
-    axios.get('/portainer-get-stacks')
-        .then((response) => {
-            console.log("leeroaded");
-            items.value = response.data;
-            loading.value = false;
-            connectionFailed.value = false;
+async function leeroad() {
+    try {
+        const response = await axios.get('/portainer-get-stacks');
+        
+        console.log("leeroaded");
+        items.value = response.data;
+        loading.value = false;
+        connectionFailed.value = false;
 
-            for (let [ignoredImage] of Object.entries(dockerUpdateManagerSettings.value.ignoredImages)) {
-                let found = true;
-                for (let stack of items.value) {
-                    for (let container of stack.containers) {
-                        container.upToDateIgnored = false;
-                        if (container.image === ignoredImage) {
-                            found = true;
-                            container.upToDateIgnored = true;
-                            break;
-                        }
+        for (let [ignoredImage] of Object.entries(dockerUpdateManagerSettings.value.ignoredImages)) {
+            let found = true;
+            for (let stack of items.value) {
+                for (let container of stack.containers) {
+                    container.upToDateIgnored = false;
+                    if (container.image === ignoredImage) {
+                        found = true;
+                        container.upToDateIgnored = true;
+                        break;
                     }
                 }
-                if (!found) {
-                    console.log(`Removing orphaned ignored image from ${ignoredImage}`)
-                    delete dockerUpdateManagerSettings.value.ignoredImages[ignoredImage];
-                }
-                setIgnoreData();
             }
-            updateStatusCounts();
-
-
-            // TODO: remove orphaned containers from dockerUpdateManagerSettings.value.ignoredImages
-            // iterate through dockeruPdateManagerSettings.value.ignoredImages and remove all that are not present in the current stacks
-        })
-        .catch((error) => {
-            loading.value = false;
-            connectionFailed.value = true;
-            console.log(error);
-        });
+            if (!found) {
+                console.log(`Removing orphaned ignored image from ${ignoredImage}`)
+                delete dockerUpdateManagerSettings.value.ignoredImages[ignoredImage];
+            }
+            setIgnoreData();
+        }
+        updateStatusCounts();
+    } catch (error) {
+        loading.value = false;
+        connectionFailed.value = true;
+        console.log(error);
+    }
 }
 
 
@@ -274,10 +334,11 @@ async function updateSelected() {
     loadingUpdateButton.value = true;
     const selectedRowsValue = selectedRows.value;
     dialogUpdate.value = false;
-    for (let idx in selectedRowsValue) {
-        const stackId = selectedRowsValue[idx];
+    for (let stackId of selectedRowsValue) {
         const stack = items.value.find((item: Stack) => item.id === stackId);
 
+        // TODO: remove the true from the if statement, it's just there for testing
+        // eslint-disable-next-line no-constant-condition
         if (true || stack?.containers.some((container: any) => container.upToDate === "outdated" && !container.upToDateIgnored)) {
             try {
                 const response = await updateStack(stackId);
@@ -285,7 +346,6 @@ async function updateSelected() {
                 switch (response.status) {
                     case 200:
                         currentProgress.value += 1;
-                        // snackbarsStore.addSnackbar(stackId, `Stack ${stack?.name} enqueued successfully`, "info");
                         break;
                     case 202:
                         snackbarsStore.addSnackbar(`${stackId}_queued`, `Stack ${stack?.name} already queued`, "warning");
@@ -348,6 +408,7 @@ function calculateItemsPerPage(itemsPerPage: number) {
     return
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function generateTestValues(num: number) {
     const testItems: UpdateQueue = {
         "done": {},
@@ -356,7 +417,7 @@ function generateTestValues(num: number) {
     };
 
     for (let i = 0; i < num; i++) {
-        const status = Math.random() > 0.5 ? QueueStatus.done : Math.random() > 0.5 ? QueueStatus.error : QueueStatus.queued;
+        const status = Math.random() > 0.5 ? QueueStatus.Done : Math.random() > 0.5 ? QueueStatus.Error : QueueStatus.Queued;
         const stackName = `test-${i}`;
         const stackId = i;
         const timestamp = Math.floor(Math.random() * 1000000000);

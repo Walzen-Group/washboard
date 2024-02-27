@@ -32,6 +32,22 @@
                       item-value="id"
                       @update:modelValue="bulkSelect"
                       show-select show-expand>
+            <template v-slot:item.name="{ item }">
+                <v-container>
+                    <v-row align="center" no-gutters dense class="d-flex flex-nowrap">
+                        <!-- Image/Icon placeholder -->
+                        <v-col cols="1" class="d-flex align-center stack-icon">
+                            <v-img
+                            :src="getFirstContainerIcon(item.containers)"
+                            ></v-img>
+                        </v-col>
+                        <!-- Text placeholder next to the image -->
+                        <v-col cols="auto" class="d-flex align-center">
+                            <span class="ml-2">{{ item.name }}</span>
+                        </v-col>
+                    </v-row>
+                </v-container>
+            </template>
             <template v-slot:item.link="{ item }">
                 <v-btn elevation="0" size="x-small" icon variant="text" :href="getPortainerUrl(item)"
                        target="_blank"
@@ -41,7 +57,7 @@
             </template>
             <template v-slot:item.updateStatus="{ item }">
                 <div class="d-flex flex-row">
-                    <v-tooltip v-for="elem in item.containers" :text="elem.name" location="top">
+                    <v-tooltip v-for="elem in item.containers" :text="elem.name" location="top" :key="elem.name">
                         <template v-slot:activator="{ props }">
                             <v-icon class="clickable-indicator" size="x-large" v-bind="props"
                                     @click="indicatorClicked(elem)"
@@ -54,15 +70,7 @@
             <template v-slot:expanded-row="{ columns, item }">
                 <tr>
                     <td :colspan="columns.length">
-                        <div class="d-flex flex-row flex-wrap mt-4">
-                            <v-btn v-if="item.containers.length === 0"
-                                   :loading="loaderState[item.id]" class="mr-2 mb-2" variant="tonal"
-                                   prepend-icon="mdi-arrow-right-drop-circle-outline"
-                                   @click="startOrStopStack(item, 'start')">Start Stack</v-btn>
-                            <v-btn v-else :loading="loaderState[item.id]" class="mr-2 mb-2"
-                                   variant="tonal" prepend-icon="mdi-stop-circle-outline"
-                                   @click="startOrStopStack(item, 'stop')">Stop Stack</v-btn>
-                        </div>
+                        <slot name="inner-actions" :item="item"></slot>
                         <v-card class="mb-3" border flat>
                             <v-data-table :loading="loaderState[item.id]" items-per-page="-1"
                                           density="comfortable"
@@ -70,9 +78,25 @@
                                           :items="item.containers">
                                 <template v-slot:item.upToDate="{ item }">
                                     <v-chip variant="tonal" :color="getColor(item)">
-                                        {{ item.upToDate.length > 0 ? item.upToDate : "unavailable"
+                                        {{ item.upToDate.length > 0 ? item.upToDate : ImageStatus.Unavailable
                                         }}
                                     </v-chip>
+                                </template>
+                                <template v-slot:item.name="{ item }">
+                                    <v-container>
+                                        <v-row align="center" no-gutters dense class="d-flex flex-nowrap">
+                                            <!-- Image/Icon placeholder -->
+                                            <v-col cols="1" class="d-flex align-center stack-icon">
+                                                <v-img
+                                                :src="item.labels['net.unraid.docker.icon']"
+                                                ></v-img>
+                                            </v-col>
+                                            <!-- Text placeholder next to the image -->
+                                            <v-col cols="auto" class="d-flex align-center">
+                                                <span class="ml-2">{{ item.name }}</span>
+                                            </v-col>
+                                        </v-row>
+                                    </v-container>
                                 </template>
                                 <template #bottom></template>
                             </v-data-table>
@@ -87,10 +111,8 @@
     </v-card>
 </template>
 <script lang="ts" setup>
-import { Container, Stack } from '@/types/types';
+import { Container, Stack, ImageStatus, ContainerStatus } from '@/types/types';
 import { ref, onMounted, Ref, onUnmounted, watch, reactive } from 'vue'
-import { startStack, stopStack, getContainers } from '@/api/lib';
-import { useSnackbarStore } from '@/store/snackbar';
 import { useDisplay } from 'vuetify';
 
 let keyDownHandler: any;
@@ -108,8 +130,6 @@ const props = defineProps<{
 
 const isMobileChromeInitialized: Ref<boolean> = ref(false);
 const mobileChromeLoader: Ref<boolean> = ref(false);
-const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
-const snackbarsStore = useSnackbarStore();
 const initCompleted: Ref<boolean> = ref(false);
 const itemsPerPage: Ref<number> = ref(-1);
 const showStoppedStacks: Ref<boolean> = ref(false);
@@ -131,7 +151,7 @@ const containerTableHeaders = [
 ];
 let loaderState: Record<string, boolean> = reactive({});
 
-watch(() => props.items, async (newVal, _) => {
+watch(() => props.items, async (newVal) => {
     console.log("platform is chrome mobile: ", platform.value.chrome && platform.value.android)
     // chrome mobile fix for laggy UI on page load
     if (platform.value.chrome && platform.value.android && !isMobileChromeInitialized.value) {
@@ -150,11 +170,11 @@ watch(() => props.items, async (newVal, _) => {
     initCompleted.value = true;
 });
 
-watch(selectedRows, (newVal, _) => {
+watch(selectedRows, (newVal) => {
     emit("update:selectedRows", newVal);
 });
 
-watch(showStoppedStacks, (newVal, _) => {
+watch(showStoppedStacks, () => {
     emitItemsPerPage(itemsPerPage.value);
 });
 
@@ -176,6 +196,10 @@ onUnmounted(() => {
 );
 
 
+function getFirstContainerIcon(containers: Container[]): string | undefined {
+    return containers.find(container => container.labels['net.unraid.docker.icon'])?.labels['net.unraid.docker.icon'];
+}
+
 function createLoaderState(items: Stack[]) {
     const data: Record<string, boolean> = {};
     for (let item of items) {
@@ -192,51 +216,6 @@ function showInactiveStacks(show: boolean) {
     }
 }
 
-async function startOrStopStack(stack: Stack, startOrStop: string) {
-    loaderState[stack.id] = true;
-    let response;
-    if (startOrStop === "start") {
-        response = await startStack(stack.id);
-    } else if (startOrStop === "stop") {
-        response = await stopStack(stack.id);
-    } else {
-        snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Failed to ${startOrStopStack} ${stack?.name}, action should be "start" or "stop"`, "error");
-        return;
-    }
-    const data = response.data;
-    switch (response.status) {
-        case 200:
-            if (startOrStop === "start") {
-                const containersResponse = await getContainers(stack.name, parseInt(defaultEndpointId))
-                const containers: Container[] = containersResponse.data;
-                itemsInternal.value = itemsInternal.value.map((item: Stack) => {
-                    if (item.id === stack.id) {
-                        const oldUpdateStatus = item.containers.map((container: Container) => container.upToDate);
-                        containers.forEach((container: Container, index: number) => {
-                            container.upToDate = oldUpdateStatus[index];
-                        });
-                        item.containers = containers;
-                    }
-                    return item;
-                });
-            } else {
-                itemsInternal.value = itemsInternal.value.map((item: Stack) => {
-                    if (item.id === stack.id) {
-                        item.containers = [];
-                    }
-                    return item;
-                });
-            }
-            snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Successfully ${startOrStop}ed ${stack?.name}`, "success");
-            // emit("update:stackModified", stack.id);
-            break;
-        default:
-            snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Failed to ${startOrStop} ${stack?.name}`, "error");
-            break;
-    }
-    loaderState[stack.id] = false;
-}
-
 
 function updateSorting(sortByRequest: any) {
     if (sortByRequest.length === 0) {
@@ -246,12 +225,12 @@ function updateSorting(sortByRequest: any) {
         // check if any container has an image with status outdated, if so it should be at the top of th elist
         itemsInternal.value.sort((a: any, b: any) => {
             if (sortByRequest[0].order === "asc") {
-                if (a.containers.some((container: Container) => container.upToDate === "outdated")) return -1;
-                if (b.containers.some((container: Container) => container.upToDate !== "outdated")) return 1;
+                if (a.containers.some((container: Container) => container.upToDate === ContainerStatus.Outdated)) return -1;
+                if (b.containers.some((container: Container) => container.upToDate !== ContainerStatus.Outdated)) return 1;
                 return 0;
             } else {
-                if (a.containers.some((container: Container) => container.upToDate === "outdated")) return 1;
-                if (b.containers.some((container: Container) => container.upToDate !== "outdated")) return -1;
+                if (a.containers.some((container: Container) => container.upToDate === ContainerStatus.Outdated)) return 1;
+                if (b.containers.some((container: Container) => container.upToDate !== ContainerStatus.Outdated)) return -1;
                 return 0;
             }
         });
@@ -274,10 +253,10 @@ function getColor(elem: Container) {
     if (elem.upToDateIgnored) {
         return 'light-green-lighten-1';
     }
-    if (elem.upToDate === "outdated") return 'yellow-darken-3'
-    else if (elem.upToDate === "updated") return 'updated'
-    else if (elem.upToDate === "skipped") return 'grey'
-    else if (elem.upToDate === "error") return 'red'
+    if (elem.upToDate === ContainerStatus.Outdated) return 'yellow-darken-3'
+    else if (elem.upToDate === ContainerStatus.Updated) return 'updated'
+    else if (elem.upToDate === ContainerStatus.Skipped) return 'grey'
+    else if (elem.upToDate === ContainerStatus.Error) return 'red'
     else return 'grey'
 }
 
@@ -285,10 +264,10 @@ function getIcon(elem: Container) {
     if (elem.upToDateIgnored) {
         return 'mdi-pause-circle-outline';
     }
-    if (elem.upToDate === "outdated") return 'mdi-chevron-up-circle-outline'
-    else if (elem.upToDate === "updated") return 'mdi-check-circle-outline'
-    else if (elem.upToDate === "skipped") return 'mdi-minus-circle-outline'
-    else if (elem.upToDate === "error") return 'mdi-close-circle-outline'
+    if (elem.upToDate === ContainerStatus.Outdated) return 'mdi-chevron-up-circle-outline'
+    else if (elem.upToDate === ContainerStatus.Updated) return 'mdi-check-circle-outline'
+    else if (elem.upToDate === ContainerStatus.Skipped) return 'mdi-minus-circle-outline'
+    else if (elem.upToDate === ContainerStatus.Error) return 'mdi-close-circle-outline'
     else return 'mdi-circle-outline'
 }
 
@@ -353,5 +332,10 @@ function getPortainerUrl(item: Stack) {
 <style lang="scss" scoped>
 .clickable-indicator {
     cursor: pointer;
+}
+
+.stack-icon {
+    min-width: 28px;
+    max-width: 28px;
 }
 </style>

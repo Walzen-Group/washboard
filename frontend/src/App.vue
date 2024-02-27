@@ -67,14 +67,14 @@ onMounted(() => {
         }
 
         switch (newStatus) {
-          case "queued":
+          case QueueStatus.Queued:
             break;
-          case "done":
+          case QueueStatus.Done:
             if (previousBucket && previousBucket != newStatus) {
               snackbarsStore.addSnackbar(`${queueItem.stackId}_update`, `Stack ${queueItem.stackName} updated successfully`, "success");
             }
             break;
-          case "error":
+          case QueueStatus.Error:
             if (previousBucket && previousBucket != newStatus) {
               snackbarsStore.addSnackbar(`${queueItem.stackId}_update`, `Stack ${queueItem.stackName} update failed`, "error");
             }
