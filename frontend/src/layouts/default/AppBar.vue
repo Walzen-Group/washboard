@@ -8,31 +8,29 @@
       <v-icon>mdi-washing-machine</v-icon>
     </v-btn>
 
-    <v-toolbar-title class="ml-4 mr-4">{{ title }}</v-toolbar-title>
-    <v-tooltip v-if="smAndUp"
-               location="bottom">
+    <v-toolbar-title class="ml-4 mr-4" width="100">{{ title }}</v-toolbar-title>
+    <v-tooltip v-if="smAndUp" location="bottom">
       <template v-slot:activator="{ props }">
         <span rounded="xl" elevation="0" class="ma-2 text-none" :ripple="false" v-bind="props">
           Queued Stacks: {{ updateQuelelelStore.queueCount }}
         </span>
       </template>
-      <span v-if="updateQuelelelStore.queueCount > 0">{{ Object.keys(updateQuelelelStore.queue[QueueStatus.Queued]).join(", ") }}</span>
+      <span v-if="updateQuelelelStore.queueCount > 0">{{
+        Object.keys(updateQuelelelStore.queue[QueueStatus.Queued]).join(", ") }}</span>
       <span v-else>Empty</span>
     </v-tooltip>
-    <v-spacer />
+    <v-spacer v-if="smAndUp" />
 
 
     <v-btn icon @click.stop="toggleTheme">
       <v-icon>mdi-theme-light-dark</v-icon>
     </v-btn>
   </v-app-bar>
-  <v-navigation-drawer width="230" floating :temporary="!clipped" mobile-breakpoint="md"
-                       v-model="drawer"
-                       :rail="miniVariant">
+  <v-navigation-drawer width="230" floating :temporary="!clipped" mobile-breakpoint="md" v-model="drawer"
+    :rail="miniVariant">
     <v-list nav density="compact">
-      <v-list-item v-for="(item, i) in items" :key="i" :to="item.to" :prepend-icon="item.icon"
-                   :title="item.title" router
-                   exact>
+      <v-list-item v-for="(item, i) in items" :key="i" :to="item.to" :prepend-icon="item.icon" :title="item.title" router
+        exact>
       </v-list-item>
     </v-list>
 
@@ -40,14 +38,14 @@
       <v-divider v-if="!smAndUp && !miniVariant" class="mb-1"></v-divider>
       <v-fade-transition hide-on-leave>
         <div class="d-flex align-center justify-center" v-if="!miniVariant">
-          <v-tooltip v-if="!smAndUp"
-                     location="bottom">
+          <v-tooltip v-if="!smAndUp" location="bottom">
             <template v-slot:activator="{ props }">
               <span elevation="0" class="ma-2 text-none" :ripple="false" v-bind="props">
                 Queued Stacks: {{ updateQuelelelStore.queueCount }}
               </span>
             </template>
-            <span v-if="updateQuelelelStore.queueCount > 0">{{ Object.keys(updateQuelelelStore.queue[QueueStatus.Queued]).join(", ") }}</span>
+            <span v-if="updateQuelelelStore.queueCount > 0">{{
+              Object.keys(updateQuelelelStore.queue[QueueStatus.Queued]).join(", ") }}</span>
             <span v-else>Empty</span>
           </v-tooltip>
         </div>

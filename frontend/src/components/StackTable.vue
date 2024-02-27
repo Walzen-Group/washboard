@@ -1,20 +1,17 @@
 <template>
     <v-card class="mt-1" variant="flat">
         <template v-slot:text>
-            <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify" single-line
-                          variant="filled" density="compact"
-                          hide-details></v-text-field>
+            <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify" single-line variant="filled"
+                density="compact" hide-details></v-text-field>
             <div class="d-flex flex-row flex-wrap mt-4 ga-2">
-                <v-btn width="200" variant="tonal" @click="selectOutdated"
-                       color="primary">Select Outdated
+                <v-btn width="200" variant="tonal" @click="selectOutdated" color="primary">Select Outdated
                 </v-btn>
                 <slot name="controls"></slot>
             </div>
         </template>
         <div>
             <v-checkbox-btn class="ml-2 mb-5" v-model="showStoppedStacks"
-                            @update:model-value="showInactiveStacks(showStoppedStacks)"
-                            label="Show inactive stacks"></v-checkbox-btn>
+                @update:model-value="showInactiveStacks(showStoppedStacks)" label="Show inactive stacks"></v-checkbox-btn>
         </div>
         <v-divider class="mt-2 mb-1"></v-divider>
         <!-- <v-fade-transition mode="out-in"> -->
@@ -25,33 +22,22 @@
             <v-skeleton-loader type="table-tfoot"></v-skeleton-loader>
         </div>
         <v-data-table v-else :items-per-page="itemsPerPage" v-model:sort-by="sortBy" :search=search
-                      @update:items-per-page="setItemsPerPage"
-                      @update:sortBy="updateSorting"
-                      :headers="headers" v-model="selectedRows" :items="itemsInternal"
-                      density="comfortable"
-                      item-value="id"
-                      @update:modelValue="bulkSelect"
-                      show-select show-expand>
+            @update:items-per-page="setItemsPerPage" @update:sortBy="updateSorting" :headers="headers"
+            v-model="selectedRows" :items="itemsInternal" density="comfortable" item-value="id"
+            @update:modelValue="bulkSelect" show-select show-expand>
             <template v-slot:item.name="{ item }">
-                <v-container>
-                    <v-row align="center" no-gutters dense class="d-flex flex-nowrap">
-                        <!-- Image/Icon placeholder -->
-                        <v-col cols="1" class="d-flex align-center stack-icon">
-                            <v-img
-                            :src="getFirstContainerIcon(item.containers)"
-                            ></v-img>
-                        </v-col>
-                        <!-- Text placeholder next to the image -->
-                        <v-col cols="auto" class="d-flex align-center">
-                            <span class="ml-2">{{ item.name }}</span>
-                        </v-col>
-                    </v-row>
-                </v-container>
+                <v-row align="center" no-gutters dense class="d-flex flex-nowrap">
+                    <v-col cols="1" class="d-flex align-center stack-icon">
+                        <v-img :src="getFirstContainerIcon(item.containers)"></v-img>
+                    </v-col>
+                    <v-col cols="auto" class="d-flex align-center">
+                        <span class="ml-2">{{ item.name }}</span>
+                    </v-col>
+                </v-row>
             </template>
             <template v-slot:item.link="{ item }">
-                <v-btn elevation="0" size="x-small" icon variant="text" :href="getPortainerUrl(item)"
-                       target="_blank"
-                       class="mr-2">
+                <v-btn elevation="0" size="x-small" icon variant="text" :href="getPortainerUrl(item)" target="_blank"
+                    class="mr-2">
                     <v-icon>mdi-open-in-new</v-icon>
                 </v-btn>
             </template>
@@ -60,9 +46,7 @@
                     <v-tooltip v-for="elem in item.containers" :text="elem.name" location="top" :key="elem.name">
                         <template v-slot:activator="{ props }">
                             <v-icon class="clickable-indicator" size="x-large" v-bind="props"
-                                    @click="indicatorClicked(elem)"
-                                    :icon="getIcon(elem)"
-                                    :color="getColor(elem)"></v-icon>
+                                @click="indicatorClicked(elem)" :icon="getIcon(elem)" :color="getColor(elem)"></v-icon>
                         </template>
                     </v-tooltip>
                 </div>
@@ -72,10 +56,8 @@
                     <td :colspan="columns.length">
                         <slot name="inner-actions" :item="item"></slot>
                         <v-card class="mb-3" border flat>
-                            <v-data-table :loading="loaderState[item.id]" items-per-page="-1"
-                                          density="comfortable"
-                                          :headers="containerTableHeaders"
-                                          :items="item.containers">
+                            <v-data-table :loading="loaderState[item.id]" items-per-page="-1" density="comfortable"
+                                :headers="containerTableHeaders" :items="item.containers">
                                 <template v-slot:item.upToDate="{ item }">
                                     <v-chip variant="tonal" :color="getColor(item)">
                                         {{ item.upToDate.length > 0 ? item.upToDate : ImageStatus.Unavailable
@@ -87,9 +69,7 @@
                                         <v-row align="center" no-gutters dense class="d-flex flex-nowrap">
                                             <!-- Image/Icon placeholder -->
                                             <v-col cols="1" class="d-flex align-center stack-icon">
-                                                <v-img
-                                                :src="item.labels['net.unraid.docker.icon']"
-                                                ></v-img>
+                                                <v-img :src="item.labels['net.unraid.docker.icon']"></v-img>
                                             </v-col>
                                             <!-- Text placeholder next to the image -->
                                             <v-col cols="auto" class="d-flex align-center">
@@ -139,7 +119,7 @@ const itemsInternal: Ref<Stack[]> = ref([]);
 const sortBy: Ref<any[]> = ref([{ key: 'name', order: 'asc' }]);
 const headers = [
     { title: "Stack Name", key: "name", value: "name" },
-    { title: "Update Status", key:"updateStatus", value: "updateStatus" },
+    { title: "Update Status", key: "updateStatus", value: "updateStatus" },
     { title: "ID", key: "id", value: "id" },
     { title: "Link", value: "link" }
 ];
@@ -197,7 +177,12 @@ onUnmounted(() => {
 
 
 function getFirstContainerIcon(containers: Container[]): string | undefined {
-    return containers.find(container => container.labels['net.unraid.docker.icon'])?.labels['net.unraid.docker.icon'];
+    // get random number between 0 and 1
+    if (Math.random() < 0.995) {
+        return containers.find(container => container.labels['net.unraid.docker.icon'])?.labels['net.unraid.docker.icon'];
+    } else {
+        return "https://www.pngitem.com/pimgs/m/506-5069601_laugh-cry-deepfry-laughingemoji-b-deepfriedmemes-crying-laughing.png";
+    }
 }
 
 function createLoaderState(items: Stack[]) {
