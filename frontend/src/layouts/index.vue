@@ -1,6 +1,13 @@
 <template>
     <DefaultBar />
-    <DefaultViewContainer />
+    <v-sheet color="#121212" class="full-height">
+        <v-img
+               aspect-ratio="16/9"
+               cover
+               src="/img/washboard_v4.webp">
+            <DefaultViewContainer />
+        </v-img>
+    </v-sheet>
     <DefaultFooter />
 </template>
 
@@ -10,5 +17,8 @@ import DefaultViewContainer from './default/ViewContainer.vue'
 import DefaultFooter from './default/Footer.vue'
 </script>
 
-<style>
+<style scoped lang="scss">
+.full-height {
+    height: 100%;
+}
 </style>

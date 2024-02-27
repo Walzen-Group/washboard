@@ -1,12 +1,5 @@
 <template>
-  <v-sheet color="#121212">
-    <v-img
-           aspect-ratio="16/9"
-           cover
-           src="/img/washboard_v4.webp">
-      <div class="stroke text-h1 pa-4 ma-16">Hello!</div>
-    </v-img>
-  </v-sheet>
+  <div class="stroke text-h1 pa-4 ma-16">Hello!</div>
   <!-- <Landing /> -->
 </template>
 
