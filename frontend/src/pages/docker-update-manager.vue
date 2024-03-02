@@ -117,23 +117,24 @@
                        title="Update stacks">
                 <v-btn density="compact" icon="mdi-close" @click="dialogUpdate = false"></v-btn>
             </v-toolbar>
-            <v-card-text class="mt-2 text-subtitle-1">
+            <v-card-text class="text-subtitle-1">
                 Do you want to update {{ totalStacksToUpdate }} stack{{ totalStacksToUpdate > 1 ? "s" :
                     "" }}?
                 <v-card elevation="0" rounded="md"
                         class="mt-2 pb-2 text-body-1" border><v-virtual-scroll
-                                      class="mt-2 pl-2"
+                                      class="mt-3 pl-2"
                                       :max-height="400"
                                       :width="450"
                                       :items="selectedStackNames">
                         <template v-slot:default="{ item }">
                             {{ item }}
                         </template>
-                    </v-virtual-scroll></v-card>
-
-
+                    </v-virtual-scroll>
+                </v-card>
+                <p class="mt-5 text-subtitle-2">Note: Updating stopped stacks will start them</p>
             </v-card-text>
             <v-card-actions class="mb-2 mr-2">
+
                 <v-spacer></v-spacer>
                 <v-btn color="primary" variant="tonal" @click="updateSelected">Enqueue</v-btn>
             </v-card-actions>

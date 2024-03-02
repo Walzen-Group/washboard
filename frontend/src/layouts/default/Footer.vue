@@ -6,6 +6,9 @@
            :href="`https://github.com/Walzen-Group/washboard/commit/${commitHash}`">
             {{ commitHash }}
         </a>
+        <v-spacer></v-spacer>
+        <a class="ml-3" href="https://www.flaticon.com/free-icon/washboard_7029393"
+           title="washboard icons">Icon</a>
     </v-footer>
 </template>
 
@@ -21,3 +24,9 @@ const commitHash = computed(() => {
     }
 });
 </script>
+
+<style lang="scss" scoped>
+.code-font {
+    font-family: "Fira Code", Fira Code, monospace;
+}
+</style>
