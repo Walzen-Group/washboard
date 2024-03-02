@@ -89,14 +89,14 @@
                 </template>
                 <template v-slot:inner-actions="{ item }">
                     <div class="d-flex flex-row flex-wrap mt-4">
-                            <v-btn v-if="item.containers.length === 0"
-                                   :loading="loaderState[item.id]" class="mr-2 mb-2" variant="tonal"
-                                   prepend-icon="mdi-arrow-right-drop-circle-outline"
-                                   @click="startOrStopStack(item, Action.Start)">Start Stack</v-btn>
-                            <v-btn v-else :loading="loaderState[item.id]" class="mr-2 mb-2"
-                                   variant="tonal" prepend-icon="mdi-stop-circle-outline"
-                                   @click="startOrStopStack(item, Action.Stop)">Stop Stack</v-btn>
-                        </div>
+                        <v-btn v-if="item.containers.length === 0"
+                               :loading="loaderState[item.id]" class="mr-2 mb-2" variant="tonal"
+                               prepend-icon="mdi-arrow-right-drop-circle-outline"
+                               @click="startOrStopStack(item, Action.Start)">Start Stack</v-btn>
+                        <v-btn v-else :loading="loaderState[item.id]" class="mr-2 mb-2"
+                               variant="tonal" prepend-icon="mdi-stop-circle-outline"
+                               @click="startOrStopStack(item, Action.Stop)">Stop Stack</v-btn>
+                    </div>
                 </template>
             </StackTable>
         </v-col>
@@ -120,16 +120,17 @@
             <v-card-text class="mt-2 text-subtitle-1">
                 Do you want to update {{ totalStacksToUpdate }} stack{{ totalStacksToUpdate > 1 ? "s" :
                     "" }}?
-                    <v-card class="mt-2 pb-2 text-body-1" border><v-virtual-scroll
-                                  class="mt-2 pl-2"
-                                  :max-height="400"
-                                  :width="450"
-                                  :items="selectedStackNames">
-                    <template v-slot:default="{ item }">
-                        {{ item }}
-                    </template>
-                </v-virtual-scroll></v-card>
-                
+                <v-card elevation="0" rounded="md"
+                        class="mt-2 pb-2 text-body-1" border><v-virtual-scroll
+                                      class="mt-2 pl-2"
+                                      :max-height="400"
+                                      :width="450"
+                                      :items="selectedStackNames">
+                        <template v-slot:default="{ item }">
+                            {{ item }}
+                        </template>
+                    </v-virtual-scroll></v-card>
+
 
             </v-card-text>
             <v-card-actions class="mb-2 mr-2">
@@ -290,7 +291,7 @@ function updateStatusCounts() {
 async function leeroad() {
     try {
         const response = await axios.get('/portainer-get-stacks');
-        
+
         console.log("leeroaded");
         items.value = response.data;
         loading.value = false;

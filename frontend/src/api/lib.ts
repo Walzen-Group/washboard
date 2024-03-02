@@ -3,7 +3,7 @@ import axios from 'axios';
 async function updateStack(stackId: number, endpointId: number = 1) {
     const response = axios.put('/portainer-update-stack', {
         pullImage: true,
-        prune: false,
+        prune: true,
         endpointId: endpointId,
         stackId: stackId
     });

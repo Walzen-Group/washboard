@@ -33,7 +33,8 @@
             <template v-slot:item.name="{ item }">
                 <v-row align="center" no-gutters dense class="d-flex flex-nowrap">
                     <v-col cols="1" class="d-flex align-center stack-icon">
-                        <v-img v-if="getFirstContainerIcon(item.containers)" height="25" :src="getFirstContainerIcon(item.containers)"></v-img>
+                        <v-img v-if="getFirstContainerIcon(item.containers)" height="25"
+                               :src="getFirstContainerIcon(item.containers)"></v-img>
                         <v-icon v-else size="31">mdi-docker</v-icon>
                     </v-col>
                     <v-col cols="auto" class="d-flex align-center">
@@ -79,7 +80,9 @@
                                     <v-row align="center" no-gutters dense class="d-flex flex-nowrap">
                                         <!-- Image/Icon placeholder -->
                                         <v-col cols="1" class="d-flex align-center stack-icon">
-                                            <v-img v-if="item.labels['net.unraid.docker.icon']" height="25" :src="item.labels['net.unraid.docker.icon']"></v-img>
+                                            <v-img v-if="item.labels['net.unraid.docker.icon']"
+                                                   height="25"
+                                                   :src="item.labels['net.unraid.docker.icon']"></v-img>
                                             <v-icon v-else size="31">mdi-docker</v-icon>
                                         </v-col>
                                         <!-- Text placeholder next to the image -->
@@ -326,7 +329,8 @@ function getPortainerUrl(item: Stack) {
 }
 </script>
 
-<style lang="scss" scoped>.clickable-indicator {
+<style lang="scss" scoped>
+.clickable-indicator {
     cursor: pointer;
 }
 
