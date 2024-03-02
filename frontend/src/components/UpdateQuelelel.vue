@@ -12,7 +12,8 @@
                 </v-card>
             </div>
             <div class="px-2" v-else>
-                <v-data-iterator
+                <p class="mx-1 text-subtitle-2" v-if="items.length == 0">No stacks have been queued yet...</p>
+                <v-data-iterator v-else
                                  :items="items"
                                  :items-per-page="itemsPerPage">
                     <template v-slot:default="{ items }">

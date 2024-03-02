@@ -1,7 +1,8 @@
 <template>
     <v-card class="mt-1" variant="flat">
         <template v-slot:text>
-            <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify" single-line
+            <v-text-field v-model="search" label="Search" prepend-inner-icon="mdi-magnify"
+                          single-line
                           variant="filled"
                           density="compact" hide-details></v-text-field>
             <div class="d-flex flex-row flex-wrap mt-4 ga-2">
@@ -30,11 +31,13 @@
                       v-model="selectedRows" :items="itemsInternal" density="comfortable"
                       item-value="id"
                       @update:modelValue="bulkSelect" show-select show-expand>
+
             <template v-slot:item.name="{ item }">
                 <v-row align="center" no-gutters dense class="d-flex flex-nowrap">
                     <v-col cols="1" class="d-flex align-center stack-icon">
                         <v-img v-if="getFirstContainerIcon(item.containers)" height="25"
                                :src="getFirstContainerIcon(item.containers)"></v-img>
+                        <v-icon v-else-if="item.containers.length == 0" size="29">mdi-power-plug-off-outline</v-icon>
                         <v-icon v-else size="31">mdi-docker</v-icon>
                     </v-col>
                     <v-col cols="auto" class="d-flex align-center">
@@ -42,13 +45,16 @@
                     </v-col>
                 </v-row>
             </template>
+
             <template v-slot:item.link="{ item }">
-                <v-btn elevation="0" size="x-small" icon variant="text" :href="getPortainerUrl(item)"
+                <v-btn elevation="0" size="x-small" icon variant="text"
+                       :href="getPortainerUrl(item)"
                        target="_blank"
                        class="mr-2">
                     <v-icon>mdi-open-in-new</v-icon>
                 </v-btn>
             </template>
+
             <template v-slot:item.updateStatus="{ item }">
                 <div class="d-flex flex-row">
                     <v-tooltip v-for="elem in item.containers" :text="elem.name" location="top"
@@ -61,6 +67,7 @@
                     </v-tooltip>
                 </div>
             </template>
+
             <template v-slot:expanded-row="{ columns, item }">
                 <tr>
                     <td :colspan="columns.length">
@@ -72,12 +79,14 @@
                                 <template v-slot:item.upToDate="{ item }">
                                     <v-chip variant="tonal" :color="getColor(item)">
                                         {{ item.upToDate.length > 0 ? item.upToDate :
-                                            ImageStatus.Unavailable
+                ImageStatus.Unavailable
                                         }}
                                     </v-chip>
                                 </template>
+
                                 <template v-slot:item.name="{ item }">
-                                    <v-row align="center" no-gutters dense class="d-flex flex-nowrap">
+                                    <v-row align="center" no-gutters dense
+                                           class="d-flex flex-nowrap">
                                         <!-- Image/Icon placeholder -->
                                         <v-col cols="1" class="d-flex align-center stack-icon">
                                             <v-img v-if="item.labels['net.unraid.docker.icon']"
@@ -91,6 +100,7 @@
                                         </v-col>
                                     </v-row>
                                 </template>
+
                                 <template #bottom></template>
                             </v-data-table>
 
@@ -103,6 +113,7 @@
         <!-- </v-fade-transition>-->
     </v-card>
 </template>
+
 <script lang="ts" setup>
 import { Container, Stack, ImageStatus, ContainerStatus } from '@/types/types';
 import { ref, onMounted, Ref, onUnmounted, watch, reactive } from 'vue'
