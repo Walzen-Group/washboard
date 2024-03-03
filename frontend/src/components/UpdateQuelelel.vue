@@ -52,7 +52,8 @@
                                                 <v-spacer></v-spacer>
                                                 <v-col cols="auto" xl="6">
                                                     <v-tooltip activator="parent" location="start">
-                                                        {{ new Date(item.raw.timestamp * 1000).toLocaleString() }}
+                                                        {{ new Date(item.raw.timestamp *
+                1000).toLocaleString() }}
                                                     </v-tooltip>
                                                     <span> {{ timeAgo(item.raw.timestamp) }}</span>
                                                 </v-col>
