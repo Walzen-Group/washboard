@@ -340,7 +340,7 @@ async function updateSelected() {
 
         // TODO: remove the true from the if statement, it's just there for testing
         // eslint-disable-next-line no-constant-condition
-        if (true || stack?.containers.some((container: any) => container.upToDate === "outdated" && !container.upToDateIgnored)) {
+        if (false || stack?.containers.some((container: any) => container.upToDate === "outdated" && !container.upToDateIgnored)) {
             try {
                 const response = await updateStack(stackId);
                 let data = response.data;
@@ -358,6 +358,7 @@ async function updateSelected() {
                 console.error(error);
             }
         } else {
+            setTimeout(() => loadingUpdateButton.value = false, 500);
             console.log(`No update necessary for stack ${stack?.name}`);
             snackbarsStore.addSnackbar(`${stackId}_noup`, `No update necessary for stack ${stack?.name}`, "info");
         }
