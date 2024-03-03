@@ -6,58 +6,54 @@
         <v-fade-transition mode="out-in">
             <div v-if="loading || hide" class="pa-2">
                 <v-card class="mb-2" v-for="(item, index) in 4" :key="index" variant="tonal">
-                    <v-skeleton-loader class="mx-auto"
-                                       type="article">
+                    <v-skeleton-loader class="mx-auto" type="article">
                     </v-skeleton-loader>
                 </v-card>
             </div>
             <div class="px-2" v-else>
-                <p class="mx-1 text-subtitle-2" v-if="items.length == 0">No stacks have been queued yet...</p>
-                <v-data-iterator v-else
-                                 :items="items"
-                                 :items-per-page="itemsPerPage">
+                <p class="mx-1 text-subtitle-2" v-if="items.length == 0">No stacks have been queued
+                    yet...</p>
+                <v-data-iterator v-else :items="items" :items-per-page="itemsPerPage">
                     <template v-slot:default="{ items }">
                         <v-fade-transition group hide-on-leave>
-
-                            <div
-                                 v-for="item in (items as any)"
-                                 :key="item.raw.stackId"
-                                 cols="auto"
+                            <div v-for="item in (items as any)" :key="item.raw.stackId" cols="auto"
                                  md="4">
                                 <v-card class="pb-1 pt-2 mb-2" border flat>
-                                    <v-tooltip v-if="item.raw.details"
-                                               activator="parent"
+                                    <v-tooltip v-if="item.raw.details" activator="parent"
                                                location="start">{{ item.raw.details }}</v-tooltip>
                                     <v-list-item :subtitle="item.raw.status">
                                         <template v-slot:append>
                                             <v-icon v-if="item.raw.status == QueueStatus.Done"
-                                                    size="35"
-                                                    icon="mdi-robot-happy"
-                                                    color="primary"
+                                                    size="35" icon="mdi-robot-happy" color="primary"
                                                     class="mr-2" />
                                             <v-icon v-else-if="item.raw.status == QueueStatus.Queued"
-                                                    size="35"
-                                                    icon="mdi-robot-confused-outline"
+                                                    size="35" icon="mdi-robot-confused-outline"
                                                     :class="`mr-2 loader`" />
                                             <v-icon v-else-if="item.raw.status == QueueStatus.Error"
-                                                    size="35"
-                                                    icon="mdi-robot-dead-outline" class="mr-2" />
+                                                    size="35" icon="mdi-robot-dead-outline"
+                                                    class="mr-2" />
                                             <v-icon v-else size="35" icon="mdi-robot"
                                                     class="mr-2" />
                                         </template>
+
                                         <template v-slot:title>
-                                            <strong class="text-h6">{{ item.raw.stackName }}</strong>
+                                            <strong class="text-h6">{{ item.raw.stackName
+                                                }}</strong>
                                         </template>
+
                                         <template v-slot:subtitle>
                                             <v-row dense>
                                                 <v-col cols="auto" xl="6">
                                                     <span :class="getColorClass(item.raw.status)">
                                                         {{ item.raw.status == QueueStatus.Queued ?
-                                                            'in progress' : item.raw.status }}
+                'in progress' : item.raw.status }}
                                                     </span>
                                                 </v-col>
                                                 <v-spacer></v-spacer>
                                                 <v-col cols="auto" xl="6">
+                                                    <v-tooltip activator="parent" location="start">
+                                                        {{ new Date(item.raw.timestamp * 1000).toLocaleString() }}
+                                                    </v-tooltip>
                                                     <span> {{ timeAgo(item.raw.timestamp) }}</span>
                                                 </v-col>
                                             </v-row>
@@ -71,24 +67,15 @@
 
                     <template v-slot:header="{ page, pageCount, prevPage, nextPage }">
                         <div class="d-flex align-center justify-center px-4 pb-4">
-                            <v-btn
-                                   class="mr-1"
-                                   :disabled="page === 1"
-                                   icon="mdi-arrow-left"
-                                   density="comfortable"
-                                   variant="tonal"
-                                   @click="prevPage"></v-btn>
+                            <v-btn class="mr-1" :disabled="page === 1" icon="mdi-arrow-left"
+                                   density="comfortable" variant="tonal" @click="prevPage"></v-btn>
 
                             <div class="mx-2 text-caption">
                                 Page {{ page }} of {{ pageCount }}
                             </div>
 
-                            <v-btn class="ml-1"
-                                   :disabled="page >= pageCount"
-                                   icon="mdi-arrow-right"
-                                   density="comfortable"
-                                   variant="tonal"
-                                   @click="nextPage"></v-btn>
+                            <v-btn class="ml-1" :disabled="page >= pageCount" icon="mdi-arrow-right"
+                                   density="comfortable" variant="tonal" @click="nextPage"></v-btn>
                         </div>
                     </template>
                 </v-data-iterator>
