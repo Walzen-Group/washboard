@@ -2,17 +2,25 @@
 <template>
   <div class="mt-2 mb-4 text-h4">Manage & Configure Stacks</div>
   <div>{{ testDataStacks.map((stack) => stack.name).join(', ') }}</div>
-  <v-data-iterator :items="testDataStacks" :items-per-page="itemsPerPage">
+  <v-data-iterator :items="testDataStacks" v-model:items-per-page="itemsPerPage">
     <template v-slot:default="{ items }">
       <v-fade-transition group hide-on-leave>
         <div ref="el">
           <div v-for="item in items" :key="item.raw.id">
             <v-card class="pb-1 pt-2 mb-2">
+              <span>{{ item }}</span>
               <v-row align="center">
-                <v-col cols="auto" class="ml-2 pr-0"><v-icon icon="mdi-drag" class="jannis"></v-icon></v-col>
+                <v-col cols="auto" class="ml-2 pr-0 cursor-pointer"><v-icon icon="mdi-drag"
+                    class="jannis"></v-icon></v-col>
                 <v-col class="pl-0">
                   <v-card-title>{{ item.raw.name }}</v-card-title>
+                  <v-btn @click="moveElement(item.raw, testDataStacks.findIndex((i) => i.name == item.raw.name) + 1)">Move
+                    up</v-btn>
+                  <v-btn @click="moveElement(item.raw, testDataStacks.findIndex((i) => i.name == item.raw.name) - 1)">Move
+                    down</v-btn>
                   <v-card-text class="pl-0">
+                    <v-text-field v-model="item.raw.name"></v-text-field>
+                    <span>{{ testDataStacks.findIndex((i) => i.name == item.raw.name) }}</span>
                     <v-container>
                       <v-row>
                         <v-col v-for="container in item.raw.containers" :key="container.id">
@@ -63,6 +71,12 @@ const { option } = useSortable(el, testDataStacks, {
 
 function setAnimation() {
   option("animation", 300);
+}
+
+function moveElement(element: Stack, toIndex: number) {
+  const fromIndex = testDataStacks.value.findIndex((i) => i.id == element.id);
+  testDataStacks.value.splice(fromIndex, 1);
+  testDataStacks.value.splice(toIndex, 0, element);
 }
 
 function getRandomInt(min: number, max: number): number {
