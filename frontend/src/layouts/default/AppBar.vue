@@ -1,8 +1,8 @@
 <template>
   <v-app-bar elevation="1" density="compact" color="washboard-appbar">
     <v-app-bar-nav-icon @click.stop="switchDrawer" />
-    <v-btn icon @click.stop="switchMini">
-      <v-icon>mdi-{{ `chevron-${miniVariant ? "right" : "left"}` }}</v-icon>
+    <v-btn :disabled="disableMiniVariant" icon @click.stop="switchMini">
+      <v-icon >mdi-{{ `chevron-${miniVariant ? "right" : "left"}` }}</v-icon>
     </v-btn>
     <v-btn icon @click.stop="switchClipped">
       <v-icon>mdi-washing-machine</v-icon>
@@ -16,7 +16,7 @@
         </span>
       </template>
       <span v-if="updateQuelelelStore.queueCount > 0">{{
-        Object.keys(updateQuelelelStore.queue[QueueStatus.Queued]).join(", ") }}</span>
+      Object.keys(updateQuelelelStore.queue[QueueStatus.Queued]).join(", ") }}</span>
       <span v-else>Empty</span>
     </v-tooltip>
     <v-spacer v-if="smAndUp" />
@@ -26,11 +26,11 @@
       <v-icon>mdi-theme-light-dark</v-icon>
     </v-btn>
   </v-app-bar>
-  <v-navigation-drawer width="230" floating :temporary="!clipped" mobile-breakpoint="md" v-model="drawer"
-    :rail="miniVariant">
+  <v-navigation-drawer width="230" floating :temporary="!clipped" mobile-breakpoint="md"
+                       v-model="drawer" :rail="miniVariant">
     <v-list nav density="compact">
-      <v-list-item v-for="(item, i) in items" :key="i" :to="item.to" :prepend-icon="item.icon" :title="item.title" router
-        exact>
+      <v-list-item v-for="(item, i) in items" :key="i" :to="item.to" :prepend-icon="item.icon"
+                   :title="item.title" router exact>
       </v-list-item>
     </v-list>
 
@@ -45,7 +45,7 @@
               </span>
             </template>
             <span v-if="updateQuelelelStore.queueCount > 0">{{
-              Object.keys(updateQuelelelStore.queue[QueueStatus.Queued]).join(", ") }}</span>
+      Object.keys(updateQuelelelStore.queue[QueueStatus.Queued]).join(", ") }}</span>
             <span v-else>Empty</span>
           </v-tooltip>
         </div>
@@ -58,7 +58,7 @@
 
 <script lang="ts" setup>
 import { useDisplay } from 'vuetify'
-const { smAndUp, mdAndUp } = useDisplay()
+const { smAndUp, mdAndUp, smAndDown } = useDisplay()
 import { ref } from 'vue';
 import { useTheme } from 'vuetify'
 import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
@@ -92,9 +92,19 @@ const items: any[] = [
 const clipped = ref(true);
 const drawer = ref(false);
 const miniVariant = ref(true);
+const disableMiniVariant = ref(false);
 
 const theme = useTheme();
 
+watch(smAndDown, (value) => {
+  if (value) {
+    miniVariant.value = false;
+    disableMiniVariant.value = true;
+  } else {
+    if (sidebarSettings.value.mini) miniVariant.value = true;
+    disableMiniVariant.value = false;
+  }
+});
 
 onMounted(() => {
   if (sidebarSettings.value.mini) {
