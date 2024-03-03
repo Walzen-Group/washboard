@@ -207,10 +207,11 @@ onMounted(async () => {
 });
 
 // watches
-watch(queueCount, (newVal, oldVal) => {
+watch(queueCount, async (newVal, oldVal) => {
     // TODO: check if this needs a delay
     if (newVal === 0 && oldVal !== 0) {
-        leeroad();
+        loadingUpdateButton.value = false;
+        await leeroad();
     }
 });
 
@@ -361,8 +362,6 @@ async function updateSelected() {
             snackbarsStore.addSnackbar(`${stackId}_noup`, `No update necessary for stack ${stack?.name}`, "info");
         }
     }
-
-    loadingUpdateButton.value = false;
     currentProgress.value = 0;
 }
 
