@@ -44,18 +44,18 @@
                                         <template v-slot:subtitle>
                                             <v-row dense>
                                                 <v-col cols="auto" xl="6">
-                                                    <span :class="getColorClass(item.raw.status)">
+                                                    <span class="cursor-default" :class="getColorClass(item.raw.status)">
                                                         {{ item.raw.status == QueueStatus.Queued ?
                 'in progress' : item.raw.status }}
                                                     </span>
                                                 </v-col>
                                                 <v-spacer></v-spacer>
                                                 <v-col cols="auto" xl="6">
-                                                    <v-tooltip activator="parent" location="start">
+                                                    <v-tooltip activator="parent" location="bottom">
                                                         {{ new Date(item.raw.timestamp *
                 1000).toLocaleString() }}
                                                     </v-tooltip>
-                                                    <span> {{ timeAgo(item.raw.timestamp) }}</span>
+                                                    <span class="cursor-default"> {{ timeAgo(item.raw.timestamp) }}</span>
                                                 </v-col>
                                             </v-row>
                                         </template>
