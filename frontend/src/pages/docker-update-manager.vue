@@ -3,14 +3,12 @@
     <div class="mb-2">
         <v-alert v-if="loading || refreshing" variant="tonal" type="info" title="Refreshing...">
             <template v-slot:prepend>
-                <v-progress-circular size="26" color="deep-blue-lighten-2"
-                                     indeterminate></v-progress-circular>
+                <v-progress-circular size="26" color="deep-blue-lighten-2" indeterminate></v-progress-circular>
             </template>
         </v-alert>
-        <v-alert v-else-if="connectionFailed" variant="tonal" type="error"
-                 title="No data"></v-alert>
+        <v-alert v-else-if="connectionFailed" variant="tonal" type="error" title="No data"></v-alert>
         <v-alert v-else-if="!containersNeedUpdate" variant="tonal" type="success" color="blue"
-                 title="You're all good"></v-alert>
+            title="You're all good"></v-alert>
 
         <v-alert v-else variant="tonal" type="warning" title="Updates available"></v-alert>
     </div>
@@ -22,16 +20,12 @@
                         <v-hover>
 
                             <template v-slot:default="{ isHovering, props }">
-                                <v-skeleton-loader v-if="loading" class="mx-auto border"
-                                                   type="image">
+                                <v-skeleton-loader v-if="loading" class="mx-auto border" type="image">
                                 </v-skeleton-loader>
-                                <v-card v-else v-bind="props"
-                                        :color="isHovering ? undefined : 'surface-variant'"
-                                        elevation="0" variant="tonal" class="fill-height"
-                                        min-width="220">
+                                <v-card v-else v-bind="props" :color="isHovering ? undefined : 'surface-variant'"
+                                    elevation="0" variant="tonal" class="fill-height" min-width="220">
                                     <template v-slot:append>
-                                        <v-icon icon="mdi-autorenew" size="x-large"
-                                                color="warning"></v-icon>
+                                        <v-icon icon="mdi-autorenew" size="x-large" color="warning"></v-icon>
                                     </template>
 
                                     <template v-slot:title>
@@ -49,16 +43,12 @@
                         <v-hover>
 
                             <template v-slot:default="{ isHovering, props }">
-                                <v-skeleton-loader v-if="loading" class="mx-auto border"
-                                                   type="image">
+                                <v-skeleton-loader v-if="loading" class="mx-auto border" type="image">
                                 </v-skeleton-loader>
-                                <v-card v-else v-bind="props"
-                                        :color="isHovering ? undefined : 'surface-variant'"
-                                        elevation="0" variant="tonal" class="fill-height"
-                                        min-width="220">
+                                <v-card v-else v-bind="props" :color="isHovering ? undefined : 'surface-variant'"
+                                    elevation="0" variant="tonal" class="fill-height" min-width="220">
                                     <template v-slot:append>
-                                        <v-icon icon="mdi-hand-okay" size="x-large"
-                                                color="success"></v-icon>
+                                        <v-icon icon="mdi-hand-okay" size="x-large" color="success"></v-icon>
                                     </template>
 
                                     <template v-slot:title>
@@ -75,35 +65,33 @@
                 </v-row>
 
             </div>
-            <StackTable @click:indicator="handleIndicatorClick"
-                        @update:selectedRows="updateSelectedRows"
-                        @update:items-per-page="calculateItemsPerPage"
-                        @update:stack-modified="leeroad" :item-url="portainerStackUrl"
-                        :items="items" :loading="loading">
+            <StackTable @click:indicator="handleIndicatorClick" @update:selectedRows="updateSelectedRows"
+                @update:items-per-page="calculateItemsPerPage" @update:stack-modified="leeroad"
+                :item-url="portainerStackUrl" :items="items" :loading="loading">
                 <template v-slot:controls>
-                    <v-btn width="200" variant="tonal" @click="confirmUpdateSelected"
-                           color="primary" :disabled="!selectedRows.length"
-                           :loading="loadingUpdateButton">
+                    <v-btn width="200" variant="tonal" @click="confirmUpdateSelected" color="primary"
+                        :disabled="!selectedRows.length" :loading="loadingUpdateButton">
                         Update Selected
                     </v-btn>
                 </template>
 
                 <template v-slot:inner-actions="{ item }">
                     <div class="d-flex flex-row flex-wrap mt-4">
-                        <v-btn v-if="item.containers.length === 0" :loading="loaderState[item.id]"
-                               class="mr-2 mb-2" variant="tonal"
-                               prepend-icon="mdi-arrow-right-drop-circle-outline"
-                               @click="startOrStopStack(item, Action.Start)">Start Stack</v-btn>
-                        <v-btn v-else :loading="loaderState[item.id]" class="mr-2 mb-2"
-                               variant="tonal" prepend-icon="mdi-stop-circle-outline"
-                               @click="startOrStopStack(item, Action.Stop)">Stop Stack</v-btn>
+                        <v-btn v-if="item.containers.length === 0" :loading="loaderState[item.id]" class="mr-2 mb-2"
+                            variant="tonal" prepend-icon="mdi-arrow-right-drop-circle-outline"
+                            @click="manageStack(item, Action.Start)">Start Stack</v-btn>
+                        <v-btn v-else :loading="loaderState[item.id]" class="mr-2 mb-2" variant="tonal"
+                            prepend-icon="mdi-stop-circle-outline" @click="manageStack(item, Action.Stop)">Stop
+                            Stack</v-btn>
+                        <v-btn :loading="loaderState[item.id]" class="mr-2 mb-2" variant="tonal" prepend-icon="mdi-restart"
+                            @click="manageStack(item, Action.Restart)">Restart
+                            Stack</v-btn>
                     </div>
                 </template>
             </StackTable>
         </v-col>
         <v-col cols="12" lg="3">
-            <UpdateQuelelel :loading="loading" :queue="queue"
-                            :itemsPerPage="updateWidgetItemsPerPage" :hide="hideWidget">
+            <UpdateQuelelel :loading="loading" :queue="queue" :itemsPerPage="updateWidgetItemsPerPage" :hide="hideWidget">
             </UpdateQuelelel>
         </v-col>
     </v-row>
@@ -111,17 +99,15 @@
 
     <v-dialog transition="dialog-top-transition" :scrim="false" v-model="dialogUpdate" width="auto">
         <v-card>
-            <v-toolbar color="primary" class="d-flex justify-end" density="compact"
-                       title="Update stacks">
+            <v-toolbar color="primary" class="d-flex justify-end" density="compact" title="Update stacks">
                 <v-btn density="compact" icon="mdi-close" @click="dialogUpdate = false"></v-btn>
             </v-toolbar>
             <v-card-text class="text-subtitle-1">
                 Do you want to update {{ totalStacksToUpdate }} stack{{ totalStacksToUpdate > 1 ?
-            "s" :
-            "" }}?
-                <v-card elevation="0" rounded="md" class="mt-2 pb-2 text-body-1"
-                        border><v-virtual-scroll class="mt-3 pl-2" :max-height="400" :width="450"
-                                      :items="selectedStackNames">
+                    "s" :
+                    "" }}?
+                <v-card elevation="0" rounded="md" class="mt-2 pb-2 text-body-1" border><v-virtual-scroll class="mt-3 pl-2"
+                        :max-height="400" :width="450" :items="selectedStackNames">
 
                         <template v-slot:default="{ item }">
                             {{ item }}
@@ -217,15 +203,21 @@ watch(queueCount, async (newVal, oldVal) => {
 
 // functions
 
-async function startOrStopStack(stack: Stack, action: Action) {
+async function manageStack(stack: Stack, action: Action) {
     loaderState[stack.id] = true;
-    if (![Action.Start, Action.Stop].includes(action)) {
-        throw new Error(`Action should be "${Action.Start}" or "${Action.Stop}", got "${action}"`);
+    if (![Action.Start, Action.Stop, Action.Restart].includes(action)) {
+        throw new Error(`Action should be "${Action.Start}", "${Action.Stop}", or "${Action.Restart}", got "${action}"`);
     }
-    try {
-        const response = await (action === Action.Start ? startStack(stack.id) : stopStack(stack.id));
-        await handleResponse(stack, action, response);
 
+    try {
+        if (action === Action.Restart) {
+            await stopStack(stack.id);
+            const startResponse = await startStack(stack.id);
+            await handleResponse(stack, Action.Restart, startResponse);
+        } else {
+            const response = await (action === Action.Start ? startStack(stack.id) : stopStack(stack.id));
+            await handleResponse(stack, action, response);
+        }
     } catch (error: any) {
         snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Failed to ${action} ${stack?.name}: ${error.message}`, "error");
     } finally {
@@ -235,8 +227,8 @@ async function startOrStopStack(stack: Stack, action: Action) {
 
 async function handleResponse(stack: Stack, action: string, response: any) {
     if (response.status === 200) {
-        if (action === Action.Start) {
-            await updateContainersOnStart(stack);
+        if (action === Action.Start || action === Action.Restart) {
+            await updateContainers(stack);
         } else {
             clearStackContainers(stack);
         }
@@ -246,8 +238,8 @@ async function handleResponse(stack: Stack, action: string, response: any) {
     }
 }
 
-async function updateContainersOnStart(stack: Stack) {
-    const containersResponse = await getContainers(stack.name, parseInt(defaultEndpointId, 10));
+async function updateContainers(stack: Stack) {
+    const containersResponse = await getContainers(stack.name, parseInt(defaultEndpointId));
     let containers: Container[] = containersResponse.data;
     containers = await Promise.all(containers.map(async container => updateContainerStatus(container)));
     items.value = items.value.map(item => (item.id === stack.id ? { ...item, containers } : item));

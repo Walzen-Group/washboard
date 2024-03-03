@@ -68,6 +68,7 @@ enum ContainerStatus {
 enum Action {
   Start = "start",
   Stop = "stop",
+  Restart = "restart",
 }
 
 interface QueueItem {
