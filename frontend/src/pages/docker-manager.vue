@@ -1,89 +1,23 @@
 <!-- eslint-disable vue/valid-v-slot -->
 <template>
   <div class="mt-2 mb-4 text-h4">Manage & Configure Stacks</div>
-  <div>{{ testDataStacks.map((stack) => stack.name).join(', ') }}</div>
-  <v-data-iterator :items="testDataStacks" v-model:items-per-page="itemsPerPage">
-    <template v-slot:default="{ items }">
-      <v-fade-transition group hide-on-leave>
-        <div ref="el">
-          <div v-for="item in items" :key="item.raw.id">
-            <v-card class="pb-1 pt-2 mb-2">
-              <span>{{ item }}</span>
-              <v-row align="center">
-                <v-col cols="auto" class="ml-2 pr-0 cursor-pointer"><v-icon icon="mdi-drag"
-                    class="jannis"></v-icon></v-col>
-                <v-col class="pl-0">
-                  <v-card-title>{{ item.raw.name }}</v-card-title>
-                  <v-btn @click="moveElement(item.raw, testDataStacks.findIndex((i) => i.name == item.raw.name) + 1)">Move
-                    up</v-btn>
-                  <v-btn @click="moveElement(item.raw, testDataStacks.findIndex((i) => i.name == item.raw.name) - 1)">Move
-                    down</v-btn>
-                  <v-card-text class="pl-0">
-                    <v-text-field v-model="item.raw.name"></v-text-field>
-                    <span>{{ testDataStacks.findIndex((i) => i.name == item.raw.name) }}</span>
-                    <v-container>
-                      <v-row>
-                        <v-col v-for="container in item.raw.containers" :key="container.id">
-                          <v-card>
-                            <v-card-title>{{ container.name }}</v-card-title>
-                            <v-card-text>{{ container.ports.join(", ") }}</v-card-text>
-                          </v-card>
-                        </v-col>
-                      </v-row>
-                    </v-container>
-                  </v-card-text>
-                </v-col>
-              </v-row>
-            </v-card>
-          </div>
-        </div>
-      </v-fade-transition>
-    </template>
-    <template v-slot:header="{ page, pageCount, prevPage, nextPage }">
-      <div class="d-flex align-center justify-center px-4 pb-4">
-        <v-btn class="mr-1" :disabled="page === 1" icon="mdi-arrow-left" density="comfortable" variant="tonal"
-          @click="prevPage"></v-btn>
+  <SortableStackTable :items="testDataStacks"></SortableStackTable>
 
-        <div class="mx-2 text-caption">
-          Page {{ page }} of {{ pageCount }}
-        </div>
-
-        <v-btn class="ml-1" :disabled="page >= pageCount" icon="mdi-arrow-right" density="comfortable" variant="tonal"
-          @click="nextPage"></v-btn>
-      </div>
-    </template>
-  </v-data-iterator>
 </template>
 
 <script lang="ts" setup>
-
-import { useSortable } from '@vueuse/integrations/useSortable';
+import SortableStackTable from '@/components/SortableStackTable.vue';
 import { Stack, Container } from '@/types/types';
-import { ref, Ref } from 'vue';
+import { ref, Ref, onMounted } from 'vue';
 
-const testDataStacks: Ref<Stack[]> = ref(generateTestData());
-const el = ref<HTMLElement | null>(null)
-const itemsPerPage = ref(10)
-const { option } = useSortable(el, testDataStacks, {
-  handle: '.jannis',
-  animation: 150,
-});
-
-function setAnimation() {
-  option("animation", 300);
-}
-
-function moveElement(element: Stack, toIndex: number) {
-  const fromIndex = testDataStacks.value.findIndex((i) => i.id == element.id);
-  testDataStacks.value.splice(fromIndex, 1);
-  testDataStacks.value.splice(toIndex, 0, element);
-}
+const testDataStacks: Ref<Stack[]> = ref([]);
 
 function getRandomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function generateTestData(): Stack[] {
+async function generateTestData(): Promise<Stack[]> {
+  await new Promise((resolve) => setTimeout(resolve, 1000));
   const testData: Stack[] = [];
 
   for (let i = 1; i <= 15; i++) {
@@ -122,5 +56,9 @@ function generateTestData(): Stack[] {
 
   return testData;
 }
+
+onMounted(async () => {
+  testDataStacks.value = await generateTestData();
+});
 
 </script>

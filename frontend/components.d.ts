@@ -10,7 +10,8 @@ declare module 'vue' {
     Landing: typeof import('./src/components/Landing.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    StackTable: typeof import('./src/components/StackTable.vue')['default']
+    SortableStackTable: typeof import('./src/components/SortableStackTable.vue')['default']
+    StackUpdateTable: typeof import('./src/components/StackUpdateTable.vue')['default']
     UpdateQuelelel: typeof import('./src/components/UpdateQuelelel.vue')['default']
   }
 }

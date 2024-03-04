@@ -64,6 +64,12 @@ func main() {
 	router.POST("/portainer-stop-stack", api.PortainerStopStack)
 	router.POST("/portainer-start-stack", api.PortainerStartStack)
 	router.PUT("/portainer-update-stack", api.PortainerUpdateStack)
+	router.POST("/portainer-start-container", api.PortainerStartContainer)
+	router.POST("/portainer-stop-container", api.PortainerStopContainer)
+	router.POST("/portainer-kill-container", api.PortainerKillContainer)
+	router.POST("/portainer-restart-container", api.PortainerRestartContainer)
+	router.POST("/portainer-pause-container", api.PortainerPauseContainer)
+	router.POST("/portainer-resume-container", api.PortainerResumeContainer)
 	router.GET("/ws/stacks-update", api.WsHandler)
 	ret := router.Run()
 	if ret != nil {

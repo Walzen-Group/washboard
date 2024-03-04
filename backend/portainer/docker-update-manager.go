@@ -58,7 +58,6 @@ func GetEndpointId(endpointName string) (int, error) {
 	return -1, nil
 }
 
-
 // GetStacks returns the stacks for the given endpoint
 func GetStacks(endpointId int) ([]StackDto, error) {
 	client := &http.Client{}
@@ -185,7 +184,6 @@ func GetContainers(endpointId int, stackName string) ([]*ContainerDto, error) {
 
 	return containersDto, nil
 }
-
 
 func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([]StackDto, error) {
 	var stacksDto = make(map[string]*StackDto)
@@ -443,7 +441,6 @@ func UpdateContainer(endpointId int, containerId string, pullImage bool) (string
 	}
 	return container["Id"].(string), nil
 }
-
 
 func getUpdateOperationId(endpointId int, stackId int) string {
 	return fmt.Sprintf("update-stack-%d-%d", endpointId, stackId)
