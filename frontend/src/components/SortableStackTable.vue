@@ -1,48 +1,50 @@
 <template>
     <div>{{ stacksInternal.map((stack) => stack.name).join(', ') }}</div>
     <div ref="sortableRoot">
-        <v-card v-for="element in stacksInternal" class="pb-1 pt-2 mb-2">
-            <v-row dense>
-                <v-col cols="auto" class="ml-2">
-                    <v-sheet
-                             class="fill-height d-flex flex-column">
-                        <v-btn icon size="40" elevation="0" variant="text" density="compact"
-                               :ripple="false"
-                               @click="moveElement(element, stacksInternal.findIndex((i) => i.name == element.name) - 1)">
-                            <v-icon size="40"> mdi-menu-up-outline </v-icon>
-                        </v-btn>
-                        <v-sheet class="d-flex fill-height flex-column">
-                            <v-icon class="ml-2 pr-0 cursor-move my-auto jannis"
-                                    icon="mdi-drag"></v-icon>
+        <v-fade-transition group>
+            <v-card v-for="element in stacksInternal" class="pb-1 pt-2 mb-2" :key="element.id">
+                <v-row dense>
+                    <v-col cols="auto" class="ml-2">
+                        <v-sheet
+                                 class="fill-height d-flex flex-column">
+                            <v-btn icon size="40" elevation="0" variant="text" density="compact"
+                                   :ripple="false"
+                                   @click="moveElement(element, stacksInternal.findIndex((i) => i.name == element.name) - 1)">
+                                <v-icon size="40"> mdi-menu-up-outline </v-icon>
+                            </v-btn>
+                            <v-sheet class="d-flex fill-height flex-column">
+                                <v-icon class="ml-2 pr-0 cursor-move my-auto jannis"
+                                        icon="mdi-drag"></v-icon>
+                            </v-sheet>
+                            <v-btn icon size="40" elevation="0" density="compact" variant="text"
+                                   :ripple="false"
+                                   class="mt-auto"
+                                   @click="moveElement(element, stacksInternal.findIndex((i) => i.name == element.name) + 1)">
+                                <v-icon size="40">mdi-menu-down-outline</v-icon>
+                            </v-btn>
                         </v-sheet>
-                        <v-btn icon size="40" elevation="0" density="compact" variant="text"
-                               :ripple="false"
-                               class="mt-auto"
-                               @click="moveElement(element, stacksInternal.findIndex((i) => i.name == element.name) + 1)">
-                            <v-icon size="40">mdi-menu-down-outline</v-icon>
-                        </v-btn>
-                    </v-sheet>
-                </v-col>
-                <v-col class="pl-0">
-                    <v-card-title>{{ element.name }}</v-card-title>
-                    <v-card-text class="pl-0">
-                        <v-container>
-                            <v-row>
-                                <v-col v-for="container in element.containers"
-                                       :key="container.id">
-                                    <v-card>
-                                        <v-card-title>{{ container.name
-                                            }}</v-card-title>
-                                        <v-card-text>{{ container.ports.join(", ")
-                                            }}</v-card-text>
-                                    </v-card>
-                                </v-col>
-                            </v-row>
-                        </v-container>
-                    </v-card-text>
-                </v-col>
-            </v-row>
-        </v-card>
+                    </v-col>
+                    <v-col class="pl-0">
+                        <v-card-title>{{ element.name }}</v-card-title>
+                        <v-card-text class="pl-0">
+                            <v-container>
+                                <v-row>
+                                    <v-col v-for="container in element.containers"
+                                           :key="container.id">
+                                        <v-card>
+                                            <v-card-title>{{ container.name
+                                                }}</v-card-title>
+                                            <v-card-text>{{ container.ports.join(", ")
+                                                }}</v-card-text>
+                                        </v-card>
+                                    </v-col>
+                                </v-row>
+                            </v-container>
+                        </v-card-text>
+                    </v-col>
+                </v-row>
+            </v-card>
+        </v-fade-transition>
     </div>
 </template>
 
