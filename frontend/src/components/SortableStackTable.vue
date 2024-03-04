@@ -9,7 +9,8 @@
                                  class="fill-height d-flex flex-column">
                             <v-btn icon size="40" elevation="0" variant="text" density="compact"
                                    :ripple="false"
-                                   @click="moveElement(element, stacksInternal.findIndex((i) => i.name == element.name) - 1)">
+                                   :disabled="isFirstElement(element)"
+                                   @click="moveElement(element, 'up')">
                                 <v-icon size="40"> mdi-menu-up-outline </v-icon>
                             </v-btn>
                             <v-sheet class="d-flex fill-height flex-column">
@@ -18,8 +19,9 @@
                             </v-sheet>
                             <v-btn icon size="40" elevation="0" density="compact" variant="text"
                                    :ripple="false"
+                                   :disabled="isLastElement(element)"
                                    class="mt-auto"
-                                   @click="moveElement(element, stacksInternal.findIndex((i) => i.name == element.name) + 1)">
+                                   @click="moveElement(element, 'down')">
                                 <v-icon size="40">mdi-menu-down-outline</v-icon>
                             </v-btn>
                         </v-sheet>
@@ -68,55 +70,30 @@ useSortable(sortableRoot, stacksInternal, {
     forceFallback: true,
 });
 
-function moveElement(element: Stack, toIndex: number) {
-    const fromIndex = stacksInternal.value.findIndex((i) => i.id == element.id);
-    stacksInternal.value.splice(fromIndex, 1);
-    stacksInternal.value.splice(toIndex, 0, element);
+function isFirstElement(element: Stack) {
+    return stacksInternal.value[0].id === element.id;
 }
 
-function getRandomInt(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
+function isLastElement(element: Stack) {
+    return stacksInternal.value[stacksInternal.value.length - 1].id === element.id;
 }
 
-function generateTestData(): Stack[] {
-    const testData: Stack[] = [];
-
-    for (let i = 1; i <= 15; i++) {
-        const containers: Container[] = [];
-        const numberOfContainers = getRandomInt(1, 4); // Random number of containers between 1 and 4
-
-        for (let j = 1; j <= numberOfContainers; j++) {
-            const container: Container = {
-                id: `container-${i}-${j}`,
-                name: `Container ${j}`,
-                image: `image${j}:latest`,
-                upToDate: `2024-02-${j < 10 ? '0' + j : j}`,
-                upToDateIgnored: j % 2 === 0,
-                status: j % 2 === 0 ? 'Running' : 'Stopped',
-                ports: [8080 + j, 9090 + j],
-                labels: {
-                    'owner': `owner${i}`,
-                    'project': `project${i}`
-                }
-            };
-            containers.push(container);
-        }
-
-        const stack: Stack = {
-            id: i,
-            name: `Stack ${i}`,
-            containers: containers,
-            updateStatus: [{
-                'lastChecked': `2024-02-${i < 10 ? '0' + i : i}`,
-                'isUpToDate': i % 2 === 0
-            }]
-        };
-
-        testData.push(stack);
+function moveElement(element: Stack, action: string) {
+    let toIndex;
+    const currIdx = stacksInternal.value.findIndex((i) => i.id == element.id);
+    if (action === "up") {
+        if (currIdx === 0) return;
+        toIndex = currIdx - 1;
+    } else if (action === "down") {
+        if (currIdx === stacksInternal.value.length - 1) return;
+        toIndex = currIdx + 1;
+    } else {
+        toIndex = currIdx;
     }
-
-    return testData;
+    const [removed] = stacksInternal.value.splice(currIdx, 1);
+    stacksInternal.value.splice(toIndex, 0, removed);
 }
+
 
 </script>
 
