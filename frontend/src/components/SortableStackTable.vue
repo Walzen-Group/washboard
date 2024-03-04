@@ -65,9 +65,7 @@ watch(props, () => {
 useSortable(sortableRoot, stacksInternal, {
     handle: '.jannis',
     animation: 250,
-    scroll: true,
     forceFallback: true,
-    bubbleScroll: true,
 });
 
 function moveElement(element: Stack, toIndex: number) {
