@@ -55,7 +55,7 @@ enum QueueStatus {
 enum ImageStatus {
   Updated = "updated",
   Outdated = "outdated",
-  Unavailable = "unavailable"
+  Unavailable = ""
 }
 
 enum ContainerStatus {
