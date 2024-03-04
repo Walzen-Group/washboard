@@ -65,7 +65,7 @@
                 </v-row>
 
             </div>
-            <StackTable @click:indicator="handleIndicatorClick" @update:selectedRows="updateSelectedRows"
+            <StackUpdateTable @click:indicator="handleIndicatorClick" @update:selectedRows="updateSelectedRows"
                 @update:items-per-page="calculateItemsPerPage" @update:stack-modified="leeroad"
                 :item-url="portainerStackUrl" :items="items" :loading="loading">
                 <template v-slot:controls>
@@ -88,7 +88,7 @@
                             Stack</v-btn>
                     </div>
                 </template>
-            </StackTable>
+            </StackUpdateTable>
         </v-col>
         <v-col cols="12" lg="3">
             <UpdateQuelelel :loading="loading" :queue="queue" :itemsPerPage="updateWidgetItemsPerPage" :hide="hideWidget">
@@ -126,8 +126,6 @@
 </template>
 
 <script lang="ts" setup>
-import StackTable from '@/components/StackTable.vue';
-import UpdateQuelelel from '@/components/UpdateQuelelel.vue';
 import axios from 'axios';
 import gsap from 'gsap';
 import { startStack, stopStack, updateStack, getContainers } from '@/api/lib';
