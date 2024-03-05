@@ -264,7 +264,7 @@ async function updateContainers(stack: Stack) {
 }
 
 async function updateContainerStatus(container: Container) {
-    const containerImageStatusResponse = await axios.get(`/portainer-get-image-status`, {
+    const containerImageStatusResponse = await axios.get(`/portainer/image-status`, {
         params: { endpointId: defaultEndpointId, containerId: container.id }
     });
     const containerImageStatus = containerImageStatusResponse.data;
@@ -301,7 +301,7 @@ function updateStatusCounts() {
 async function leeroad() {
     refreshing.value = true;
     try {
-        const response = await axios.get('/portainer-get-stacks');
+        const response = await axios.get('/portainer/stacks');
 
         console.log("leeroaded");
         items.value = response.data;

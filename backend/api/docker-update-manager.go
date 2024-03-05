@@ -226,7 +226,6 @@ func PortainerGetImageStatus(c *gin.Context) {
 // for unsuccessful update attempts. It uses the Gin web framework to parse JSON request bodies and to send
 // JSON responses, ensuring a structured and consistent API interface.
 func PortainerUpdateContainer(c *gin.Context) {
-	// Set pullImage
 	var reqBody map[string]interface{}
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
 		errorMessage := "Failed to bind json. Check the request body and ensure that the pullImage field is present."

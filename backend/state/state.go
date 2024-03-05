@@ -58,11 +58,11 @@ func ReflectionPath() string {
 type Config struct {
 	// secrets
 	PortainerSecret string `yaml:"portainer_secret"`
-	PortainerUrl string `yaml:"portainer_url"`
-	DbUrl string `yaml:"db_url"`
+	PortainerUrl    string `yaml:"portainer_url"`
+	DbUrl           string `yaml:"db_url"`
 }
 
 type Data struct {
-	Config Config
+	Config           Config
 	StackUpdateQueue *cache.Cache
 }

@@ -57,37 +57,37 @@ func main() {
 	  }))
 
 	// portainer api routes
-	// TODO: change endpoint to /portainer/...
-	router.GET("/portainer-get-endpoint", api.PortainerGetEndpoint)
-	router.GET("/portainer-get-stacks", api.PortainerGetStacks)
-	router.GET("/portainer-get-containers", api.PortainerGetContainers)
-	router.GET("/portainer-get-image-status", cache.CachePage(store, time.Minute * 10, api.PortainerGetImageStatus))
-	router.POST("/portainer-update-container", api.PortainerUpdateContainer)
-	router.POST("/portainer-stop-stack", api.PortainerStopStack)
-	router.POST("/portainer-start-stack", api.PortainerStartStack)
-	router.PUT("/portainer-update-stack", api.PortainerUpdateStack)
-	router.POST("/portainer-start-container", api.PortainerStartContainer)
-	router.POST("/portainer-stop-container", api.PortainerStopContainer)
-	router.POST("/portainer-kill-container", api.PortainerKillContainer)
-	router.POST("/portainer-restart-container", api.PortainerRestartContainer)
-	router.POST("/portainer-pause-container", api.PortainerPauseContainer)
-	router.POST("/portainer-resume-container", api.PortainerResumeContainer)
+	router.GET("/portainer/endpoint", api.PortainerGetEndpoint)
+	router.GET("/portainer/stacks", api.PortainerGetStacks)
+	router.GET("/portainer/containers", api.PortainerGetContainers)
+	router.GET("/portainer/image-status", cache.CachePage(store, time.Minute * 10, api.PortainerGetImageStatus))
+	router.POST("/portainer/update-container", api.PortainerUpdateContainer)
+	// TODO: change endpoint to /portainer/stack/start/:id etc.
+	router.POST("/portainer/stop-stack", api.PortainerStopStack)
+	router.POST("/portainer/start-stack", api.PortainerStartStack)
+	router.PUT("/portainer/update-stack", api.PortainerUpdateStack)
+	router.POST("/portainer/start-container", api.PortainerStartContainer)
+	router.POST("/portainer/stop-container", api.PortainerStopContainer)
+	router.POST("/portainer/kill-container", api.PortainerKillContainer)
+	router.POST("/portainer/restart-container", api.PortainerRestartContainer)
+	router.POST("/portainer/pause-container", api.PortainerPauseContainer)
+	router.POST("/portainer/resume-container", api.PortainerResumeContainer)
 
 	// websocket stuff
 	router.GET("/ws/stacks-update", api.WsHandler)
 
 	// db crud
 	router.POST("/db/stacks", api.CreateStackSettings)
-	router.GET("/db/stacks", api.GetStacksSettings)
+	router.GET("/db/stacks", api.GetStackSettings)
 	router.GET("/db/stacks/:id", api.GetStackSettings)
 	router.PUT("/db/stacks/:id", api.UpdateStackSettings)
 	router.DELETE("/db/stacks/:id", api.DeleteStackSettings)
 
 	router.POST("/db/groups", api.CreateGroupSettings)
-	router.GET("/db/groups", api.GetGroupsSettings)
-	router.GET("/db/groups/:id", api.GetGroupSettings)
-	router.PUT("/db/groups/:id", api.UpdateGroupSettings)
-	router.DELETE("/db/groups/:id", api.DeleteGroupSettings)
+	router.GET("/db/groups", api.GetGroupSettings)
+	router.GET("/db/groups/:name", api.GetGroupSettings)
+	router.PUT("/db/groups/:name", api.UpdateGroupSettings)
+	router.DELETE("/db/groups/:name", api.DeleteGroupSettings)
 
 
 

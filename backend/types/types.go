@@ -59,12 +59,12 @@ const (
 )
 
 type GroupSettings struct {
-	GroupName      string `bson:"groupName"`
-	GlobalPriority int    `bson:"globalPriority"`
+	GroupName      string `bson:"groupName" json:"groupName"`
+	GlobalPriority int    `bson:"globalPriority" json:"globalPriority"`
 }
 
 type StackSettings struct {
-	StackId             int `bson:"stackId"`
-	GlobalPriority      int `bson:"globalPriority"`
-	WithinGroupPriority int `bson:"withinGroupPriority"`
+	StackId             int `bson:"stackId" json:"stackId"`
+	GlobalPriority      int `bson:"globalPriority" json:"globalPriority"`
+	WithinGroupPriority int `bson:"withinGroupPriority" json:"withinGroupPriority"`
 }
