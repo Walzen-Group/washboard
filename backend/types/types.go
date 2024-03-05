@@ -36,26 +36,28 @@ type StackUpdateStatus struct {
 	Timestamp  int64  `json:"timestamp"`
 }
 
-type ActionType string
+type ContainerAction string
 
 // We could make an ActionType type and use that instead of string but that would require some annoying refactoring
 const (
-	Outdated                  string     = "outdated"
-	Updated                   string     = "updated"
-	Preparing                 string     = "preparing"
-	Skipped                   string     = "skipped"
-	Error                     string     = "error"
-	Done                      string     = "done"
-	Queued                    string     = "queued"
-	DbName                    string     = "washb"
-	DbGroupSettingsCollection string     = "group_settings"
-	DbStackSettingsCollection string     = "stack_settings"
-	Start                     ActionType = "start"
-	Stop                      ActionType = "stop"
-	Kill                      ActionType = "kill"
-	Restart                   ActionType = "restart"
-	Pause                     ActionType = "pause"
-	Resume                    ActionType = "resume"
+	Outdated                  string          = "outdated"
+	Updated                   string          = "updated"
+	Preparing                 string          = "preparing"
+	Skipped                   string          = "skipped"
+	Error                     string          = "error"
+	Done                      string          = "done"
+	Queued                    string          = "queued"
+	DbName                    string          = "washb"
+	DbGroupSettingsCollection string          = "group_settings"
+	DbStackSettingsCollection string          = "stack_settings"
+	StackGroupLabel           string          = "org.walzen.washb.group"
+	StackLabel                string          = "com.docker.compose.project"
+	Start                     ContainerAction = "start"
+	Stop                      ContainerAction = "stop"
+	Kill                      ContainerAction = "kill"
+	Restart                   ContainerAction = "restart"
+	Pause                     ContainerAction = "pause"
+	Resume                    ContainerAction = "resume"
 )
 
 type GroupSettings struct {
@@ -64,7 +66,10 @@ type GroupSettings struct {
 }
 
 type StackSettings struct {
-	StackId             int `bson:"stackId" json:"stackId"`
-	GlobalPriority      int `bson:"globalPriority" json:"globalPriority"`
-	WithinGroupPriority int `bson:"withinGroupPriority" json:"withinGroupPriority"`
+	StackName           string `bson:"stackName" json:"stackName"`
+	GlobalPriority      int    `bson:"globalPriority" json:"globalPriority"`
+	WithinGroupPriority int    `bson:"withinGroupPriority" json:"withinGroupPriority"`
+}
+type SyncOptions struct {
+	EndpointIds []int `json:"endpointIds"`
 }

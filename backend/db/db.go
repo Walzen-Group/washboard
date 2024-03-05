@@ -20,7 +20,7 @@ var once sync.Once
 
 type CannotInsertWrappedError struct {
 	Context string
-	Err error
+	Err     error
 }
 
 func (w *CannotInsertWrappedError) Error() string {
@@ -32,6 +32,15 @@ func Burrito(err error, info string) *CannotInsertWrappedError {
 		Context: info,
 		Err:     err,
 	}
+}
+
+type DoesNotExistWrappedError struct {
+	Context string
+	Err     error
+}
+
+func (w *DoesNotExistWrappedError) Error() string {
+	return fmt.Sprintf("%s: %v", w.Context, w.Err)
 }
 
 type DataStore struct {
@@ -78,7 +87,7 @@ func CreateStackSettings(stackSettings *types.StackSettings) error {
 	}
 	collection := conn.db.Collection(types.DbStackSettingsCollection)
 	indexModel := mongo.IndexModel{
-		Keys:    bson.D{primitive.E{Key: "stackId", Value: 1}},
+		Keys:    bson.D{primitive.E{Key: "stackName", Value: 1}},
 		Options: options.Index().SetUnique(true),
 	}
 	ctxOp2, cancelOp2 := context.WithTimeout(context.Background(), 10*time.Second)
@@ -98,7 +107,7 @@ func CreateStackSettings(stackSettings *types.StackSettings) error {
 }
 
 // GetStackSettings retrieves a stack settings document from the database by ID
-func GetStackSettings(id int) (*types.StackSettings, error) {
+func GetStackSettings(name string) (*types.StackSettings, error) {
 	conn, conErr := GetConnection()
 	if conErr != nil {
 		return nil, conErr
@@ -108,8 +117,14 @@ func GetStackSettings(id int) (*types.StackSettings, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	err := collection.FindOne(ctx, bson.M{"stackId": id}).Decode(&stackSettings)
+	err := collection.FindOne(ctx, bson.M{"stackName": name}).Decode(&stackSettings)
 	if err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			return nil , &DoesNotExistWrappedError{
+				Context: "",
+				Err:     err,
+			}
+		}
 		return nil, err
 	}
 	return &stackSettings, nil
@@ -142,7 +157,7 @@ func GetAllStackSettings() ([]types.StackSettings, error) {
 }
 
 // UpdateStackSettings updates a stack settings document in the database
-func UpdateStackSettings(stackSettings *types.StackSettings, stackId int) error {
+func UpdateStackSettings(stackSettings *types.StackSettings, stackName string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -151,18 +166,18 @@ func UpdateStackSettings(stackSettings *types.StackSettings, stackId int) error 
 		return conErr
 	}
 	collection := conn.db.Collection(types.DbStackSettingsCollection)
-	res, err := collection.ReplaceOne(ctx, bson.M{"stackId": stackId}, stackSettings)
+	res, err := collection.ReplaceOne(ctx, bson.M{"stackName": stackName}, stackSettings)
 	if err != nil {
 		return err
 	}
 	if res.MatchedCount == 0 {
-		return fmt.Errorf("No stack settings found with ID %d", stackId)
+		return fmt.Errorf("No stack settings found with stack name %s", stackName)
 	}
 	return err
 }
 
 // DeleteStackSettings deletes a stack settings document from the database by ID
-func DeleteStackSettings(id int) error {
+func DeleteStackSettings(stackName string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -171,12 +186,12 @@ func DeleteStackSettings(id int) error {
 		return conErr
 	}
 	collection := conn.db.Collection(types.DbStackSettingsCollection)
-	res, err := collection.DeleteOne(ctx, bson.M{"stackId": id})
+	res, err := collection.DeleteOne(ctx, bson.M{"stackName": stackName})
 	if err != nil {
 		return err
 	}
 	if res.DeletedCount == 0 {
-		return fmt.Errorf("No stack settings found with ID %d", id)
+		return fmt.Errorf("No stack settings found with stack name %s", stackName)
 	}
 	return err
 }
@@ -219,9 +234,41 @@ func GetGroupSettings(groupName string) (*types.GroupSettings, error) {
 	defer cancel()
 	err := collection.FindOne(ctx, bson.M{"groupName": groupName}).Decode(&groupSettings)
 	if err != nil {
+		if err.Error() == "mongo: no documents in result" {
+			return nil , &DoesNotExistWrappedError{
+				Context: "",
+				Err:     err,
+			}
+		}
 		return nil, err
 	}
 	return &groupSettings, nil
+}
+
+// GetGroupSettings retrieves a group settings document from the database by ID
+func GetAllGroupSettings() ([]types.GroupSettings, error) {
+	conn, conErr := GetConnection()
+	if conErr != nil {
+		return nil, conErr
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	collection := conn.db.Collection(types.DbGroupSettingsCollection)
+	var groupSettings []types.GroupSettings
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	err = cursor.All(ctx, &groupSettings)
+	if err != nil {
+		return nil, err
+	}
+	return groupSettings, nil
 }
 
 // UpdateGroupSettings updates a group settings document in the database

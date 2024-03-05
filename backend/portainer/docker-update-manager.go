@@ -155,7 +155,7 @@ func GetContainers(endpointId int, stackName string) ([]*types.ContainerDto, err
 	q := req.URL.Query()
 	q.Add("all", "true")
 	if stackName != "" {
-		q.Add("filters", fmt.Sprintf(`{"label":["com.docker.compose.project=%s"]}`, stackName))
+		q.Add("filters", fmt.Sprintf(`{"label":["%s=%s"]}`, types.StackLabel, stackName))
 	}
 	req.URL.RawQuery = q.Encode()
 	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
@@ -199,7 +199,7 @@ func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([
 	for _, container := range containers {
 		var stackName string
 
-		if labelRaw, ok := container.Labels["com.docker.compose.project"]; !ok {
+		if labelRaw, ok := container.Labels[types.StackLabel]; !ok {
 			continue
 		} else if labelParsed, ok := labelRaw.(string); !ok {
 			glg.Warnf("label %s is not a string", labelRaw)

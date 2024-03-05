@@ -3,7 +3,6 @@ module washboard
 go 1.22.0
 
 require (
-	github.com/gin-contrib/cache v1.2.0
 	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-gonic/gin v1.9.1
 )
@@ -22,17 +21,13 @@ require (
 
 require (
 	github.com/gorilla/websocket v1.5.1
-	github.com/robfig/go-cache v0.0.0-20130306151617-9fc39e0dbf62 // indirect
 )
 
 require (
-	github.com/bradfitz/gomemcache v0.0.0-20230124162541-5f7a7d875746 // indirect
 	github.com/chenzhuoyu/iasm v0.9.0 // indirect
-	github.com/gomodule/redigo v1.8.9 // indirect
 	github.com/google/go-cmp v0.5.8 // indirect
 	github.com/kpango/fastime v1.1.9 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/memcachier/mc/v3 v3.0.3 // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 )
 

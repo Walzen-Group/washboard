@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strconv"
 	"washboard/db"
+	"washboard/portainer"
 	"washboard/types"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +13,120 @@ import (
 )
 
 func SyncWithPortainer(c *gin.Context) {
+	var syncOptions *types.SyncOptions = &types.SyncOptions{}
+	if err := c.ShouldBindJSON(&syncOptions); err != nil {
+		errorMessage := "Failed to bind json. Check the request body and ensure that the correct fields are present."
+		glg.Errorf("%s %s", errorMessage, err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": errorMessage,
+			"error":   err,
+		})
+		return
+	}
 
+	var containers []*types.ContainerDto
+
+	for _, endpoint := range syncOptions.EndpointIds {
+		tmp, err := portainer.GetContainers(endpoint, "")
+
+		if err != nil {
+			errorMessage := fmt.Sprintf("Failed to get containers for endpoint %d", endpoint)
+			glg.Errorf("%s %s", errorMessage, err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": errorMessage,
+				"error":   err,
+			})
+			return
+		}
+		containers = append(containers, tmp...)
+	}
+
+	collectedGroups := make(map[string]*types.GroupSettings)
+	collectedStacks := make(map[string]*types.StackSettings)
+	targetError := &db.DoesNotExistWrappedError{}
+
+	// add missing grups and stakcs (das bleibt so)
+	for _, container := range containers {
+		if groupName, ok := container.Labels[types.StackGroupLabel]; ok {
+			group, err := db.GetGroupSettings(groupName.(string))
+			if errors.As(err, &targetError) {
+				group = &types.GroupSettings{GroupName: groupName.(string)}
+				glg.Infof("adding missing group %s", groupName.(string))
+				db.CreateGroupSettings(group)
+			} else if err != nil {
+				errorMessage := fmt.Sprintf("Failed to sync settings with db %s", groupName)
+				glg.Errorf("%s %s", errorMessage, err)
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message": errorMessage,
+					"error":   err,
+				})
+				return
+			}
+			collectedGroups[groupName.(string)] = group
+		} else if stackName, ok := container.Labels[types.StackLabel]; ok {
+			stack, err := db.GetStackSettings(stackName.(string))
+			if errors.As(err, &targetError) {
+				stack = &types.StackSettings{StackName: stackName.(string)}
+				glg.Infof("adding missing stack %s", stackName.(string))
+				db.CreateStackSettings(stack)
+			} else if err != nil {
+				errorMessage := fmt.Sprintf("Failed to sync settings with db %s", groupName)
+				glg.Errorf("%s %s", errorMessage, err)
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"message": errorMessage,
+					"error":   err,
+				})
+				return
+			}
+			collectedStacks[stackName.(string)] = stack
+		}
+	}
+
+	allGroupSettings, err := db.GetAllGroupSettings()
+	allStackSettings, err2 := db.GetAllStackSettings()
+	if err != nil {
+		errorMessage := "Failed to get all group settings"
+		glg.Errorf("%s %s", errorMessage, err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": errorMessage,
+			"error":   err,
+		})
+		return
+	}
+	if err2 != nil {
+		errorMessage := "Failed to get all stack settings"
+		glg.Errorf("%s %s", errorMessage, err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": errorMessage,
+			"error":   err,
+		})
+		return
+	}
+
+	stacksToRemove := make([]string, 0)
+	groupsToRemove := make([]string, 0)
+
+	for _, stackSettings := range allStackSettings {
+		if _, ok := collectedStacks[stackSettings.StackName]; !ok {
+			stacksToRemove = append(stacksToRemove, stackSettings.StackName)
+		}
+	}
+
+	for _, groupSettings := range allGroupSettings {
+		if _, ok := collectedGroups[groupSettings.GroupName]; !ok {
+			groupsToRemove = append(groupsToRemove, groupSettings.GroupName)
+		}
+	}
+
+	for _, stack := range stacksToRemove {
+		glg.Infof("removing orphaned stack %s", stack)
+		db.DeleteStackSettings(stack)
+	}
+
+	for _, group := range groupsToRemove {
+		glg.Infof("removing orphaned group %s", group)
+		db.DeleteGroupSettings(group)
+	}
 }
 
 func CreateStackSettings(c *gin.Context) {
@@ -54,9 +167,9 @@ func CreateStackSettings(c *gin.Context) {
 }
 
 func GetStackSettings(c *gin.Context) {
-	id := c.Param("id")
+	name := c.Param("name")
 
-	if id == "" {
+	if name == "" {
 		stacks, err := db.GetAllStackSettings()
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -66,43 +179,32 @@ func GetStackSettings(c *gin.Context) {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
-			"message": "ok",
+			"message":       "ok",
 			"stackSettings": stacks,
 		})
 		return
-	} else {
-		intId, _ := strconv.Atoi(id)
-		glg.Debugf("Getting stack settings for id: %d", intId)
-		stack, err := db.GetStackSettings(intId)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Failed to get stack settings",
-				"error":   fmt.Sprintf("%s", err),
-			})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{
-			"message":       "ok",
-			"stackSettings": stack,
+	}
+	stack, err := db.GetStackSettings(name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to get stack settings",
+			"error":   fmt.Sprintf("%s", err),
 		})
 		return
 	}
+	c.JSON(http.StatusOK, gin.H{
+		"message":       "ok",
+		"stackSettings": stack,
+	})
+	return
 }
 
 func UpdateStackSettings(c *gin.Context) {
-	idStr := c.Param("id")
+	name := c.Param("name")
 
-	if idStr == "" {
+	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "id is required",
-		})
-		return
-	}
-
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "id must be an integer",
+			"message": "stack name is required",
 		})
 		return
 	}
@@ -118,7 +220,7 @@ func UpdateStackSettings(c *gin.Context) {
 		return
 	}
 
-	err = db.UpdateStackSettings(stackSettings, id)
+	err := db.UpdateStackSettings(stackSettings, name)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -135,24 +237,16 @@ func UpdateStackSettings(c *gin.Context) {
 }
 
 func DeleteStackSettings(c *gin.Context) {
-	idStr := c.Param("id")
+	name := c.Param("name")
 
-	if idStr == "" {
+	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "id is required",
+			"message": "stack name is required",
 		})
 		return
 	}
 
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "id must be an integer",
-		})
-		return
-	}
-
-	err = db.DeleteStackSettings(id)
+	err := db.DeleteStackSettings(name)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -183,7 +277,7 @@ func CreateGroupSettings(c *gin.Context) {
 		glg.Errorf("%s", errorMessage)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "notok",
-			"error":  errorMessage,
+			"error":   errorMessage,
 		})
 		return
 	}

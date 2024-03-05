@@ -7,8 +7,6 @@ import (
 	"washboard/api"
 	"washboard/state"
 
-	"github.com/gin-contrib/cache"
-	"github.com/gin-contrib/cache/persistence"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/kpango/glg"
@@ -45,8 +43,6 @@ func main() {
 	router := gin.Default()
 	//router.SetTrustedProxies([]string{"localhost"})
 
-	store := persistence.NewInMemoryStore(time.Second)
-
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "http://192.168.0.38:3000", "http://10.10.194.2:3000"},
 		AllowMethods:     []string{"*, PUT"},
@@ -57,39 +53,45 @@ func main() {
 	  }))
 
 	// portainer api routes
-	router.GET("/portainer/endpoint", api.PortainerGetEndpoint)
-	router.GET("/portainer/stacks", api.PortainerGetStacks)
-	router.GET("/portainer/containers", api.PortainerGetContainers)
-	router.GET("/portainer/image-status", cache.CachePage(store, time.Minute * 10, api.PortainerGetImageStatus))
-	router.POST("/portainer/update-container", api.PortainerUpdateContainer)
-	// TODO: change endpoint to /portainer/stack/start/:id etc.
-	router.POST("/portainer/stop-stack", api.PortainerStopStack)
-	router.POST("/portainer/start-stack", api.PortainerStartStack)
-	router.PUT("/portainer/update-stack", api.PortainerUpdateStack)
-	router.POST("/portainer/start-container", api.PortainerStartContainer)
-	router.POST("/portainer/stop-container", api.PortainerStopContainer)
-	router.POST("/portainer/kill-container", api.PortainerKillContainer)
-	router.POST("/portainer/restart-container", api.PortainerRestartContainer)
-	router.POST("/portainer/pause-container", api.PortainerPauseContainer)
-	router.POST("/portainer/resume-container", api.PortainerResumeContainer)
+	portainerRoute := router.Group("/portainer")
+	portainerRoute.GET("/endpoint", api.PortainerGetEndpoint)
+	portainerRoute.GET("/containers", api.PortainerGetContainers)
+	portainerRoute.GET("/image-status", api.PortainerGetImageStatus)
+	portainerRoute.POST("/update-container", api.PortainerUpdateContainer)
+
+	// portainer container routes
+	prtContainersRoute := portainerRoute.Group("/containers")
+	prtContainersRoute.POST("/:containerId/:action", api.PortainerContainerAction) // valid actions are types.ContainerAction
+
+	// portainer stack routes
+	prtStackRoute := portainerRoute.Group("/stacks")
+	prtStackRoute.GET("", api.PortainerGetStacks)
+	prtStackRoute.POST("/stop", api.PortainerStopStack)
+	prtStackRoute.POST("/start", api.PortainerStartStack)
+	prtStackRoute.PUT("/update", api.PortainerUpdateStack)
 
 	// websocket stuff
-	router.GET("/ws/stacks-update", api.WsHandler)
+	websocketRoute := router.Group("/ws")
+	websocketRoute.GET("/stacks-update", api.WsHandler)
 
-	// db crud
-	router.POST("/db/stacks", api.CreateStackSettings)
-	router.GET("/db/stacks", api.GetStackSettings)
-	router.GET("/db/stacks/:id", api.GetStackSettings)
-	router.PUT("/db/stacks/:id", api.UpdateStackSettings)
-	router.DELETE("/db/stacks/:id", api.DeleteStackSettings)
+	// db CRUD
 
-	router.POST("/db/groups", api.CreateGroupSettings)
-	router.GET("/db/groups", api.GetGroupSettings)
-	router.GET("/db/groups/:name", api.GetGroupSettings)
-	router.PUT("/db/groups/:name", api.UpdateGroupSettings)
-	router.DELETE("/db/groups/:name", api.DeleteGroupSettings)
+	// db stack routes
+	dbStackRoute := router.Group("/db/stacks")
+	dbStackRoute.POST("", api.CreateStackSettings)
+	dbStackRoute.GET("", api.GetStackSettings)
+	dbStackRoute.PUT("/:name", api.UpdateStackSettings)
+	dbStackRoute.DELETE("/:name", api.DeleteStackSettings)
 
+	// db group routes
+	dbGroupRoute := router.Group("/db/groups")
+	dbGroupRoute.POST("", api.CreateGroupSettings)
+	dbGroupRoute.GET("/:name", api.GetGroupSettings)
+	dbGroupRoute.GET("", api.GetGroupSettings)
+	dbGroupRoute.PUT("/:name", api.UpdateGroupSettings)
+	dbGroupRoute.DELETE("/:name", api.DeleteGroupSettings)
 
+	router.POST("/db/sync", api.SyncWithPortainer)
 
 	ret := router.Run()
 	if ret != nil {

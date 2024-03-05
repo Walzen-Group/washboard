@@ -74,33 +74,22 @@ func portainerStartOrStopStack(c *gin.Context, startOrStop string) {
 	})
 }
 
+func PortainerContainerAction(c *gin.Context) {
+	containerId := c.Param("containerId")
+	action := types.ContainerAction(c.Param("action"))
 
-func PortainerStartContainer(c *gin.Context) {
-	PortainerManageContainer(c, types.Start)
-}
+	if containerId == "" {
+		glg.Warn("containerId field is missing")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "containerId field is missing"})
+		return
+	}
 
-func PortainerStopContainer(c *gin.Context) {
-	PortainerManageContainer(c, types.Stop)
-}
+	if action == "" {
+		glg.Warn("action field is missing")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "action field is missing"})
+		return
+	}
 
-func PortainerRestartContainer(c *gin.Context) {
-	PortainerManageContainer(c, types.Restart)
-}
-
-func PortainerKillContainer(c *gin.Context) {
-	PortainerManageContainer(c, types.Kill)
-}
-
-func PortainerPauseContainer(c *gin.Context) {
-	PortainerManageContainer(c, types.Pause)
-}
-
-func PortainerResumeContainer(c *gin.Context) {
-	PortainerManageContainer(c, types.Resume)
-}
-
-
-func PortainerManageContainer(c *gin.Context, action types.ActionType) {
 	var reqBody map[string]interface{}
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
 		errorMessage := "Failed to bind json. Check the request body."
@@ -114,10 +103,6 @@ func PortainerManageContainer(c *gin.Context, action types.ActionType) {
 
 
 	var endpointId int
-	var containerId string
-	// var action portainer.ActionType
-
-
 	if endpointRaw, ok := reqBody["endpointId"]; !ok {
 		glg.Warn("endpointId field is missing")
 		c.JSON(http.StatusBadRequest, gin.H{"message": "endpointId field is missing"})
@@ -129,28 +114,6 @@ func PortainerManageContainer(c *gin.Context, action types.ActionType) {
 	} else {
 		endpointId = int(endpointIdFloat)
 	}
-
-	if containerRaw, ok := reqBody["containerId"]; !ok {
-		glg.Warn("containerId field is missing")
-		c.JSON(http.StatusBadRequest, gin.H{"message": "containerId field is missing"})
-		return
-	} else if containerId, ok = containerRaw.(string); !ok {
-		glg.Warn("containerId field is not a string")
-		c.JSON(http.StatusBadRequest, gin.H{"message": "containerId field is not a string"})
-		return
-	}
-
-	// if actionRaw, ok := reqBody["action"]; !ok {
-	// 	glg.Warn("action field is missing")
-	// 	c.JSON(http.StatusBadRequest, gin.H{"message": "action field is missing"})
-	// 	return
-	// } else if actionStr, ok := actionRaw.(string); !ok {
-	// 	glg.Warn("action field is not a string")
-	// 	c.JSON(http.StatusBadRequest, gin.H{"message": "action field is not a string"})
-	// 	return
-	// } else {
-	// 	action = portainer.ActionType(actionStr)
-	// }
 
 	res, err := portainer.ManageContainer(endpointId, containerId, action)
 

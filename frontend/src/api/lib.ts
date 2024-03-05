@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 async function updateStack(stackId: number, endpointId: number = 1) {
-    const response = axios.put('/portainer/update-stack', {
+    const response = axios.put('/portainer/stacks/update', {
         pullImage: true,
         prune: true,
         endpointId: endpointId,
@@ -12,7 +12,7 @@ async function updateStack(stackId: number, endpointId: number = 1) {
 
 async function stopStack(stackId: number, endpointId: number = 1) {
     console.log('stopStack', stackId, endpointId)
-    const response = axios.post('/portainer/stop-stack', {
+    const response = axios.post('/portainer/stacks/stop', {
         endpointId: endpointId,
         stackId: stackId
     });
@@ -20,7 +20,7 @@ async function stopStack(stackId: number, endpointId: number = 1) {
 }
 
 async function startStack(stackId: number, endpointId: number = 1) {
-    const response = axios.post('/portainer/start-stack', {
+    const response = axios.post('/portainer/stacks/start', {
         endpointId: endpointId,
         stackId: stackId
     });

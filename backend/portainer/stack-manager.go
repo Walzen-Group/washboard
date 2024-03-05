@@ -64,15 +64,19 @@ func StartOrStopStack(endpointId int, stackId int, starOrStop string) (string, i
 }
 
 
-func ManageContainer(endpointId int, containerId string, action types.ActionType) (string, error) {
+func ManageContainer(endpointId int, containerId string, action types.ContainerAction) (string, error) {
 	client := &http.Client{}
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/endpoints/%d/docker/containers/%s/%s", appState.Config.PortainerUrl, endpointId, containerId, action), nil)
+    reqBody := bytes.NewBuffer([]byte("{}"))
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/endpoints/%d/docker/containers/%s/%s", appState.Config.PortainerUrl, endpointId, containerId, action), reqBody)
 	if err != nil {
 		glg.Errorf("Failed to create request: %s", err)
 		return "", err
 	}
 
 	req.Header.Add("X-API-Key", appState.Config.PortainerSecret)
+
+	// print req body
+	glg.Infof("Request body: %+v", req.Body)
 	resp, err := client.Do(req)
 	if err != nil {
 		glg.Errorf("Failed to send request: %s", err)
@@ -88,7 +92,7 @@ func ManageContainer(endpointId int, containerId string, action types.ActionType
 			glg.Errorf("Failed to read response: %s", err)
 			return "", err
 		}
-		return "", fmt.Errorf("Failed to manage container: %s", body)
+		return "", fmt.Errorf("Failed to %s container: %s", action, body)
 	}
 	return "success", nil
 }
