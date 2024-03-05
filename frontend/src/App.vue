@@ -48,6 +48,12 @@ onMounted(() => {
     theme.global.name.value = "light";
   }
 
+  connectWebSocket();
+
+})
+
+function connectWebSocket() {
+  console.log("opening websocket");
   let wsAddr = `${axios.defaults.baseURL}/ws/stacks-update`.replace('http://', 'ws://').replace('https://', 'wss://');
   let socket = new WebSocket(wsAddr);
   socket.onmessage = function (event) {
@@ -84,7 +90,19 @@ onMounted(() => {
     }
     updateQuelelelStore.update(data);
   };
-})
+
+  socket.onclose = function (event) {
+    console.log('Socket is closed. Reconnect will be attempted in 1 second.', event.reason);
+    setTimeout(function () {
+      connectWebSocket();
+    }, 1000);
+  };
+
+  socket.onerror = function () {
+    console.error('Socket encountered error, closing socket');
+    socket.close();
+  };
+}
 
 function handleSystemThemeUpdate(e: any) {
   console.log(`updating theme based on system preference ${e.matches ? "dark" : "light"}`);
@@ -97,5 +115,4 @@ function handleSystemThemeUpdate(e: any) {
 
 </script>
 
-<style lang="scss">
-</style>
+<style lang="scss"></style>
