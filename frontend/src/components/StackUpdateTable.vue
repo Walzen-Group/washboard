@@ -37,7 +37,8 @@
                     <v-col cols="1" class="d-flex align-center stack-icon">
                         <v-img v-if="getFirstContainerIcon(item.containers)" height="25"
                                :src="getFirstContainerIcon(item.containers)"></v-img>
-                        <v-icon v-else-if="item.containers.length == 0" size="29">mdi-power-plug-off-outline</v-icon>
+                        <v-icon v-else-if="item.containers.length == 0"
+                                size="29">mdi-power-plug-off-outline</v-icon>
                         <v-icon v-else size="31">mdi-docker</v-icon>
                     </v-col>
                     <v-col cols="auto" class="d-flex align-center">
@@ -78,9 +79,7 @@
                                           :headers="containerTableHeaders" :items="item.containers">
                                 <template v-slot:item.upToDate="{ item }">
                                     <v-chip variant="tonal" :color="getColor(item)">
-                                        {{ item.upToDate.length > 0 ? item.upToDate :
-                ImageStatus.Unavailable
-                                        }}
+                                        {{ item.upToDate.length > 0 ? item.upToDate : 'n/a' }}
                                     </v-chip>
                                 </template>
 
