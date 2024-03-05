@@ -94,16 +94,14 @@
                         <v-btn v-if="item.containers.length === 0" :loading="loaderState[item.id]"
                                class="mr-2 mb-2"
                                variant="tonal" prepend-icon="mdi-arrow-right-drop-circle-outline"
-                               @click="manageStack(item, Action.Start)">Start Stack</v-btn>
+                               @click="manageStack(item, Action.Start)">Start</v-btn>
                         <v-btn v-else :loading="loaderState[item.id]" class="mr-2 mb-2"
                                variant="tonal"
                                prepend-icon="mdi-stop-circle-outline"
-                               @click="manageStack(item, Action.Stop)">Stop
-                            Stack</v-btn>
+                               @click="manageStack(item, Action.Stop)">Stop</v-btn>
                         <v-btn :loading="loaderState[item.id]" class="mr-2 mb-2" variant="tonal"
                                prepend-icon="mdi-restart"
-                               @click="manageStack(item, Action.Restart)">Restart
-                            Stack</v-btn>
+                               @click="manageStack(item, Action.Restart)">Restart</v-btn>
                     </div>
                 </template>
             </StackUpdateTable>
