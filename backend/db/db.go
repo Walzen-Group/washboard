@@ -92,7 +92,7 @@ func CreateStackSettings(stackSettings *types.StackSettings) error {
 	defer cancel()
 	_, err = collection.InsertOne(ctx, stackSettings)
 	if err != nil {
-		err = Burrito(err, err.(mongo.WriteException).WriteErrors[0].Message) // burrito the error
+		err = Burrito(err, err.(mongo.WriteException).WriteErrors[0].Message) // 🌯 the error
 	}
 	return err
 }
