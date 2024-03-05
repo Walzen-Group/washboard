@@ -27,7 +27,7 @@ func (w *CannotInsertWrappedError) Error() string {
 	return fmt.Sprintf("%s: %v", w.Context, w.Err)
 }
 
-func Wrap(err error, info string) *CannotInsertWrappedError {
+func Burrito(err error, info string) *CannotInsertWrappedError {
 	return &CannotInsertWrappedError{
 		Context: info,
 		Err:     err,
@@ -92,7 +92,7 @@ func CreateStackSettings(stackSettings *types.StackSettings) error {
 	defer cancel()
 	_, err = collection.InsertOne(ctx, stackSettings)
 	if err != nil {
-		err = Wrap(err, err.(mongo.WriteException).WriteErrors[0].Message) // burrito the error
+		err = Burrito(err, err.(mongo.WriteException).WriteErrors[0].Message) // burrito the error
 	}
 	return err
 }
