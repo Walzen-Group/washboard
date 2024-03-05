@@ -7,6 +7,7 @@ import (
 	"time"
 	"washboard/state"
 	"washboard/types"
+	"washboard/werrors"
 
 	"github.com/kpango/glg"
 	"go.mongodb.org/mongo-driver/bson"
@@ -17,31 +18,6 @@ import (
 
 var instance *DataStore
 var once sync.Once
-
-type CannotInsertWrappedError struct {
-	Context string
-	Err     error
-}
-
-func (w *CannotInsertWrappedError) Error() string {
-	return fmt.Sprintf("%s: %v", w.Context, w.Err)
-}
-
-func Burrito(err error, info string) *CannotInsertWrappedError {
-	return &CannotInsertWrappedError{
-		Context: info,
-		Err:     err,
-	}
-}
-
-type DoesNotExistWrappedError struct {
-	Context string
-	Err     error
-}
-
-func (w *DoesNotExistWrappedError) Error() string {
-	return fmt.Sprintf("%s: %v", w.Context, w.Err)
-}
 
 type DataStore struct {
 	db     *mongo.Database
@@ -101,7 +77,7 @@ func CreateStackSettings(stackSettings *types.StackSettings) error {
 	defer cancel()
 	_, err = collection.InsertOne(ctx, stackSettings)
 	if err != nil {
-		err = Burrito(err, err.(mongo.WriteException).WriteErrors[0].Message) // 🌯 the error
+		err = werrors.NewCannotInsertError(err, err.(mongo.WriteException).WriteErrors[0].Message) // 🌯 the error
 	}
 	return err
 }
@@ -120,7 +96,7 @@ func GetStackSettings(name string) (*types.StackSettings, error) {
 	err := collection.FindOne(ctx, bson.M{"stackName": name}).Decode(&stackSettings)
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
-			return nil , &DoesNotExistWrappedError{
+			return nil , &werrors.DoesNotExistError{
 				Context: "",
 				Err:     err,
 			}
@@ -235,7 +211,7 @@ func GetGroupSettings(groupName string) (*types.GroupSettings, error) {
 	err := collection.FindOne(ctx, bson.M{"groupName": groupName}).Decode(&groupSettings)
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
-			return nil , &DoesNotExistWrappedError{
+			return nil , &werrors.DoesNotExistError{
 				Context: "",
 				Err:     err,
 			}

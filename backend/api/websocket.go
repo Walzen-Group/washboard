@@ -51,7 +51,7 @@ func readData(ws *websocket.Conn, oniiChan chan string) {
 			if websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseNoStatusReceived, websocket.CloseAbnormalClosure) {
 				glg.Infof("client %s disconnected from websocket", ws.RemoteAddr())
 			} else {
-				glg.Warnf("error while writing to websocket: %s", err)
+				glg.Info("client %s disconnected from websocket: %s", ws.RemoteAddr(), err)
 			}
 			oniiChan <- CMD_STOP
 			return

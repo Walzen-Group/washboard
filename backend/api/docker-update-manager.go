@@ -318,6 +318,21 @@ func PortainerUpdateContainer(c *gin.Context) {
 // Note: This function logs warnings for missing fields or type mismatches and errors for issues encountered
 // during stack update attempts. It uses the Gin framework for handling HTTP requests and responses.
 func PortainerUpdateStack(c *gin.Context) {
+	stackIdStr := c.Param("id")
+
+	if stackIdStr == "" {
+		glg.Warn("stackId in path is missing")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "stackId in path is missing"})
+		return
+	}
+
+	stackId, err := strconv.Atoi(stackIdStr)
+	if err != nil {
+		glg.Warn("stackId in path is not an int")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "stackId in path is not an int"})
+		return
+	}
+
 	var reqBody map[string]interface{}
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
 		errorMessage := "Failed to bind json. Check the request body."
@@ -330,7 +345,6 @@ func PortainerUpdateStack(c *gin.Context) {
 	}
 
 	var endpointId int
-	var stackId int
 	var prune bool
 	var pullImage bool
 
@@ -344,18 +358,6 @@ func PortainerUpdateStack(c *gin.Context) {
 		return
 	} else {
 		endpointId = int(endpointIdFloat)
-	}
-
-	if stackRaw, ok := reqBody["stackId"]; !ok {
-		glg.Warn("stackId field is missing")
-		c.JSON(http.StatusBadRequest, gin.H{"message": "stackId field is missing"})
-		return
-	} else if stackIdFloat, ok := stackRaw.(float64); !ok {
-		glg.Warn("stackId field is not a string")
-		c.JSON(http.StatusBadRequest, gin.H{"message": "stackId field is not a boolean"})
-		return
-	} else {
-		stackId = int(stackIdFloat)
 	}
 
 	if pullImageRaw, ok := reqBody["pullImage"]; !ok {

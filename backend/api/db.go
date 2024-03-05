@@ -4,23 +4,28 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 	"washboard/db"
 	"washboard/portainer"
 	"washboard/types"
+	"washboard/werrors"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kpango/glg"
 )
 
 func SyncWithPortainer(c *gin.Context) {
+	if _, ok := appState.StateQueue.Get("sync"); ok {
+		handleError(c, errors.New("Sync already in progress"), "Sync already in progress", http.StatusConflict)
+		return
+	}
+	appState.StateQueue.Add("sync", "inprog", time.Minute*2)
+	defer appState.StateQueue.Delete("sync")
+
+	glg.Infof("starting setting sync portainer->washbdb")
 	var syncOptions *types.SyncOptions = &types.SyncOptions{}
 	if err := c.ShouldBindJSON(&syncOptions); err != nil {
-		errorMessage := "Failed to bind json. Check the request body and ensure that the correct fields are present."
-		glg.Errorf("%s %s", errorMessage, err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": errorMessage,
-			"error":   err,
-		})
+		handleError(c, err, "Failed to bind json. Check the request body and ensure that the correct fields are present.", http.StatusBadRequest)
 		return
 	}
 
@@ -30,12 +35,7 @@ func SyncWithPortainer(c *gin.Context) {
 		tmp, err := portainer.GetContainers(endpoint, "")
 
 		if err != nil {
-			errorMessage := fmt.Sprintf("Failed to get containers for endpoint %d", endpoint)
-			glg.Errorf("%s %s", errorMessage, err)
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": errorMessage,
-				"error":   err,
-			})
+			handleError(c, err, fmt.Sprintf("Failed to get containers for endpoint %d", endpoint), http.StatusBadRequest)
 			return
 		}
 		containers = append(containers, tmp...)
@@ -43,7 +43,7 @@ func SyncWithPortainer(c *gin.Context) {
 
 	collectedGroups := make(map[string]*types.GroupSettings)
 	collectedStacks := make(map[string]*types.StackSettings)
-	targetError := &db.DoesNotExistWrappedError{}
+	targetError := &werrors.DoesNotExistError{}
 
 	// add missing grups and stakcs (das bleibt so)
 	for _, container := range containers {
@@ -54,28 +54,19 @@ func SyncWithPortainer(c *gin.Context) {
 				glg.Infof("adding missing group %s", groupName.(string))
 				db.CreateGroupSettings(group)
 			} else if err != nil {
-				errorMessage := fmt.Sprintf("Failed to sync settings with db %s", groupName)
-				glg.Errorf("%s %s", errorMessage, err)
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": errorMessage,
-					"error":   err,
-				})
+				handleError(c, err, fmt.Sprintf("Failed to sync settings with db for: %s", groupName), http.StatusInternalServerError)
 				return
 			}
 			collectedGroups[groupName.(string)] = group
-		} else if stackName, ok := container.Labels[types.StackLabel]; ok {
+		}
+		if stackName, ok := container.Labels[types.StackLabel]; ok {
 			stack, err := db.GetStackSettings(stackName.(string))
 			if errors.As(err, &targetError) {
 				stack = &types.StackSettings{StackName: stackName.(string)}
 				glg.Infof("adding missing stack %s", stackName.(string))
 				db.CreateStackSettings(stack)
 			} else if err != nil {
-				errorMessage := fmt.Sprintf("Failed to sync settings with db %s", groupName)
-				glg.Errorf("%s %s", errorMessage, err)
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": errorMessage,
-					"error":   err,
-				})
+				handleError(c, err, fmt.Sprintf("Failed to sync settings with db for: %s", stackName), http.StatusInternalServerError)
 				return
 			}
 			collectedStacks[stackName.(string)] = stack
@@ -85,21 +76,11 @@ func SyncWithPortainer(c *gin.Context) {
 	allGroupSettings, err := db.GetAllGroupSettings()
 	allStackSettings, err2 := db.GetAllStackSettings()
 	if err != nil {
-		errorMessage := "Failed to get all group settings"
-		glg.Errorf("%s %s", errorMessage, err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": errorMessage,
-			"error":   err,
-		})
+		handleError(c, err, "Failed to get all group settings", http.StatusInternalServerError)
 		return
 	}
 	if err2 != nil {
-		errorMessage := "Failed to get all stack settings"
-		glg.Errorf("%s %s", errorMessage, err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": errorMessage,
-			"error":   err,
-		})
+		handleError(c, err2, "Failed to get all stack settings", http.StatusInternalServerError)
 		return
 	}
 
@@ -120,13 +101,20 @@ func SyncWithPortainer(c *gin.Context) {
 
 	for _, stack := range stacksToRemove {
 		glg.Infof("removing orphaned stack %s", stack)
-		db.DeleteStackSettings(stack)
+		err := db.DeleteStackSettings(stack)
+		if err != nil {
+			glg.Errorf("Failed to delete orphaned stack %s", stack)
+		}
 	}
 
 	for _, group := range groupsToRemove {
 		glg.Infof("removing orphaned group %s", group)
-		db.DeleteGroupSettings(group)
+		err := db.DeleteGroupSettings(group)
+		if err != nil {
+			glg.Errorf("Failed to delete orphaned group %s", group)
+		}
 	}
+	glg.Infof("sync completed")
 }
 
 func CreateStackSettings(c *gin.Context) {
@@ -143,9 +131,9 @@ func CreateStackSettings(c *gin.Context) {
 	glg.Infof("Creating stack settings: %+v", stackSettings)
 	err := db.CreateStackSettings(stackSettings)
 	if err != nil {
-		target := &db.CannotInsertWrappedError{}
+		target := &werrors.CannotInsertError{}
 		if errors.As(err, &target) {
-			glg.Errorf("%s %s", err.(*db.CannotInsertWrappedError), err)
+			glg.Errorf("%s %s", err.(*werrors.CannotInsertError), err)
 			c.JSON(http.StatusNotAcceptable, gin.H{
 				"message": "There was an issue with the insert operation",
 				"error":   err,
@@ -196,7 +184,6 @@ func GetStackSettings(c *gin.Context) {
 		"message":       "ok",
 		"stackSettings": stack,
 	})
-	return
 }
 
 func UpdateStackSettings(c *gin.Context) {
@@ -285,9 +272,9 @@ func CreateGroupSettings(c *gin.Context) {
 	glg.Infof("Creating group settings: %+v", groupSettings)
 	err := db.CreateGroupSettings(groupSettings)
 	if err != nil {
-		target := &db.CannotInsertWrappedError{}
+		target := &werrors.CannotInsertError{}
 		if errors.As(err, &target) {
-			glg.Errorf("%s %s", err.(*db.CannotInsertWrappedError), err)
+			glg.Errorf("%s %s", err.(*werrors.CannotInsertError), err)
 			c.JSON(http.StatusNotAcceptable, gin.H{
 				"message": "There was an issue with the insert operation",
 				"error":   err,

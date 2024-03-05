@@ -99,7 +99,7 @@
                                variant="tonal"
                                prepend-icon="mdi-stop-circle-outline"
                                @click="manageStack(item, Action.Stop)">Stop</v-btn>
-                        <v-btn :loading="loaderState[item.id]" class="mr-2 mb-2" variant="tonal"
+                        <v-btn v-if="item.containers.length !== 0" :loading="loaderState[item.id]" class="mr-2 mb-2" variant="tonal"
                                prepend-icon="mdi-restart"
                                @click="manageStack(item, Action.Restart)">Restart</v-btn>
                     </div>

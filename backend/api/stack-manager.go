@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"washboard/portainer"
 	"washboard/types"
@@ -20,6 +21,21 @@ func PortainerStopStack(c *gin.Context) {
 }
 
 func portainerStartOrStopStack(c *gin.Context, startOrStop string) {
+	stackIdStr := c.Param("id")
+
+	if stackIdStr == "" {
+		glg.Warn("stackId in path is missing")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "stackId in path is missing"})
+		return
+	}
+
+	stackId, err := strconv.Atoi(stackIdStr)
+	if err != nil {
+		glg.Warn("stackId in path is not an int")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "stackId in path is not an int"})
+		return
+	}
+
 	var reqBody map[string]interface{}
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
 		errorMessage := "Failed to bind json. Check the request body and ensure that the pullImage field is present."
@@ -33,7 +49,6 @@ func portainerStartOrStopStack(c *gin.Context, startOrStop string) {
 
 
 	var endpointId int
-	var stackId int
 
 	if endpointRaw, ok := reqBody["endpointId"]; !ok {
 		glg.Warn("endpointId field is missing")
@@ -47,17 +62,6 @@ func portainerStartOrStopStack(c *gin.Context, startOrStop string) {
 		endpointId = int(endpointIdFloat)
 	}
 
-	if stackIdRaw, ok := reqBody["stackId"]; !ok {
-		glg.Warn("id field is missing")
-		c.JSON(http.StatusBadRequest, gin.H{"message": "id field is missing"})
-		return
-	} else if idFloat, ok := stackIdRaw.(float64); !ok {
-		glg.Warn("id field is not a string")
-		c.JSON(http.StatusBadRequest, gin.H{"message": "id field is not a number"})
-		return
-	} else {
-		stackId = int(idFloat)
-	}
 
 	stackName, status, err := portainer.StartOrStopStack(endpointId, stackId, startOrStop)
 	if err != nil {

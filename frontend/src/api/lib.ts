@@ -1,28 +1,25 @@
 import axios from 'axios';
 
 async function updateStack(stackId: number, endpointId: number = 1) {
-    const response = axios.put('/portainer/stacks/update', {
+    const response = axios.put(`/portainer/stacks/${stackId}/update`, {
         pullImage: true,
         prune: true,
         endpointId: endpointId,
-        stackId: stackId
     });
     return response;
 }
 
 async function stopStack(stackId: number, endpointId: number = 1) {
     console.log('stopStack', stackId, endpointId)
-    const response = axios.post('/portainer/stacks/stop', {
+    const response = axios.post(`/portainer/stacks/${stackId}/stop`, {
         endpointId: endpointId,
-        stackId: stackId
     });
     return response;
 }
 
 async function startStack(stackId: number, endpointId: number = 1) {
-    const response = axios.post('/portainer/stacks/start', {
+    const response = axios.post(`/portainer/stacks/${stackId}/start`, {
         endpointId: endpointId,
-        stackId: stackId
     });
     return response;
 }

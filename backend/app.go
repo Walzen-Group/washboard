@@ -66,9 +66,9 @@ func main() {
 	// portainer stack routes
 	prtStackRoute := portainerRoute.Group("/stacks")
 	prtStackRoute.GET("", api.PortainerGetStacks)
-	prtStackRoute.POST("/stop", api.PortainerStopStack)
-	prtStackRoute.POST("/start", api.PortainerStartStack)
-	prtStackRoute.PUT("/update", api.PortainerUpdateStack)
+	prtStackRoute.POST("/:id/stop", api.PortainerStopStack)
+	prtStackRoute.POST("/:id/start", api.PortainerStartStack)
+	prtStackRoute.PUT("/:id/update", api.PortainerUpdateStack)
 
 	// websocket stuff
 	websocketRoute := router.Group("/ws")

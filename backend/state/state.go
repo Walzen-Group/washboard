@@ -25,6 +25,7 @@ func Instance() *Data {
 		instance = new(Data)
 		instance.Config = Config{}
 		instance.StackUpdateQueue = cache.New(5*time.Minute, 10*time.Minute)
+		instance.StateQueue = cache.New(1*time.Minute, 1*time.Minute)
 		reflectionPath = filepath.Dir(ex)
 		fmt.Println(ex)
 		// check if secrets file exists
@@ -65,4 +66,5 @@ type Config struct {
 type Data struct {
 	Config           Config
 	StackUpdateQueue *cache.Cache
+	StateQueue *cache.Cache
 }
