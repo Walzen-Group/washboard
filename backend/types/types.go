@@ -1,4 +1,4 @@
-package portainer
+package types
 
 type EndpointDto struct {
 	Id         int            `json:"id"`
@@ -40,17 +40,31 @@ type ActionType string
 
 // We could make an ActionType type and use that instead of string but that would require some annoying refactoring
 const (
-	Outdated  string     = "outdated"
-	Updated   string     = "updated"
-	Preparing string     = "preparing"
-	Skipped   string     = "skipped"
-	Error     string     = "error"
-	Done      string     = "done"
-	Queued    string     = "queued"
-	Start     ActionType = "start"
-	Stop      ActionType = "stop"
-	Kill      ActionType = "kill"
-	Restart   ActionType = "restart"
-	Pause     ActionType = "pause"
-	Resume    ActionType = "resume"
+	Outdated                  string     = "outdated"
+	Updated                   string     = "updated"
+	Preparing                 string     = "preparing"
+	Skipped                   string     = "skipped"
+	Error                     string     = "error"
+	Done                      string     = "done"
+	Queued                    string     = "queued"
+	DbName                    string     = "washb"
+	DbGroupSettingsCollection string     = "group_settings"
+	DbStackSettingsCollection string     = "stack_settings"
+	Start                     ActionType = "start"
+	Stop                      ActionType = "stop"
+	Kill                      ActionType = "kill"
+	Restart                   ActionType = "restart"
+	Pause                     ActionType = "pause"
+	Resume                    ActionType = "resume"
 )
+
+type GroupSettings struct {
+	GroupName      string `bson:"groupName"`
+	GlobalPriority int    `bson:"globalPriority"`
+}
+
+type StackSettings struct {
+	StackId             int `bson:"stackId"`
+	GlobalPriority      int `bson:"globalPriority"`
+	WithinGroupPriority int `bson:"withinGroupPriority"`
+}

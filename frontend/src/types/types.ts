@@ -10,11 +10,25 @@ interface Container {
 }
 
 
-interface Stack {
+interface Stack extends StackSettings {
   id: number;
   name: string;
   containers: Container[];
   updateStatus: Object[];
+}
+
+interface StackSettings {
+  GlobalPriority: number;
+  WithinGroupPriority: number;
+}
+
+interface Group extends GroupSettings {
+  Stacks: Stack[];
+}
+
+interface GroupSettings {
+  GroupName: string;
+  GlobalPriority: number;
 }
 
 interface ContainerView {
@@ -89,6 +103,9 @@ export {
 export type {
   Container,
   Stack,
+  StackSettings,
+  GroupSettings,
+  Group,
   ContainerView,
   Snackbar,
   AppSettings,

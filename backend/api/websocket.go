@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
-	"washboard/portainer"
+	"washboard/types"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
@@ -39,14 +39,12 @@ func WsHandler(c *gin.Context) {
 	}
 	glg.Infof("Client %s connected", c.ClientIP())
 
-	wsState := &WsState{}
-
 	oniiChan := make(chan string)
-	go readData(ws, oniiChan, wsState)
-	go pushData(ws, oniiChan, wsState)
+	go readData(ws, oniiChan)
+	go pushData(ws, oniiChan)
 }
 
-func readData(ws *websocket.Conn, oniiChan chan string, wsState *WsState) {
+func readData(ws *websocket.Conn, oniiChan chan string) {
 	for {
 		_, message, err := ws.ReadMessage()
 		if err != nil {
@@ -62,7 +60,7 @@ func readData(ws *websocket.Conn, oniiChan chan string, wsState *WsState) {
 	}
 }
 
-func pushData(ws *websocket.Conn, oniiChan chan string, wsState *WsState) {
+func pushData(ws *websocket.Conn, oniiChan chan string) {
 	defer ws.Close()
 	for {
 		select {
@@ -77,13 +75,13 @@ func pushData(ws *websocket.Conn, oniiChan chan string, wsState *WsState) {
 		items := appState.StackUpdateQueue.Items()
 
 		// group items by status and create new map[string]map[string]cache.Item
-		groupedItems := make(map[string]map[string]portainer.StackUpdateStatus)
+		groupedItems := make(map[string]map[string]types.StackUpdateStatus)
 		for _, item := range items {
-			stackUpdateStatus := item.Object.(portainer.StackUpdateStatus)
+			stackUpdateStatus := item.Object.(types.StackUpdateStatus)
 
 			status := stackUpdateStatus.Status
 			if _, ok := groupedItems[status]; !ok {
-				groupedItems[status] = make(map[string]portainer.StackUpdateStatus)
+				groupedItems[status] = make(map[string]types.StackUpdateStatus)
 			}
 			groupedItems[status][stackUpdateStatus.StackName] = stackUpdateStatus
 		}

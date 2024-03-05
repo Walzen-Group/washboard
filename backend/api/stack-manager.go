@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"washboard/portainer"
+	"washboard/types"
 
 	"github.com/gin-gonic/gin"
 	"github.com/kpango/glg"
@@ -75,31 +76,31 @@ func portainerStartOrStopStack(c *gin.Context, startOrStop string) {
 
 
 func PortainerStartContainer(c *gin.Context) {
-	PortainerManageContainer(c, portainer.Start)
+	PortainerManageContainer(c, types.Start)
 }
 
 func PortainerStopContainer(c *gin.Context) {
-	PortainerManageContainer(c, portainer.Stop)
+	PortainerManageContainer(c, types.Stop)
 }
 
 func PortainerRestartContainer(c *gin.Context) {
-	PortainerManageContainer(c, portainer.Restart)
+	PortainerManageContainer(c, types.Restart)
 }
 
 func PortainerKillContainer(c *gin.Context) {
-	PortainerManageContainer(c, portainer.Kill)
+	PortainerManageContainer(c, types.Kill)
 }
 
 func PortainerPauseContainer(c *gin.Context) {
-	PortainerManageContainer(c, portainer.Pause)
+	PortainerManageContainer(c, types.Pause)
 }
 
 func PortainerResumeContainer(c *gin.Context) {
-	PortainerManageContainer(c, portainer.Resume)
+	PortainerManageContainer(c, types.Resume)
 }
 
 
-func PortainerManageContainer(c *gin.Context, action portainer.ActionType) {
+func PortainerManageContainer(c *gin.Context, action types.ActionType) {
 	var reqBody map[string]interface{}
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
 		errorMessage := "Failed to bind json. Check the request body."

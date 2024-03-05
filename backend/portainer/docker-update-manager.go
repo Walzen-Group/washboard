@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"washboard/helper"
+	"washboard/types"
 
 	"github.com/kpango/glg"
 	"github.com/patrickmn/go-cache"
@@ -41,7 +42,7 @@ func GetEndpointId(endpointName string) (int, error) {
 		return -1, err
 	}
 
-	var endpoints []EndpointDto
+	var endpoints []types.EndpointDto
 	err = json.Unmarshal(body, &endpoints)
 	if err != nil {
 		glg.Errorf("Failed to unmarshal JSON: %s", err)
@@ -59,7 +60,7 @@ func GetEndpointId(endpointName string) (int, error) {
 }
 
 // GetStacks returns the stacks for the given endpoint
-func GetStacks(endpointId int) ([]StackDto, error) {
+func GetStacks(endpointId int) ([]types.StackDto, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks", appState.Config.PortainerUrl), nil)
 	if err != nil {
@@ -143,7 +144,7 @@ func GetStacks(endpointId int) ([]StackDto, error) {
 }
 
 // GetContainers returns the containers for the given endpoint. If stackName is provided, only the containers of the stack with the given label are returned, otherwise all containers are returned
-func GetContainers(endpointId int, stackName string) ([]*ContainerDto, error) {
+func GetContainers(endpointId int, stackName string) ([]*types.ContainerDto, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/endpoints/%d/docker/containers/json", appState.Config.PortainerUrl, endpointId), nil)
 	if err != nil {
@@ -180,20 +181,20 @@ func GetContainers(endpointId int, stackName string) ([]*ContainerDto, error) {
 		return nil, err
 	}
 
-	containersDto := buildContainerDto(containers, endpointId)
+	containersDto := buildContainerDto(containers)
 
 	return containersDto, nil
 }
 
-func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([]StackDto, error) {
-	var stacksDto = make(map[string]*StackDto)
+func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([]types.StackDto, error) {
+	var stacksDto = make(map[string]*types.StackDto)
 	containers, err := GetContainers(endpointId, "")
 	if err != nil {
 		glg.Errorf("Failed to get stack containers: %s", err)
 		return nil, err
 	}
 
-	queryImageStatusContainers := make([]*ContainerDto, 0, len(containers))
+	queryImageStatusContainers := make([]*types.ContainerDto, 0, len(containers))
 
 	for _, container := range containers {
 		var stackName string
@@ -207,29 +208,29 @@ func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([
 			stackName = labelParsed
 		}
 		if val, ok := stacks[stackName]["allImagesStatus"]; ok {
-			if val.(string) != Updated {
+			if val.(string) != types.Updated {
 				queryImageStatusContainers = append(queryImageStatusContainers, container)
 			} else {
-				container.UpToDate = Updated
+				container.UpToDate = types.Updated
 			}
 		}
 		if val, ok := stacksDto[stackName]; ok {
 			val.Containers = append(val.Containers, container)
 		} else if val, ok := stacks[stackName]; ok {
-			stacksDto[stackName] = &StackDto{
+			stacksDto[stackName] = &types.StackDto{
 				Id:         int(val["Id"].(float64)),
 				Name:       val["Name"].(string),
-				Containers: []*ContainerDto{container},
+				Containers: []*types.ContainerDto{container},
 			}
 		}
 	}
 
 	for key, value := range stacks {
 		if _, ok := stacksDto[key]; !ok {
-			stacksDto[key] = &StackDto{
+			stacksDto[key] = &types.StackDto{
 				Id:         int(value["Id"].(float64)),
 				Name:       value["Name"].(string),
-				Containers: make([]*ContainerDto, 0),
+				Containers: make([]*types.ContainerDto, 0),
 			}
 		}
 	}
@@ -238,7 +239,7 @@ func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([
 		queryContainerImageStatus(endpointId, queryImageStatusContainers)
 	}
 
-	stacksDtoList := make([]StackDto, 0, len(stacksDto))
+	stacksDtoList := make([]types.StackDto, 0, len(stacksDto))
 	for _, stack := range stacksDto {
 		stacksDtoList = append(stacksDtoList, *stack)
 	}
@@ -246,8 +247,8 @@ func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([
 	return stacksDtoList, nil
 }
 
-func buildContainerDto(containers []map[string]interface{}, endpointId int) []*ContainerDto {
-	var containersDto []*ContainerDto
+func buildContainerDto(containers []map[string]interface{}) []*types.ContainerDto {
+	var containersDto []*types.ContainerDto
 	for _, container := range containers {
 		portsData := container["Ports"].([]interface{})
 		// Get unique public ports
@@ -264,7 +265,7 @@ func buildContainerDto(containers []map[string]interface{}, endpointId int) []*C
 		}
 		name := container["Names"].([]interface{})[0].(string)
 		name = helper.RemoveFirstIfMatch(name, "/")
-		containersDto = append(containersDto, &ContainerDto{
+		containersDto = append(containersDto, &types.ContainerDto{
 			Id:       container["Id"].(string),
 			Name:     name,
 			Image:    container["Image"].(string),
@@ -278,7 +279,7 @@ func buildContainerDto(containers []map[string]interface{}, endpointId int) []*C
 	return containersDto
 }
 
-func queryContainerImageStatus(endpointId int, containersDto []*ContainerDto) {
+func queryContainerImageStatus(endpointId int, containersDto []*types.ContainerDto) {
 	// Fetch UpToDate status for each container
 	var wg sync.WaitGroup
 	statusChan := make(chan struct {
@@ -289,7 +290,7 @@ func queryContainerImageStatus(endpointId int, containersDto []*ContainerDto) {
 
 	for i, container := range containersDto {
 		wg.Add(1)
-		go func(i int, container *ContainerDto) {
+		go func(i int, container *types.ContainerDto) {
 			defer wg.Done()
 
 			cachedStatus, found := portainerCache.Get(container.Id)
@@ -463,8 +464,8 @@ func getUpdateOperationId(endpointId int, stackId int) string {
 func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool) (float64, error) {
 	id := getUpdateOperationId(endpointId, stackId)
 	if val, ok := appState.StackUpdateQueue.Get(id); ok {
-		data := val.(StackUpdateStatus)
-		if data.Status != Error && data.Status != Done {
+		data := val.(types.StackUpdateStatus)
+		if data.Status != types.Error && data.Status != types.Done {
 			glg.Infof("stack update already queued: %s", val)
 			retErr := errors.New("stack update already queued")
 			return -2, retErr
@@ -536,11 +537,11 @@ func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool)
 	reqBodyByte := []byte(reqBodyRaw)
 
 	go func() {
-		updateStatus := StackUpdateStatus{
+		updateStatus := types.StackUpdateStatus{
 			EndpointId: endpointId,
 			StackId:    stackId,
 			StackName:  stackNameString,
-			Status:     Queued,
+			Status:     types.Queued,
 			Timestamp:  int64(time.Now().Unix()),
 			Details:    "",
 		}
@@ -548,10 +549,10 @@ func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool)
 		_, err := updateStack(endpointId, stackId, reqBodyByte)
 		if err != nil {
 			glg.Errorf("No operation performed: %s", err)
-			updateStatus.Status = Error
+			updateStatus.Status = types.Error
 			updateStatus.Details = err.Error()
 		} else {
-			updateStatus.Status = Done
+			updateStatus.Status = types.Done
 		}
 		updateStatus.Timestamp = int64(time.Now().Unix())
 		appState.StackUpdateQueue.Set(id, updateStatus, time.Hour*24*7)

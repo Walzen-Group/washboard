@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"washboard/types"
 
 	"github.com/kpango/glg"
 )
@@ -63,7 +64,7 @@ func StartOrStopStack(endpointId int, stackId int, starOrStop string) (string, i
 }
 
 
-func ManageContainer(endpointId int, containerId string, action ActionType) (string, error) {
+func ManageContainer(endpointId int, containerId string, action types.ActionType) (string, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/endpoints/%d/docker/containers/%s/%s", appState.Config.PortainerUrl, endpointId, containerId, action), nil)
 	if err != nil {

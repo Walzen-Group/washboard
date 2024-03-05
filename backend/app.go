@@ -56,6 +56,8 @@ func main() {
 		MaxAge: 12 * time.Hour,
 	  }))
 
+	// portainer api routes
+	// TODO: change endpoint to /portainer/...
 	router.GET("/portainer-get-endpoint", api.PortainerGetEndpoint)
 	router.GET("/portainer-get-stacks", api.PortainerGetStacks)
 	router.GET("/portainer-get-containers", api.PortainerGetContainers)
@@ -70,7 +72,25 @@ func main() {
 	router.POST("/portainer-restart-container", api.PortainerRestartContainer)
 	router.POST("/portainer-pause-container", api.PortainerPauseContainer)
 	router.POST("/portainer-resume-container", api.PortainerResumeContainer)
+
+	// websocket stuff
 	router.GET("/ws/stacks-update", api.WsHandler)
+
+	// db crud
+	router.POST("/db/stacks", api.CreateStackSettings)
+	router.GET("/db/stacks", api.GetStacksSettings)
+	router.GET("/db/stacks/:id", api.GetStackSettings)
+	router.PUT("/db/stacks/:id", api.UpdateStackSettings)
+	router.DELETE("/db/stacks/:id", api.DeleteStackSettings)
+
+	router.POST("/db/groups", api.CreateGroupSettings)
+	router.GET("/db/groups", api.GetGroupsSettings)
+	router.GET("/db/groups/:id", api.GetGroupSettings)
+	router.PUT("/db/groups/:id", api.UpdateGroupSettings)
+	router.DELETE("/db/groups/:id", api.DeleteGroupSettings)
+
+
+
 	ret := router.Run()
 	if ret != nil {
 		panic(ret)
