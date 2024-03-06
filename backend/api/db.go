@@ -16,7 +16,7 @@ import (
 
 func SyncWithPortainer(c *gin.Context) {
 	if _, ok := appState.StateQueue.Get("sync"); ok {
-		handleError(c, errors.New("Sync already in progress"), "Sync already in progress", http.StatusConflict)
+		handleError(c, fmt.Errorf("Sync already in progress"), "Sync already in progress", http.StatusConflict)
 		return
 	}
 	appState.StateQueue.Add("sync", "inprog", time.Minute*2)
@@ -121,11 +121,7 @@ func CreateStackSettings(c *gin.Context) {
 	var stackSettings *types.StackSettings = &types.StackSettings{}
 	if err := c.ShouldBindJSON(&stackSettings); err != nil {
 		errorMessage := "Failed to bind json. Check the request body and ensure that the correct fields are present."
-		glg.Errorf("%s %s", errorMessage, err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": errorMessage,
-			"error":   err,
-		})
+		handleError(c, err, errorMessage, http.StatusBadRequest)
 		return
 	}
 	glg.Infof("Creating stack settings: %+v", stackSettings)
@@ -140,12 +136,7 @@ func CreateStackSettings(c *gin.Context) {
 			})
 			return
 		}
-		errorMessage := "Failed to create stack settings."
-		glg.Errorf("%s %s", errorMessage, err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": errorMessage,
-			"error":   err,
-		})
+		handleError(c, err, "Failed to create stack settings", http.StatusInternalServerError)
 		return
 	}
 	c.JSON(http.StatusCreated, gin.H{
@@ -160,10 +151,7 @@ func GetStackSettings(c *gin.Context) {
 	if name == "" {
 		stacks, err := db.GetAllStackSettings()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Failed to get stack settings",
-				"error":   err,
-			})
+			handleError(c, err, "Failed to get stack settings", http.StatusInternalServerError)
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{
@@ -173,11 +161,12 @@ func GetStackSettings(c *gin.Context) {
 		return
 	}
 	stack, err := db.GetStackSettings(name)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Failed to get stack settings",
-			"error":   fmt.Sprintf("%s", err),
-		})
+	target := &werrors.DoesNotExistError{}
+	if errors.As(err, &target) {
+		handleError(c, err, "No result", http.StatusNotFound)
+		return
+	} else if err != nil {
+		handleError(c, err, "Failed to get stack settings", http.StatusInternalServerError)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
@@ -199,11 +188,7 @@ func UpdateStackSettings(c *gin.Context) {
 	var stackSettings *types.StackSettings = &types.StackSettings{}
 	if err := c.ShouldBindJSON(&stackSettings); err != nil {
 		errorMessage := "Failed to bind json. Check the request body and ensure that the correct fields are present."
-		glg.Errorf("%s %s", errorMessage, err)
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": errorMessage,
-			"error":   err,
-		})
+		handleError(c, err, errorMessage, http.StatusBadRequest)
 		return
 	}
 
@@ -299,18 +284,25 @@ func GetGroupSettings(c *gin.Context) {
 	name := c.Param("name")
 
 	if name == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "id is required",
+		stacks, err := db.GetAllGroupSettings()
+		if err != nil {
+			handleError(c, err, "Failed to get group settings", http.StatusInternalServerError)
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"message":       "ok",
+			"stackSettings": stacks,
 		})
 		return
 	}
 
 	group, err := db.GetGroupSettings(name)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Failed to get group settings",
-			"error":   fmt.Sprintf("%s", err),
-		})
+	target := &werrors.DoesNotExistError{}
+	if errors.As(err, &target) {
+		handleError(c, err, "No result", http.StatusNotFound)
+		return
+	} else if err != nil {
+		handleError(c, err, "Failed to get group settings", http.StatusInternalServerError)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{

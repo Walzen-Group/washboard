@@ -13,6 +13,6 @@ func handleError(c *gin.Context, err error, context string, statusCode int) {
 	glg.Errorf("%s %s", context, err)
 	c.JSON(statusCode, gin.H{
 		"message": context,
-		"error":   err,
+		"error":   err.Error(),
 	})
 }

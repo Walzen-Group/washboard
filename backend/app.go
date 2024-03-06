@@ -79,6 +79,7 @@ func main() {
 	// db stack routes
 	dbStackRoute := router.Group("/db/stacks")
 	dbStackRoute.POST("", api.CreateStackSettings)
+	dbStackRoute.GET("/:name", api.GetStackSettings)
 	dbStackRoute.GET("", api.GetStackSettings)
 	dbStackRoute.PUT("/:name", api.UpdateStackSettings)
 	dbStackRoute.DELETE("/:name", api.DeleteStackSettings)

@@ -97,7 +97,7 @@ func GetStackSettings(name string) (*types.StackSettings, error) {
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
 			return nil , &werrors.DoesNotExistError{
-				Context: "",
+				Context: "empty response",
 				Err:     err,
 			}
 		}
@@ -212,7 +212,7 @@ func GetGroupSettings(groupName string) (*types.GroupSettings, error) {
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
 			return nil , &werrors.DoesNotExistError{
-				Context: "",
+				Context: "empty response",
 				Err:     err,
 			}
 		}
