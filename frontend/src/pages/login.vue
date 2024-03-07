@@ -1,7 +1,7 @@
 <template>
     <v-container class="fill-height">
         <v-card class="mx-auto" width="400">
-            <v-card-title class="py-5">Log in to your account</v-card-title>
+            <v-card-title class="py-5">It's time to wash</v-card-title>
             <v-card-text>
                 <v-alert v-if="loginError" type="error" color="deep-purple-lighten-2" class="mb-6" dense>{{ loginErrorMessage
                     }}</v-alert>
