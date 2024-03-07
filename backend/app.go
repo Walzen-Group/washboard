@@ -1,8 +1,10 @@
 package main
 
 import (
+	"math/rand"
 	"net/http"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"washboard/api"
@@ -19,6 +21,13 @@ import (
 
 func main() {
 	appState := state.Instance()
+
+	if appState.Config.JwtSecret == "" {
+		// generate very long secret
+		glg.Warnf("No JWT secret found in config, generating a new one. This will cause sessions to be lost after app restarts.")
+		appState.Config.JwtSecret = RandStringBytesMaskImprSrcSB(128)
+	}
+
 	// Set up logger
 	//log := glg.FileWriter(filepath.Join("log", "main.log"), os.ModeAppend)
 	log := &lumberjack.Logger{
@@ -157,4 +166,31 @@ func main() {
 	if ret != nil {
 		panic(ret)
 	}
+}
+
+var src = rand.NewSource(time.Now().UnixNano())
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+const (
+    letterIdxBits = 6                    // 6 bits to represent a letter index
+    letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
+    letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
+)
+
+func RandStringBytesMaskImprSrcSB(n int) string {
+    sb := strings.Builder{}
+    sb.Grow(n)
+    // A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
+    for i, cache, remain := n-1, src.Int63(), letterIdxMax; i >= 0; {
+        if remain == 0 {
+            cache, remain = src.Int63(), letterIdxMax
+        }
+        if idx := int(cache & letterIdxMask); idx < len(letterBytes) {
+            sb.WriteByte(letterBytes[idx])
+            i--
+        }
+        cache >>= letterIdxBits
+        remain--
+    }
+
+    return sb.String()
 }
