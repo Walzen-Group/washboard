@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-	_ = state.Instance()
+	appState := state.Instance()
 	// Set up logger
 	//log := glg.FileWriter(filepath.Join("log", "main.log"), os.ModeAppend)
 	log := &lumberjack.Logger{
@@ -58,9 +58,9 @@ func main() {
 
 	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
 		Realm:           "walzen",
-		Key:             []byte("secret key"),
-		Timeout:         time.Hour,
-		MaxRefresh:      time.Hour,
+		Key:             []byte(appState.Config.JwtSecret),
+		Timeout:         time.Hour * 24 * 7,
+		MaxRefresh:      time.Hour * 24 * 30,
 		IdentityKey:     types.IdentityKey,
 		PayloadFunc:     auth.PayloadFunc,
 		IdentityHandler: auth.IdentityHandler,
@@ -76,13 +76,13 @@ func main() {
 		// - "cookie:<name>"
 		// - "param:<name>"
 
-		SendCookie:       true,
-		SecureCookie:     false, //non HTTPS dev environments
-		CookieHTTPOnly:   true,  // JS can't modify
-		CookieDomain:     "localhost:8080",
-		CookieName:       "jwt", // default jwt
-		CookieSameSite:   http.SameSiteDefaultMode, //SameSiteDefaultMode, SameSiteLaxMode, SameSiteStrictMode, SameSiteNoneMode
-		TokenLookup: "header: Authorization, query: token, cookie: jwt",
+		SendCookie:     true,
+		SecureCookie:   false, //non HTTPS dev environments
+		CookieHTTPOnly: true,  // JS can't modify
+		CookieDomain:   "localhost:8080, 10.10.194.2:8080, 172.31.0.37:8080, 10.10.10.37:8080",
+		CookieName:     "jwt",                    // default jwt
+		CookieSameSite: http.SameSiteDefaultMode, //SameSiteDefaultMode, SameSiteLaxMode, SameSiteStrictMode, SameSiteNoneMode
+		TokenLookup:    "header: Authorization, query: token, cookie: jwt",
 		// TokenLookup: "query:token",
 		// TokenLookup: "cookie:token",
 
@@ -90,7 +90,7 @@ func main() {
 		TokenHeadName: "Bearer",
 
 		// TimeFunc provides the current time. You can override it to use another time value. This is useful for testing or if your server uses a different time zone than your tokens.
-		TimeFunc:       time.Now,
+		TimeFunc: time.Now,
 	})
 
 	if err != nil {
@@ -144,6 +144,10 @@ func main() {
 	authGroup.POST("/login", authMiddleware.LoginHandler)
 	authGroup.POST("/logout", authMiddleware.LogoutHandler)
 	authGroup.POST("/refresh_token", authMiddleware.RefreshHandler)
+
+	router.GET("/", authMiddleware.MiddlewareFunc(), func(c *gin.Context) {
+		c.JSON(200, gin.H{"code": "OK", "message": "nothing to see here"})
+	})
 
 	router.NoRoute(authMiddleware.MiddlewareFunc(), func(c *gin.Context) {
 		c.JSON(404, gin.H{"code": "PAGE_NOT_FOUND", "message": "Pagenius nicht gefunden!"})

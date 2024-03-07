@@ -2,7 +2,7 @@
   <v-app-bar elevation="1" density="compact" color="washboard-appbar">
     <v-app-bar-nav-icon @click.stop="switchDrawer" />
     <v-btn :disabled="disableMiniVariant" icon @click.stop="switchMini">
-      <v-icon >mdi-{{ `chevron-${miniVariant ? "right" : "left"}` }}</v-icon>
+      <v-icon>mdi-{{ `chevron-${miniVariant ? "right" : "left"}` }}</v-icon>
     </v-btn>
     <v-btn icon @click.stop="switchClipped">
       <v-icon>mdi-washing-machine</v-icon>
@@ -27,6 +27,7 @@
     </v-btn>
   </v-app-bar>
   <v-navigation-drawer width="230" floating :temporary="!clipped" mobile-breakpoint="md"
+                       v-if="!loginForm"
                        v-model="drawer" :rail="miniVariant">
     <v-list nav density="compact">
       <v-list-item v-for="(item, i) in items" :key="i" :to="item.to" :prepend-icon="item.icon"
@@ -35,6 +36,24 @@
     </v-list>
 
     <template v-slot:append>
+      <div class="ma-2 d-flex align-center">
+
+        <v-btn rounded @click="signOut" :size="miniVariant ? 39 : 'default'" variant="tonal"
+               :icon="miniVariant" class="mx-auto">
+          <v-fade-transition hide-on-leave>
+            <span v-if="!miniVariant">
+              Sign Out
+            </span>
+            <v-icon class="pl-1" v-if="miniVariant" :size=24>
+              mdi-logout
+            </v-icon>
+          </v-fade-transition>
+          <template v-slot:prepend>
+            <v-icon>mdi-logout</v-icon>
+          </template>
+        </v-btn>
+
+      </div>
       <v-divider v-if="!smAndUp && !miniVariant" class="mb-1"></v-divider>
       <v-fade-transition hide-on-leave>
         <div class="d-flex align-center justify-center" v-if="!miniVariant">
@@ -66,9 +85,14 @@ import { storeToRefs } from 'pinia';
 import { onMounted } from 'vue';
 import { useLocalStore } from '@/store/local';
 import { QueueStatus } from "@/types/types";
+import axios from 'axios';
 const updateQuelelelStore = useUpdateQuelelelStore();
 const localStore = useLocalStore();
 const { sidebarSettings } = storeToRefs(localStore);
+
+const props = defineProps({
+  loginForm: Boolean
+});
 
 const title = "Washboard"
 
@@ -93,6 +117,11 @@ const clipped = ref(true);
 const drawer = ref(false);
 const miniVariant = ref(true);
 const disableMiniVariant = ref(false);
+const router = useRouter();
+import { useAppStore } from '@/store/app';
+
+const appStore = useAppStore();
+const { renderInitCompleted } = storeToRefs(appStore);
 
 const theme = useTheme();
 
@@ -145,6 +174,16 @@ function switchClipped() {
 
 function toggleTheme() {
   theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark'
+}
+
+async function signOut() {
+  try {
+    await axios.post("/auth/logout");
+    renderInitCompleted.value = false;
+    router.push({ path: '/login' });
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 

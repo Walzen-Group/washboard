@@ -48,7 +48,9 @@ async function generateTestData(): Promise<Stack[]> {
       updateStatus: [{
         'lastChecked': `2024-02-${i < 10 ? '0' + i : i}`,
         'isUpToDate': i % 2 === 0
-      }]
+      }],
+      GlobalPriority: -1,
+      WithinGroupPriority: -1
     };
 
     testData.push(stack);

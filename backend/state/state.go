@@ -63,6 +63,7 @@ type Config struct {
 	DbUrl           string `yaml:"db_url"`
 	User            string `yaml:"user"`
 	Password        string `yaml:"password"`
+	JwtSecret       string `yaml:"jwt_secret"`
 }
 
 type Data struct {

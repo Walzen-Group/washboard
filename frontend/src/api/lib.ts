@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 async function updateStack(stackId: number, endpointId: number = 1) {
     const response = axios.put(`/portainer/stacks/${stackId}/update`, {
@@ -35,4 +35,17 @@ async function getContainers(stackName: string, endpointId: number = 1) {
 
 }
 
-export { updateStack, stopStack, startStack, getContainers};
+async function isAuthorized() {
+    try {
+      await axios.get('/');
+      return true;
+    } catch (e) {
+      if ((e as AxiosError).response?.status == 401) {
+        console.log('Unauthorized');
+        return false;
+      }
+    }
+    return false;
+  }
+
+export { updateStack, stopStack, startStack, getContainers, isAuthorized};

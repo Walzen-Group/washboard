@@ -24,12 +24,11 @@ import { useUpdateQuelelelStore } from './store/updateQuelelel';
 import { storeToRefs } from 'pinia';
 import { useTheme } from 'vuetify'
 import { onMounted } from 'vue';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { UpdateQueue, QueueStatus, QueueItem } from './types/types';
 
 const snackbarStore = useSnackbarStore();
 const { snackbars: snackbars } = storeToRefs(snackbarStore);
-
 
 const updateQuelelelStore = useUpdateQuelelelStore();
 const { queue: stackQueue } = storeToRefs(updateQuelelelStore);
@@ -39,7 +38,7 @@ const theme = useTheme();
 
 let mediaEvent;
 
-onMounted(() => {
+onMounted(async () => {
   mediaEvent = window.matchMedia("(prefers-color-scheme: dark)");
   mediaEvent.addEventListener("change", handleSystemThemeUpdate);
   if (mediaEvent.matches) {
@@ -49,8 +48,19 @@ onMounted(() => {
   }
 
   connectWebSocket();
+  callRefreshTokenRoute();
+});
 
-})
+async function callRefreshTokenRoute() {
+  try {
+    await axios.post("/auth/refresh_token");
+  } catch (e) {
+    const error = e as AxiosError;
+    if (error.response?.status === 401) {
+      console.log("refresh token invalid, redirecting to login");
+    }
+  }
+}
 
 function connectWebSocket() {
   console.log("opening websocket");
