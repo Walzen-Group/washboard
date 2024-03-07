@@ -18,7 +18,7 @@
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn :loading="loading" class="mx-1 my-1" variant="tonal"
-                       @click="submitLogin">Log in</v-btn>
+                       @click="submitLogin">Start Laundry</v-btn>
             </v-card-actions>
         </v-card>
     </v-container>
