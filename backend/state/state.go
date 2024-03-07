@@ -61,10 +61,12 @@ type Config struct {
 	PortainerSecret string `yaml:"portainer_secret"`
 	PortainerUrl    string `yaml:"portainer_url"`
 	DbUrl           string `yaml:"db_url"`
+	User            string `yaml:"user"`
+	Password        string `yaml:"password"`
 }
 
 type Data struct {
 	Config           Config
 	StackUpdateQueue *cache.Cache
-	StateQueue *cache.Cache
+	StateQueue       *cache.Cache
 }

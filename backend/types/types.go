@@ -50,8 +50,10 @@ const (
 	DbName                    string          = "washb"
 	DbGroupSettingsCollection string          = "group_settings"
 	DbStackSettingsCollection string          = "stack_settings"
+	DbAccountsCollection      string          = "accounts"
 	StackGroupLabel           string          = "org.walzen.washb.group"
 	StackLabel                string          = "com.docker.compose.project"
+	IdentityKey               string          = "id"
 	Start                     ContainerAction = "start"
 	Stop                      ContainerAction = "stop"
 	Kill                      ContainerAction = "kill"
@@ -59,6 +61,15 @@ const (
 	Pause                     ContainerAction = "pause"
 	Resume                    ContainerAction = "resume"
 )
+
+type Login struct {
+	Username string `form:"username" json:"username" binding:"required"`
+	Password string `form:"password" json:"password" binding:"required"`
+}
+
+type User struct {
+	UserName string
+}
 
 type GroupSettings struct {
 	GroupName      string `bson:"groupName" json:"groupName"`
