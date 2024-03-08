@@ -7,7 +7,9 @@
 
 // https://vuetifyjs.com/features/sass-variables/`
 @use 'vuetify/settings' with ( //$color-pack: false
-    $body-font-family: Inter);
+    $body-font-family: Inter,
+    $expansion-panel-text-padding: 0px
+);
 
 
 @font-face {

@@ -11,7 +11,7 @@
                                    :ripple="false"
                                    :disabled="isFirstElement(element)"
                                    @click="moveElement(element, 'up')">
-                                <v-icon size="40"> mdi-menu-up-outline </v-icon>
+                                <v-icon size="40"> mdi-chevron-up </v-icon>
                             </v-btn>
                             <v-sheet class="d-flex fill-height flex-column">
                                 <v-icon class="ml-2 pr-0 cursor-move my-auto jannis"
@@ -22,27 +22,24 @@
                                    :disabled="isLastElement(element)"
                                    class="mt-auto"
                                    @click="moveElement(element, 'down')">
-                                <v-icon size="40">mdi-menu-down-outline</v-icon>
+                                <v-icon size="40">mdi-chevron-down</v-icon>
                             </v-btn>
                         </v-sheet>
                     </v-col>
-                    <v-col class="pl-0">
-                        <v-card-title>{{ element.name }}</v-card-title>
-                        <v-card-text class="pl-0">
-                            <v-container>
-                                <v-row>
-                                    <v-col v-for="container in element.containers"
-                                           :key="container.id">
-                                        <v-card>
-                                            <v-card-title>{{ container.name
-                                                }}</v-card-title>
-                                            <v-card-text>{{ container.ports.join(", ")
-                                                }}</v-card-text>
-                                        </v-card>
-                                    </v-col>
-                                </v-row>
-                            </v-container>
-                        </v-card-text>
+                    <v-col>
+                        <StackContainer>
+                            <template #title>
+                                <div class="d-flex">
+                                    <div class="text-h6">
+                                        Manuel
+                                    </div>
+                                    <div>
+                                        Banuel
+                                    </div>
+                                </div>
+                            </template>
+                            <template #shortcuts>Bannis</template>
+                        </StackContainer>
                     </v-col>
                 </v-row>
             </v-card>

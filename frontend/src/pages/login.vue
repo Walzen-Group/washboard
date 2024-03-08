@@ -1,26 +1,42 @@
 <template>
     <v-container class="fill-height">
-        <v-card class="mx-auto" width="400">
-            <v-card-title class="py-5">It's time to wash</v-card-title>
-            <v-card-text>
-                <v-alert v-if="loginError" type="error" color="deep-purple-lighten-2" class="mb-6" dense>{{ loginErrorMessage
-                    }}</v-alert>
-                <v-text-field v-model="username" label="Name"
-                              class="mb-3"
-                              :rules="usernameRules"
-                              variant="filled">
-                </v-text-field>
-                <v-text-field @keydown.enter="submitLogin" v-model="password" label="Password"
-                              type="password"
-                              variant="filled">
-                </v-text-field>
-            </v-card-text>
-            <v-card-actions>
-                <v-spacer></v-spacer>
-                <v-btn :loading="loading" class="mx-1 my-1" variant="tonal"
-                       @click="submitLogin">Start Laundry</v-btn>
-            </v-card-actions>
-        </v-card>
+        <div class="mx-auto login-card">
+            <v-card>
+
+                <div>
+                    <v-card-title class="py-5">It's time to wash</v-card-title>
+                    <v-card-text>
+                        <v-row align="center" justify="center">
+                            <v-col cols="auto">
+                                <WashingMachine animate :scale="0.8"></WashingMachine>
+                            </v-col>
+                            <v-col class="login-fields">
+                                <v-alert v-if="loginError" type="error"
+                                         color="deep-purple-lighten-2"
+                                         class="mb-6"
+                                         dense>{{ loginErrorMessage
+                                    }}</v-alert>
+                                <v-text-field v-model="username" label="Name"
+                                              class="mb-3"
+                                              :rules="usernameRules"
+                                              variant="filled">
+                                </v-text-field>
+                                <v-text-field @keydown.enter="submitLogin" v-model="password"
+                                              label="Password"
+                                              type="password"
+                                              variant="filled">
+                                </v-text-field>
+                            </v-col>
+                        </v-row>
+                    </v-card-text>
+                    <v-card-actions>
+                        <v-spacer></v-spacer>
+                        <v-btn :loading="loading" class="mx-1 my-1" variant="tonal"
+                               @click="submitLogin">Start Laundry</v-btn>
+                    </v-card-actions>
+                </div>
+            </v-card>
+        </div>
     </v-container>
 </template>
 
@@ -82,6 +98,22 @@ async function submitLogin() {
 
 </script>
 
-<style scoped></style>
+<style scoped>
+.login-card {
+    max-width: 450px;
+    /* 'initial width' */
+    width: 100%;
+    min-width: 200px;
+    /* 'minimum width' */
+}
 
-<route lang="yaml">meta: layout: login </route>
+.login-fields {
+    min-width: 200px;
+    width: 100%;
+}
+</style>
+
+<route lang="yaml">
+    meta:
+      layout: login
+</route>

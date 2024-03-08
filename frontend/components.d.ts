@@ -11,7 +11,10 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     SortableStackTable: typeof import('./src/components/SortableStackTable.vue')['default']
+    Stack: typeof import('./src/components/Stack.vue')['default']
+    StackContainer: typeof import('./src/components/StackContainer.vue')['default']
     StackUpdateTable: typeof import('./src/components/StackUpdateTable.vue')['default']
     UpdateQuelelel: typeof import('./src/components/UpdateQuelelel.vue')['default']
+    WashingMachine: typeof import('./src/components/WashingMachine.vue')['default']
   }
 }

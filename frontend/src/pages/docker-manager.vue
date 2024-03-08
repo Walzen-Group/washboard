@@ -6,7 +6,6 @@
 </template>
 
 <script lang="ts" setup>
-import SortableStackTable from '@/components/SortableStackTable.vue';
 import { Stack, Container } from '@/types/types';
 import { ref, Ref, onMounted } from 'vue';
 

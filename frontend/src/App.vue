@@ -20,12 +20,13 @@
 
 <script lang="ts" setup>
 import { useSnackbarStore } from '@/store/snackbar';
-import { useUpdateQuelelelStore } from './store/updateQuelelel';
+import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
 import { storeToRefs } from 'pinia';
 import { useTheme } from 'vuetify'
 import { onMounted } from 'vue';
 import axios, { AxiosError } from 'axios';
 import { UpdateQueue, QueueStatus, QueueItem } from './types/types';
+import { callRefreshTokenRoute } from '@/api/lib';
 
 const snackbarStore = useSnackbarStore();
 const { snackbars: snackbars } = storeToRefs(snackbarStore);
@@ -51,19 +52,9 @@ onMounted(async () => {
   callRefreshTokenRoute();
 });
 
-async function callRefreshTokenRoute() {
-  try {
-    await axios.post("/auth/refresh_token");
-  } catch (e) {
-    const error = e as AxiosError;
-    if (error.response?.status === 401) {
-      console.log("refresh token invalid, redirecting to login");
-    }
-  }
-}
+
 
 function connectWebSocket() {
-  console.log("opening websocket");
   let wsAddr = `${axios.defaults.baseURL}/ws/stacks-update`.replace('http://', 'ws://').replace('https://', 'wss://');
   let socket = new WebSocket(wsAddr);
   socket.onmessage = function (event) {

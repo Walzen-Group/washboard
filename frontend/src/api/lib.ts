@@ -48,4 +48,17 @@ async function isAuthorized() {
     return false;
   }
 
-export { updateStack, stopStack, startStack, getContainers, isAuthorized};
+  async function callRefreshTokenRoute() {
+    try {
+      await axios.post("/auth/refresh_token");
+      return true;
+    } catch (e) {
+      const error = e as AxiosError;
+      if (error.response?.status === 401) {
+        console.log("refresh token invalid, redirecting to login");
+      }
+    }
+    return false;
+  }
+
+export { updateStack, stopStack, startStack, getContainers, isAuthorized, callRefreshTokenRoute};

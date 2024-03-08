@@ -1,5 +1,9 @@
 <template>
-  <div class="stroke text-h1 pa-4 ma-16">Hello!</div>
+  <div class="stroke text-h1 pa-4 d-flex align-center">
+    <WashingMachine class="mr-3" animate :scale="0.6" />
+    Hello!
+  </div>
+
   <!-- <Landing /> -->
 </template>
 
