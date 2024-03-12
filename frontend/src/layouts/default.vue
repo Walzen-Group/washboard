@@ -16,6 +16,6 @@ import DefaultFooter from './default/Footer.vue'
 
 <style>
 .max-container-width {
-  max-width: 1700px !important;
+  max-width: 1800px !important;
 }
 </style>
