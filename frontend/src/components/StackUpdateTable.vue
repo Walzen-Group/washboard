@@ -85,7 +85,7 @@
                     <v-tooltip v-for="elem in item.containers" :text="elem.name" location="top" :key="elem.name">
                         <template v-slot:activator="{ props }">
                             <v-icon
-                                class="clickable-indicator"
+                                :class="{ 'clickable-indicator' : true, 'loader': false }"
                                 size="x-large"
                                 v-bind="props"
                                 @click="indicatorClicked(elem)"
@@ -309,6 +309,7 @@ function getColor(elem: Container) {
     else if (elem.upToDate === ContainerStatus.Updated) return "updated";
     else if (elem.upToDate === ContainerStatus.Skipped) return "grey";
     else if (elem.upToDate === ContainerStatus.Error) return "red";
+    else if (elem.upToDate === ContainerStatus.NotRequested) return "wurple";
     else return "grey";
 }
 
@@ -320,6 +321,7 @@ function getIcon(elem: Container) {
     else if (elem.upToDate === ContainerStatus.Updated) return "mdi-check-circle-outline";
     else if (elem.upToDate === ContainerStatus.Skipped) return "mdi-minus-circle-outline";
     else if (elem.upToDate === ContainerStatus.Error) return "mdi-close-circle-outline";
+    else if (elem.upToDate === ContainerStatus.NotRequested) return "mdi-help-circle-outline";
     else return "mdi-circle-outline";
 }
 
@@ -389,5 +391,21 @@ function getPortainerUrl(item: Stack) {
 .stack-icon {
     min-width: 28px;
     max-width: 28px;
+}
+
+.loader {
+    animation: spin 30s linear infinite;
+}
+
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+        /* left center right top bottom */
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 </style>

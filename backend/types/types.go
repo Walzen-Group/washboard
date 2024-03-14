@@ -47,6 +47,7 @@ const (
 	Error                     string          = "error"
 	Done                      string          = "done"
 	Queued                    string          = "queued"
+	NotRequested              string          = "not_requested"
 	DbName                    string          = "washb"
 	DbGroupSettingsCollection string          = "group_settings"
 	DbStackSettingsCollection string          = "stack_settings"

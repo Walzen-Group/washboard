@@ -23,7 +23,7 @@ func Instance() *Data {
 			glg.Fatal(err)
 		}
 		instance = new(Data)
-		instance.Config = Config{}
+		instance.Config = Config{ CacheDurationMinutes: 1 }
 		instance.StackUpdateQueue = cache.New(5*time.Minute, 10*time.Minute)
 		instance.StateQueue = cache.New(1*time.Minute, 1*time.Minute)
 		reflectionPath = filepath.Dir(ex)
@@ -48,6 +48,21 @@ func Instance() *Data {
 		if err != nil {
 			panic(err)
 		}
+
+		// save config file with all fields
+		encoded, err := yaml.Marshal(instance.Config)
+		if err != nil {
+			glg.Fatal("could not marshal base config file")
+		}
+		if err := os.WriteFile(filepath.Join(reflectionPath, "secrets.yaml"), encoded, 0644); err != nil {
+			glg.Fatal("could not save base config file")
+		}
+
+		if instance.Config.CacheDurationMinutes == 1 {
+			glg.Warn("image cache duration is set to 1 minute")
+		} else {
+			glg.Infof("image cache duration is set to %d minutes", instance.Config.CacheDurationMinutes)
+		}
 	})
 	return instance
 }
@@ -64,6 +79,7 @@ type Config struct {
 	User            string `yaml:"user"`
 	Password        string `yaml:"password"`
 	JwtSecret       string `yaml:"jwt_secret"`
+	CacheDurationMinutes int `yaml:"cache_duration_minutes"`
 }
 
 type Data struct {

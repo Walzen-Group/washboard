@@ -78,6 +78,7 @@ func PortainerGetEndpoint(c *gin.Context) {
 func PortainerGetStacks(c *gin.Context) {
 	// Set endpointId
 	endpoint := c.DefaultQuery("endpointId", "1")
+	skeletonOnly := c.DefaultQuery("skeletonOnly", "false")
 	endpointId, err := strconv.Atoi(endpoint)
 	if err != nil {
 		glg.Errorf("failed to convert endpointId to int: %s", err)
@@ -88,7 +89,12 @@ func PortainerGetStacks(c *gin.Context) {
 		return
 	}
 
-	res, err := portainer.GetStacks(endpointId)
+	res, err := portainer.GetStacks(endpointId, skeletonOnly == "true")
+	/*
+	if (skeletonOnly == "false") {
+		time.Sleep(5 * time.Second)
+	}
+	*/
 	if err != nil {
 		glg.Error("failed to get stacks")
 		c.JSON(http.StatusInternalServerError, gin.H{

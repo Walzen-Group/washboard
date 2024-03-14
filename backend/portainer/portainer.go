@@ -8,4 +8,4 @@ import (
 )
 
 var appState *state.Data = state.Instance()
-var portainerCache = cache.New(1*time.Minute, 10*time.Minute)
+var portainerCache = cache.New(time.Duration(appState.Config.CacheDurationMinutes), 10*time.Minute)

@@ -60,7 +60,7 @@ func GetEndpointId(endpointName string) (int, error) {
 }
 
 // GetStacks returns the stacks for the given endpoint
-func GetStacks(endpointId int) ([]types.StackDto, error) {
+func GetStacks(endpointId int, skeletonOnly bool) ([]types.StackDto, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks", appState.Config.PortainerUrl), nil)
 	if err != nil {
@@ -111,19 +111,24 @@ func GetStacks(endpointId int) ([]types.StackDto, error) {
 			continue
 		}
 		var allImagesStatus string
-		if val, ok := portainerCache.Get(fmt.Sprintf("stack-%d-images-status", stackId)); ok {
-			allImagesStatus = val.(string)
-			countCached++
+		// skip retrieval if only the stack skeleton is requested
+		if skeletonOnly {
+			stack["allImagesStatus"] = types.NotRequested
 		} else {
-			allImagesStatus, err = GetStackImagesStatus(stackId)
-			if err != nil {
-				glg.Errorf("Failed to get stack images status: %s", err)
-				allImagesStatus = "error"
+			if val, ok := portainerCache.Get(fmt.Sprintf("stack-%d-images-status", stackId)); ok {
+				allImagesStatus = val.(string)
+				countCached++
+			} else {
+				allImagesStatus, err = GetStackImagesStatus(stackId)
+				if err != nil {
+					glg.Errorf("Failed to get stack images status: %s", err)
+					allImagesStatus = "error"
+				}
+				portainerCache.Set(fmt.Sprintf("stack-%d-images-status", stackId), allImagesStatus, cache.DefaultExpiration)
+				countUncached++
 			}
-			portainerCache.Set(fmt.Sprintf("stack-%d-images-status", stackId), allImagesStatus, cache.DefaultExpiration)
-			countUncached++
+			stack["allImagesStatus"] = allImagesStatus
 		}
-		stack["allImagesStatus"] = allImagesStatus
 
 		if stackName, ok := stack["Name"]; !ok {
 			glg.Warnf("stack does not have name key")
@@ -136,7 +141,11 @@ func GetStacks(endpointId int) ([]types.StackDto, error) {
 		}
 	}
 
-	glg.Infof("cached stack images status: %d, uncached stack images status: %d", countCached, countUncached)
+	if skeletonOnly {
+		glg.Infof("no image status requested")
+	} else {
+		glg.Infof("cached stack images status: %d, uncached stack images status: %d", countCached, countUncached)
+	}
 
 	stacksDto, err := buildStacksDto(stacksDict, endpointId)
 
@@ -208,7 +217,9 @@ func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([
 			stackName = labelParsed
 		}
 		if val, ok := stacks[stackName]["allImagesStatus"]; ok {
-			if val.(string) != types.Updated {
+			if val.(string) == types.NotRequested {
+				container.UpToDate = val.(string)
+			} else if val.(string) != types.Updated {
 				queryImageStatusContainers = append(queryImageStatusContainers, container)
 			} else {
 				container.UpToDate = types.Updated

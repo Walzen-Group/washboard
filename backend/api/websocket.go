@@ -30,14 +30,14 @@ var upgrader = websocket.Upgrader{
 }
 
 func WsHandler(c *gin.Context) {
-	glg.Infof("WS connection from %s", c.ClientIP())
+	glg.Debugf("ws connection request from %s", c.ClientIP())
 	ws, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	glg.Infof("Upgraded to websocket")
+	glg.Debugf("Upgraded to websocket")
 	if err != nil {
 		glg.Errorf("error while upgrading to websocket: %s", err)
 		return
 	}
-	glg.Infof("Client %s connected", c.ClientIP())
+	glg.Infof("client %s connected to status websocket", c.ClientIP())
 
 	oniiChan := make(chan string)
 	go readData(ws, oniiChan)

@@ -1,21 +1,38 @@
 <template>
     <div class="mt-2 mb-4 text-h4">Update Stack Images</div>
     <div class="mb-2">
-        <v-alert v-if="loading || refreshing" variant="tonal" type="info" title="Refreshing...">
-            <template v-slot:prepend>
-                <v-progress-circular size="26" color="deep-blue-lighten-2" indeterminate></v-progress-circular>
-            </template>
-        </v-alert>
-        <v-alert v-else-if="connectionFailed" variant="tonal" type="error" title="No data"></v-alert>
-        <v-alert
-            v-else-if="!containersNeedUpdate"
-            variant="tonal"
-            type="success"
-            color="blue"
-            title="You're all good"
-        ></v-alert>
-
-        <v-alert v-else variant="tonal" type="warning" title="Updates available"></v-alert>
+        <v-fade-transition hide-on-leave>
+            <v-alert v-if="loading || refreshing" variant="tonal" type="info" title="Refreshing...">
+                <template v-slot:prepend>
+                    <v-progress-circular size="26" color="deep-blue-lighten-2" indeterminate></v-progress-circular>
+                </template>
+            </v-alert>
+            <v-alert
+                v-else-if="waitingForImageStatus"
+                variant="tonal"
+                type="info"
+                color="deep-purple-lighten-2"
+                title="Checking for image updates..."
+                text="This may take a while, please be patient"
+            >
+                <template v-slot:prepend>
+                    <v-progress-circular
+                        size="26"
+                        color="deep-purple-lighten-2"
+                        indeterminate
+                    ></v-progress-circular>
+                </template>
+            </v-alert>
+            <v-alert v-else-if="connectionFailed" variant="tonal" type="error" title="No data"></v-alert>
+            <v-alert
+                v-else-if="!containersNeedUpdate"
+                variant="tonal"
+                type="success"
+                color="blue"
+                title="You're all good"
+            ></v-alert>
+            <v-alert v-else variant="tonal" type="warning" title="Updates available"></v-alert>
+        </v-fade-transition>
     </div>
     <v-row dense>
         <v-col cols="12" lg="9">
@@ -24,54 +41,58 @@
                     <v-col>
                         <v-hover>
                             <template v-slot:default="{ isHovering, props }">
-                                <v-skeleton-loader v-if="loading" class="mx-auto border" type="image">
-                                </v-skeleton-loader>
-                                <v-card
-                                    v-else
-                                    v-bind="props"
-                                    :color="isHovering ? undefined : 'surface-variant'"
-                                    elevation="0"
-                                    variant="tonal"
-                                    class="fill-height"
-                                    min-width="220"
-                                >
-                                    <template v-slot:append>
-                                        <v-icon icon="mdi-autorenew" size="x-large" color="warning"></v-icon>
-                                    </template>
+                                <v-fade-transition hide-on-leave>
+                                    <v-skeleton-loader v-if="loading" class="mx-auto border" type="image">
+                                    </v-skeleton-loader>
+                                    <v-card
+                                        v-else
+                                        v-bind="props"
+                                        :color="isHovering ? undefined : 'surface-variant'"
+                                        elevation="0"
+                                        variant="tonal"
+                                        class="fill-height"
+                                        min-width="220"
+                                    >
+                                        <template v-slot:append>
+                                            <v-icon icon="mdi-autorenew" size="x-large" color="warning"></v-icon>
+                                        </template>
 
-                                    <template v-slot:title> Can Be Updated </template>
+                                        <template v-slot:title> Can Be Updated </template>
 
-                                    <v-card-text>
-                                        <h2>{{ tweeenedOutdated.number.toFixed(0) }}</h2>
-                                    </v-card-text>
-                                </v-card>
+                                        <v-card-text>
+                                            <h2>{{ tweeenedOutdated.number.toFixed(0) }}</h2>
+                                        </v-card-text>
+                                    </v-card>
+                                </v-fade-transition>
                             </template>
                         </v-hover>
                     </v-col>
                     <v-col>
                         <v-hover>
                             <template v-slot:default="{ isHovering, props }">
-                                <v-skeleton-loader v-if="loading" class="mx-auto border" type="image">
-                                </v-skeleton-loader>
-                                <v-card
-                                    v-else
-                                    v-bind="props"
-                                    :color="isHovering ? undefined : 'surface-variant'"
-                                    elevation="0"
-                                    variant="tonal"
-                                    class="fill-height"
-                                    min-width="220"
-                                >
-                                    <template v-slot:append>
-                                        <v-icon icon="mdi-hand-okay" size="x-large" color="success"></v-icon>
-                                    </template>
+                                <v-fade-transition hide-on-leave>
+                                    <v-skeleton-loader v-if="loading" class="mx-auto border" type="image">
+                                    </v-skeleton-loader>
+                                    <v-card
+                                        v-else
+                                        v-bind="props"
+                                        :color="isHovering ? undefined : 'surface-variant'"
+                                        elevation="0"
+                                        variant="tonal"
+                                        class="fill-height"
+                                        min-width="220"
+                                    >
+                                        <template v-slot:append>
+                                            <v-icon icon="mdi-hand-okay" size="x-large" color="success"></v-icon>
+                                        </template>
 
-                                    <template v-slot:title> Gucci </template>
+                                        <template v-slot:title> Gucci </template>
 
-                                    <v-card-text>
-                                        <h2>{{ tweeenedUpToDate.number.toFixed(0) }}</h2>
-                                    </v-card-text>
-                                </v-card>
+                                        <v-card-text>
+                                            <h2>{{ tweeenedUpToDate.number.toFixed(0) }}</h2>
+                                        </v-card-text>
+                                    </v-card>
+                                </v-fade-transition>
                             </template>
                         </v-hover>
                     </v-col>
@@ -214,6 +235,7 @@ const selectedStackNames: Ref<string[]> = ref([]);
 const items: Ref<Stack[]> = ref([]);
 const loading: Ref<boolean> = ref(true);
 const refreshing: Ref<boolean> = ref(true);
+const waitingForImageStatus: Ref<boolean> = ref(false);
 
 // computed properties
 const portainerStackUrl = computed(() => {
@@ -247,6 +269,9 @@ watch(queueCount, async (newVal, oldVal) => {
 });
 
 // functions
+async function awaitTimeout(delay: number) {
+    return new Promise((resolve) => setTimeout(resolve, delay, "loading"));
+}
 
 async function manageStack(stack: Stack, action: Action) {
     loaderState[stack.id] = true;
@@ -328,39 +353,56 @@ function updateStatusCounts() {
     return { outdated, upToDate };
 }
 
+async function init() {
+    const response = await axios.get("/portainer/stacks", { params: { skeletonOnly: true } });
+    items.value = response.data;
+    loading.value = false;
+    waitingForImageStatus.value = true;
+    refreshing.value = false;
+}
+
 async function leeroad() {
     refreshing.value = true;
     try {
-        const response = await axios.get("/portainer/stacks");
-
+        const request = axios.get("/portainer/stacks");
+        const timeout = awaitTimeout(5000);
+        const first = await Promise.any([request, timeout]);
+        if (first === "loading") {
+            await init();
+        }
+        const response = await request;
         console.log("leeroaded");
         items.value = response.data;
+        waitingForImageStatus.value = false;
         connectionFailed.value = false;
-
-        for (let [ignoredImage] of Object.entries(dockerUpdateManagerSettings.value.ignoredImages)) {
-            let found = true;
-            for (let stack of items.value) {
-                for (let container of stack.containers) {
-                    container.upToDateIgnored = false;
-                    if (container.image === ignoredImage) {
-                        found = true;
-                        container.upToDateIgnored = true;
-                        break;
-                    }
-                }
-            }
-            if (!found) {
-                console.log(`Removing orphaned ignored image from ${ignoredImage}`);
-                delete dockerUpdateManagerSettings.value.ignoredImages[ignoredImage];
-            }
-            setIgnoreData();
-        }
+        setImageIgnores();
         updateStatusCounts();
     } catch (error) {
         connectionFailed.value = true;
         console.log(error);
     }
     refreshing.value = false;
+}
+
+function setImageIgnores() {
+    for (let [ignoredImage] of Object.entries(dockerUpdateManagerSettings.value.ignoredImages)) {
+        let found = true;
+        for (let stack of items.value) {
+            for (let container of stack.containers) {
+                container.upToDateIgnored = false;
+                if (container.image === ignoredImage) {
+                    found = true;
+                    container.upToDateIgnored = true;
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            console.log(`Removing orphaned ignored image from ${ignoredImage}`);
+            delete dockerUpdateManagerSettings.value.ignoredImages[ignoredImage];
+        }
+        setIgnoreData();
+    }
 }
 
 function updateSelectedRows(data: number[]) {
