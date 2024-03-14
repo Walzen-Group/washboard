@@ -18,12 +18,14 @@
         <v-divider vertical />
         <v-col cols="auto" class="pr-3 ml-1 pb-0 fill-height">
             <v-hover v-slot="{ isHovering, props }">
-                <v-card rounded="md"
-                        @click="show = !show"
-                        variant="flat"
-                        :color="isHovering ? 'rgba(0, 0, 0, 0.04)' : undefined"
-                        v-bind="props"
-                        class="d-flex align-center fill-height">
+                <v-card
+                    rounded="md"
+                    @click="show = !show"
+                    variant="flat"
+                    :color="isHovering ? 'rgba(0, 0, 0, 0.04)' : undefined"
+                    v-bind="props"
+                    class="d-flex align-center fill-height"
+                >
                     <v-icon :size="35">
                         {{ !show ? "mdi-chevron-down" : "mdi-chevron-up" }}
                     </v-icon>

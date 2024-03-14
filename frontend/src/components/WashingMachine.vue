@@ -1,20 +1,18 @@
 <template>
     <div class="washing-machine-outer-body" :style="washStyle">
         <div class="washing-machine">
-            <div :class="{ 'body': true, 'animate-shake': animate }">
+            <div :class="{ body: true, 'animate-shake': animate }">
                 <div class="panel">
                     <div class="button"></div>
                     <div class="dial"></div>
                 </div>
                 <div class="door">
                     <div class="window">
-                        <div :class="{ 'drum': true, 'drum-rotate': animate }">
-                            <img src="/img/walzen_logo_transparent.png" alt="W" class="letter-W">
+                        <div :class="{ drum: true, 'drum-rotate': animate }">
+                            <img src="/img/walzen_logo_transparent.png" alt="W" class="letter-W" />
                         </div>
-
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -24,21 +22,18 @@
 const props = defineProps({
     scale: {
         type: Number,
-        default: 1
+        default: 1,
     },
     animate: {
         type: Boolean,
-        default: false
-    }
-})
+        default: false,
+    },
+});
 
 const washStyle = computed(() => ({
-    '--scale-factor': props.scale,
+    "--scale-factor": props.scale,
 }));
-
 </script>
-
-
 
 <style scoped lang="scss">
 $base-width: 150px;
@@ -49,9 +44,9 @@ $panel-margin-top: 20px;
 $panel-border-radius: 10px;
 $control-size: 20px;
 $control-dial-size: 25px;
-$base-door-color: #455A64;
-$base-panel-color: #37474F;
-$control-color: #CFD8DC;
+$base-door-color: #455a64;
+$base-panel-color: #37474f;
+$control-color: #cfd8dc;
 $drum-width: 100px;
 $drum-height: 200px;
 $drum-color: #303030;
@@ -70,7 +65,6 @@ $w-dimensions: 100px;
 }
 
 @keyframes shake {
-
     0%,
     100% {
         transform: translate(0, 0) rotate(0);
@@ -116,7 +110,7 @@ $w-dimensions: 100px;
 .door {
     @include scale(width, $base-width);
     @include scale(height, $base-height);
-    background-color: #455A64;
+    background-color: #455a64;
     border-radius: $base-radius;
     display: flex;
     justify-content: center;
@@ -168,7 +162,7 @@ $w-dimensions: 100px;
 .panel {
     @include scale(width, 150px);
     @include scale(height, $panel-height);
-    background-color: #37474F;
+    background-color: #37474f;
     @include scale(margin-bottom, $panel-margin-top);
     @include scale(border-radius, $panel-border-radius);
     display: flex;
@@ -181,7 +175,7 @@ $w-dimensions: 100px;
 .dial {
     @include scale(width, $control-size);
     @include scale(height, $control-size);
-    background-color: #CFD8DC;
+    background-color: #cfd8dc;
     border-radius: 50%;
 }
 

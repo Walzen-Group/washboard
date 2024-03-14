@@ -1,10 +1,7 @@
 <template>
     <DefaultBar />
     <v-sheet color="#121212" class="full-height">
-        <v-img
-               aspect-ratio="16/9"
-               cover
-               src="/img/washboard_v4.webp">
+        <v-img aspect-ratio="16/9" cover src="/img/washboard_v4.webp">
             <DefaultViewContainer />
         </v-img>
     </v-sheet>
@@ -12,9 +9,9 @@
 </template>
 
 <script lang="ts" setup>
-import DefaultBar from './default/AppBar.vue'
-import DefaultViewContainer from './default/ViewContainer.vue'
-import DefaultFooter from './default/Footer.vue'
+import DefaultBar from "./default/AppBar.vue";
+import DefaultViewContainer from "./default/ViewContainer.vue";
+import DefaultFooter from "./default/Footer.vue";
 </script>
 
 <style scoped lang="scss">

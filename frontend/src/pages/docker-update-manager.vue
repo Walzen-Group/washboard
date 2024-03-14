@@ -3,14 +3,17 @@
     <div class="mb-2">
         <v-alert v-if="loading || refreshing" variant="tonal" type="info" title="Refreshing...">
             <template v-slot:prepend>
-                <v-progress-circular size="26" color="deep-blue-lighten-2"
-                                     indeterminate></v-progress-circular>
+                <v-progress-circular size="26" color="deep-blue-lighten-2" indeterminate></v-progress-circular>
             </template>
         </v-alert>
-        <v-alert v-else-if="connectionFailed" variant="tonal" type="error"
-                 title="No data"></v-alert>
-        <v-alert v-else-if="!containersNeedUpdate" variant="tonal" type="success" color="blue"
-                 title="You're all good"></v-alert>
+        <v-alert v-else-if="connectionFailed" variant="tonal" type="error" title="No data"></v-alert>
+        <v-alert
+            v-else-if="!containersNeedUpdate"
+            variant="tonal"
+            type="success"
+            color="blue"
+            title="You're all good"
+        ></v-alert>
 
         <v-alert v-else variant="tonal" type="warning" title="Updates available"></v-alert>
     </div>
@@ -20,23 +23,23 @@
                 <v-row dense class="mb-0">
                     <v-col>
                         <v-hover>
-
                             <template v-slot:default="{ isHovering, props }">
-                                <v-skeleton-loader v-if="loading" class="mx-auto border"
-                                                   type="image">
+                                <v-skeleton-loader v-if="loading" class="mx-auto border" type="image">
                                 </v-skeleton-loader>
-                                <v-card v-else v-bind="props"
-                                        :color="isHovering ? undefined : 'surface-variant'"
-                                        elevation="0" variant="tonal" class="fill-height"
-                                        min-width="220">
+                                <v-card
+                                    v-else
+                                    v-bind="props"
+                                    :color="isHovering ? undefined : 'surface-variant'"
+                                    elevation="0"
+                                    variant="tonal"
+                                    class="fill-height"
+                                    min-width="220"
+                                >
                                     <template v-slot:append>
-                                        <v-icon icon="mdi-autorenew" size="x-large"
-                                                color="warning"></v-icon>
+                                        <v-icon icon="mdi-autorenew" size="x-large" color="warning"></v-icon>
                                     </template>
 
-                                    <template v-slot:title>
-                                        Can Be Updated
-                                    </template>
+                                    <template v-slot:title> Can Be Updated </template>
 
                                     <v-card-text>
                                         <h2>{{ tweeenedOutdated.number.toFixed(0) }}</h2>
@@ -47,23 +50,23 @@
                     </v-col>
                     <v-col>
                         <v-hover>
-
                             <template v-slot:default="{ isHovering, props }">
-                                <v-skeleton-loader v-if="loading" class="mx-auto border"
-                                                   type="image">
+                                <v-skeleton-loader v-if="loading" class="mx-auto border" type="image">
                                 </v-skeleton-loader>
-                                <v-card v-else v-bind="props"
-                                        :color="isHovering ? undefined : 'surface-variant'"
-                                        elevation="0" variant="tonal" class="fill-height"
-                                        min-width="220">
+                                <v-card
+                                    v-else
+                                    v-bind="props"
+                                    :color="isHovering ? undefined : 'surface-variant'"
+                                    elevation="0"
+                                    variant="tonal"
+                                    class="fill-height"
+                                    min-width="220"
+                                >
                                     <template v-slot:append>
-                                        <v-icon icon="mdi-hand-okay" size="x-large"
-                                                color="success"></v-icon>
+                                        <v-icon icon="mdi-hand-okay" size="x-large" color="success"></v-icon>
                                     </template>
 
-                                    <template v-slot:title>
-                                        Gucci
-                                    </template>
+                                    <template v-slot:title> Gucci </template>
 
                                     <v-card-text>
                                         <h2>{{ tweeenedUpToDate.number.toFixed(0) }}</h2>
@@ -73,62 +76,87 @@
                         </v-hover>
                     </v-col>
                 </v-row>
-
             </div>
-            <StackUpdateTable @click:indicator="handleIndicatorClick"
-                              @update:selectedRows="updateSelectedRows"
-                              @update:items-per-page="calculateItemsPerPage"
-                              @update:stack-modified="leeroad"
-                              :item-url="portainerStackUrl" :items="items" :loading="loading">
-
+            <StackUpdateTable
+                @click:indicator="handleIndicatorClick"
+                @update:selectedRows="updateSelectedRows"
+                @update:items-per-page="calculateItemsPerPage"
+                @update:stack-modified="leeroad"
+                :item-url="portainerStackUrl"
+                :items="items"
+                :loading="loading"
+            >
                 <template v-slot:controls>
-                    <v-btn width="200" variant="tonal" @click="confirmUpdateSelected"
-                           color="primary"
-                           :disabled="!selectedRows.length" :loading="loadingUpdateButton">
+                    <v-btn
+                        width="200"
+                        variant="tonal"
+                        @click="confirmUpdateSelected"
+                        color="primary"
+                        :disabled="!selectedRows.length"
+                        :loading="loadingUpdateButton"
+                    >
                         Update Selected
                     </v-btn>
                 </template>
 
                 <template v-slot:inner-actions="{ item }">
                     <div class="d-flex flex-row flex-wrap mt-4">
-                        <v-btn v-if="item.containers.length === 0" :loading="loaderState[item.id]"
-                               class="mr-2 mb-2"
-                               variant="tonal" prepend-icon="mdi-arrow-right-drop-circle-outline"
-                               @click="manageStack(item, Action.Start)">Start</v-btn>
-                        <v-btn v-else :loading="loaderState[item.id]" class="mr-2 mb-2"
-                               variant="tonal"
-                               prepend-icon="mdi-stop-circle-outline"
-                               @click="manageStack(item, Action.Stop)">Stop</v-btn>
-                        <v-btn v-if="item.containers.length !== 0" :loading="loaderState[item.id]" class="mr-2 mb-2" variant="tonal"
-                               prepend-icon="mdi-restart"
-                               @click="manageStack(item, Action.Restart)">Restart</v-btn>
+                        <v-btn
+                            v-if="item.containers.length === 0"
+                            :loading="loaderState[item.id]"
+                            class="mr-2 mb-2"
+                            variant="tonal"
+                            prepend-icon="mdi-arrow-right-drop-circle-outline"
+                            @click="manageStack(item, Action.Start)"
+                            >Start</v-btn
+                        >
+                        <v-btn
+                            v-else
+                            :loading="loaderState[item.id]"
+                            class="mr-2 mb-2"
+                            variant="tonal"
+                            prepend-icon="mdi-stop-circle-outline"
+                            @click="manageStack(item, Action.Stop)"
+                            >Stop</v-btn
+                        >
+                        <v-btn
+                            v-if="item.containers.length !== 0"
+                            :loading="loaderState[item.id]"
+                            class="mr-2 mb-2"
+                            variant="tonal"
+                            prepend-icon="mdi-restart"
+                            @click="manageStack(item, Action.Restart)"
+                            >Restart</v-btn
+                        >
                     </div>
                 </template>
             </StackUpdateTable>
         </v-col>
         <v-col cols="12" lg="3">
-            <UpdateQuelelel :loading="loading" :queue="queue"
-                            :itemsPerPage="updateWidgetItemsPerPage"
-                            :hide="hideWidget">
+            <UpdateQuelelel
+                :loading="loading"
+                :queue="queue"
+                :itemsPerPage="updateWidgetItemsPerPage"
+                :hide="hideWidget"
+            >
             </UpdateQuelelel>
         </v-col>
     </v-row>
 
-
     <v-dialog transition="dialog-top-transition" :scrim="false" v-model="dialogUpdate" width="auto">
         <v-card>
-            <v-toolbar color="primary" class="d-flex justify-end" density="compact"
-                       title="Update stacks">
+            <v-toolbar color="primary" class="d-flex justify-end" density="compact" title="Update stacks">
                 <v-btn density="compact" icon="mdi-close" @click="dialogUpdate = false"></v-btn>
             </v-toolbar>
             <v-card-text class="text-subtitle-1">
-                Do you want to update {{ totalStacksToUpdate }} stack{{ totalStacksToUpdate > 1 ?
-            "s" :
-            "" }}?
-                <v-card elevation="0" rounded="md" class="mt-2 pb-2 text-body-1"
-                        border><v-virtual-scroll class="mt-3 pl-2"
-                                      :max-height="400" :width="450" :items="selectedStackNames">
-
+                Do you want to update {{ totalStacksToUpdate }} stack{{ totalStacksToUpdate > 1 ? "s" : "" }}?
+                <v-card elevation="0" rounded="md" class="mt-2 pb-2 text-body-1" border
+                    ><v-virtual-scroll
+                        class="mt-3 pl-2"
+                        :max-height="400"
+                        :width="450"
+                        :items="selectedStackNames"
+                    >
                         <template v-slot:default="{ item }">
                             {{ item }}
                         </template>
@@ -137,7 +165,6 @@
                 <p class="mt-5 text-subtitle-2">Note: Updating stopped stacks will start them</p>
             </v-card-text>
             <v-card-actions class="mb-2 mr-2">
-
                 <v-spacer></v-spacer>
                 <v-btn color="primary" variant="tonal" @click="updateSelected">Enqueue</v-btn>
             </v-card-actions>
@@ -146,15 +173,15 @@
 </template>
 
 <script lang="ts" setup>
-import axios from 'axios';
-import gsap from 'gsap';
-import { startStack, stopStack, updateStack, getContainers } from '@/api/lib';
-import { useLocalStore } from '@/store/local';
-import { useSnackbarStore } from '@/store/snackbar';
-import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
-import { storeToRefs } from 'pinia';
-import { ref, Ref, onMounted, computed, watch, reactive } from 'vue';
-import { Stack, Container, UpdateQueue, QueueStatus, ImageStatus, Action } from '@/types/types';
+import axios from "axios";
+import gsap from "gsap";
+import { startStack, stopStack, updateStack, getContainers } from "@/api/lib";
+import { useLocalStore } from "@/store/local";
+import { useSnackbarStore } from "@/store/snackbar";
+import { useUpdateQuelelelStore } from "@/store/updateQuelelel";
+import { storeToRefs } from "pinia";
+import { ref, Ref, onMounted, computed, watch, reactive } from "vue";
+import { Stack, Container, UpdateQueue, QueueStatus, ImageStatus, Action } from "@/types/types";
 
 const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
 
@@ -166,7 +193,6 @@ const updateQuelelelStore = useUpdateQuelelelStore();
 const { queue, queueCount } = storeToRefs(updateQuelelelStore);
 
 const snackbarsStore = useSnackbarStore();
-
 
 let loaderState: Record<string, boolean> = reactive({});
 
@@ -191,7 +217,9 @@ const refreshing: Ref<boolean> = ref(true);
 
 // computed properties
 const portainerStackUrl = computed(() => {
-    return process.env.PORTAINER_BASE_URL?.replace("${endpointId}", defaultEndpointId) || process.env.BASE_URL || "";
+    return (
+        process.env.PORTAINER_BASE_URL?.replace("${endpointId}", defaultEndpointId) || process.env.BASE_URL || ""
+    );
 });
 
 const containersNeedUpdate = computed(() => {
@@ -202,7 +230,6 @@ const containersNeedUpdate = computed(() => {
     }
     return false;
 });
-
 
 // hooks
 onMounted(async () => {
@@ -224,7 +251,9 @@ watch(queueCount, async (newVal, oldVal) => {
 async function manageStack(stack: Stack, action: Action) {
     loaderState[stack.id] = true;
     if (![Action.Start, Action.Stop, Action.Restart].includes(action)) {
-        throw new Error(`Action should be "${Action.Start}", "${Action.Stop}", or "${Action.Restart}", got "${action}"`);
+        throw new Error(
+            `Action should be "${Action.Start}", "${Action.Stop}", or "${Action.Restart}", got "${action}"`
+        );
     }
 
     try {
@@ -237,7 +266,11 @@ async function manageStack(stack: Stack, action: Action) {
             await handleResponse(stack, action, response);
         }
     } catch (error: any) {
-        snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Failed to ${action} ${stack?.name}: ${error.message}`, "error");
+        snackbarsStore.addSnackbar(
+            `${stack.id}_startstop`,
+            `Failed to ${action} ${stack?.name}: ${error.message}`,
+            "error"
+        );
     } finally {
         loaderState[stack.id] = false;
     }
@@ -259,22 +292,21 @@ async function handleResponse(stack: Stack, action: string, response: any) {
 async function updateContainers(stack: Stack) {
     const containersResponse = await getContainers(stack.name, parseInt(defaultEndpointId));
     let containers: Container[] = containersResponse.data;
-    containers = await Promise.all(containers.map(async container => updateContainerStatus(container)));
-    items.value = items.value.map(item => (item.id === stack.id ? { ...item, containers } : item));
+    containers = await Promise.all(containers.map(async (container) => updateContainerStatus(container)));
+    items.value = items.value.map((item) => (item.id === stack.id ? { ...item, containers } : item));
 }
 
 async function updateContainerStatus(container: Container) {
     const containerImageStatusResponse = await axios.get(`/portainer/image-status`, {
-        params: { endpointId: defaultEndpointId, containerId: container.id }
+        params: { endpointId: defaultEndpointId, containerId: container.id },
     });
     const containerImageStatus = containerImageStatusResponse.data;
     return { ...container, upToDate: containerImageStatus.status };
 }
 
 function clearStackContainers(stack: Stack) {
-    items.value = items.value.map(item => (item.id === stack.id ? { ...item, containers: [] } : item));
+    items.value = items.value.map((item) => (item.id === stack.id ? { ...item, containers: [] } : item));
 }
-
 
 function updateStatusCounts() {
     let outdated = 0;
@@ -290,18 +322,16 @@ function updateStatusCounts() {
         }
     }
     setTimeout(() => {
-        gsap.to(tweeenedOutdated, { duration: 0.5, number: Number(outdated) || 0 })
-        gsap.to(tweeenedUpToDate, { duration: 0.5, number: Number(upToDate) || 0 })
+        gsap.to(tweeenedOutdated, { duration: 0.5, number: Number(outdated) || 0 });
+        gsap.to(tweeenedUpToDate, { duration: 0.5, number: Number(upToDate) || 0 });
     }, 200);
     return { outdated, upToDate };
 }
 
-
-
 async function leeroad() {
     refreshing.value = true;
     try {
-        const response = await axios.get('/portainer/stacks');
+        const response = await axios.get("/portainer/stacks");
 
         console.log("leeroaded");
         items.value = response.data;
@@ -320,7 +350,7 @@ async function leeroad() {
                 }
             }
             if (!found) {
-                console.log(`Removing orphaned ignored image from ${ignoredImage}`)
+                console.log(`Removing orphaned ignored image from ${ignoredImage}`);
                 delete dockerUpdateManagerSettings.value.ignoredImages[ignoredImage];
             }
             setIgnoreData();
@@ -333,12 +363,11 @@ async function leeroad() {
     refreshing.value = false;
 }
 
-
-
-
 function updateSelectedRows(data: number[]) {
     selectedRows.value = data;
-    selectedStackNames.value = items.value.filter((item: Stack) => data.includes(item.id)).map((item: Stack) => item.name);
+    selectedStackNames.value = items.value
+        .filter((item: Stack) => data.includes(item.id))
+        .map((item: Stack) => item.name);
 }
 
 async function updateSelected() {
@@ -350,8 +379,15 @@ async function updateSelected() {
 
         // TODO: remove the true from the if statement, it's just there for testing
         // eslint-disable-next-line no-constant-condition
-        if (true || stack?.containers.some((container: any) =>
-            (container.upToDate === ImageStatus.Outdated || container.upToDate === ImageStatus.Unavailable) && !container.upToDateIgnored)) {
+        if (
+            true ||
+            stack?.containers.some(
+                (container: any) =>
+                    (container.upToDate === ImageStatus.Outdated ||
+                        container.upToDate === ImageStatus.Unavailable) &&
+                    !container.upToDateIgnored
+            )
+        ) {
             try {
                 const response = await updateStack(stackId);
                 let data = response.data;
@@ -360,16 +396,24 @@ async function updateSelected() {
                         currentProgress.value += 1;
                         break;
                     case 202:
-                        snackbarsStore.addSnackbar(`${stackId}_queued`, `Stack ${stack?.name} already queued`, "warning");
+                        snackbarsStore.addSnackbar(
+                            `${stackId}_queued`,
+                            `Stack ${stack?.name} already queued`,
+                            "warning"
+                        );
                         break;
                     default:
-                        snackbarsStore.addSnackbar(`${stackId}_error`, `Failed to enqueue stack ${stack?.name}: ${data.error}`, "error");
+                        snackbarsStore.addSnackbar(
+                            `${stackId}_error`,
+                            `Failed to enqueue stack ${stack?.name}: ${data.error}`,
+                            "error"
+                        );
                 }
             } catch (error) {
                 console.error(error);
             }
         } else {
-            setTimeout(() => loadingUpdateButton.value = false, 500);
+            setTimeout(() => (loadingUpdateButton.value = false), 500);
             console.log(`No update necessary for stack ${stack?.name}`);
             snackbarsStore.addSnackbar(`${stackId}_noup`, `No update necessary for stack ${stack?.name}`, "info");
         }
@@ -389,7 +433,7 @@ function handleIndicatorClick(container: any) {
         dockerUpdateManagerSettings.value.ignoredImages[container.image] = true;
     }
     localStore.updateDockerUpdateManagerSettings({
-        ignoredImages: dockerUpdateManagerSettings.value.ignoredImages
+        ignoredImages: dockerUpdateManagerSettings.value.ignoredImages,
     });
     setIgnoreData();
 }
@@ -416,19 +460,20 @@ function calculateItemsPerPage(itemsPerPage: number) {
             hideWidget.value = false;
         }, 200);
     }
-    return
+    return;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function generateTestValues(num: number) {
     const testItems: UpdateQueue = {
-        "done": {},
-        "error": {},
-        "queued": {}
+        done: {},
+        error: {},
+        queued: {},
     };
 
     for (let i = 0; i < num; i++) {
-        const status = Math.random() > 0.5 ? QueueStatus.Done : Math.random() > 0.5 ? QueueStatus.Error : QueueStatus.Queued;
+        const status =
+            Math.random() > 0.5 ? QueueStatus.Done : Math.random() > 0.5 ? QueueStatus.Error : QueueStatus.Queued;
         const stackName = `test-${i}`;
         const stackId = i;
         const timestamp = Math.floor(Math.random() * 1000000000);
@@ -438,7 +483,7 @@ function generateTestValues(num: number) {
             stackName: stackName,
             status: status,
             details: "Ich bin der Hämmerer",
-            timestamp: timestamp
+            timestamp: timestamp,
         };
     }
     return testItems;

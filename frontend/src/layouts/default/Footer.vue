@@ -2,19 +2,18 @@
     <v-footer :absolute="true" app>
         <span class="mx-2">&copy; {{ new Date().getFullYear() }} Walzen Group</span>
         <v-icon color="grey lighten-1" size="20">mdi-git</v-icon>
-        <a class="code-font ml-1"
-           :href="`https://github.com/Walzen-Group/washboard/commit/${commitHash}`">
+        <a class="code-font ml-1" :href="`https://github.com/Walzen-Group/washboard/commit/${commitHash}`">
             {{ commitHash }}
         </a>
         <v-spacer></v-spacer>
-        <a class="ml-3" href="https://www.flaticon.com/free-icon/washboard_7029393"
-           title="washboard icons">Icon</a>
+        <a class="ml-3" href="https://www.flaticon.com/free-icon/washboard_7029393" title="washboard icons"
+            >Icon</a
+        >
     </v-footer>
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
-
+import { computed } from "vue";
 
 const commitHash = computed(() => {
     if (process.env.commitHash) {
