@@ -88,7 +88,7 @@ func main() {
 		SendCookie:     true,
 		SecureCookie:   false, //non HTTPS dev environments
 		CookieHTTPOnly: true,  // JS can't modify
-		CookieDomain:   "localhost:8080, 10.10.194.2:8080, 172.31.0.37:8080, 10.10.10.37:8080",
+		// CookieDomain:   "localhost:8080, 10.10.194.2:8080, 172.31.0.37:8080, 10.10.10.37:8080",
 		CookieName:     "jwt",                    // default jwt
 		CookieSameSite: http.SameSiteDefaultMode, //SameSiteDefaultMode, SameSiteLaxMode, SameSiteStrictMode, SameSiteNoneMode
 		TokenLookup:    "header: Authorization, query: token, cookie: jwt",
