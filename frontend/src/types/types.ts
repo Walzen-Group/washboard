@@ -9,6 +9,10 @@ interface Container {
   labels: Record<string, string>;
 }
 
+interface StackInternal extends Stack {
+  expanded?: boolean;
+}
+
 
 interface Stack extends StackSettings {
   id: number;
@@ -105,6 +109,7 @@ export {
 export type {
   Container,
   Stack,
+  StackInternal,
   StackSettings,
   GroupSettings,
   Group,

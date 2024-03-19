@@ -493,7 +493,7 @@ function setIgnoreData() {
 }
 
 function calculateItemsPerPage(itemsPerPage: number) {
-    let val = Math.round(itemsPerPage * 0.55);
+    let val = Math.round(itemsPerPage * 0.53);
     updateWidgetItemsPerPage.value = val + 2;
 
     if (!loading.value) {
