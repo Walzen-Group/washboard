@@ -48,7 +48,7 @@
                                         :name="element.name">
                             <template #title>
                                 <div class="d-flex">
-                                    <div class="text-h6">Manuel</div>
+                                    <div class="text-h6">Manuel {{ element.id }}</div>
                                     <div>Banuel</div>
                                 </div>
                             </template>
@@ -71,10 +71,16 @@ import { useSortable } from "@vueuse/integrations/useSortable";
 
 const sortableRoot = ref<HTMLElement | null>(null);
 const props = defineProps<{ items: Stack[] }>();
-const stacksInternal: Ref<StackInternal[]> = ref(props.items);
+const stacksInternal: Ref<StackInternal[]> = ref([]);
 
 watch(props, () => {
-    stacksInternal.value = props.items;
+    stacksInternal.value = props.items.map((stack) => {
+        const stackInternal: StackInternal = {
+            ...stack,
+            expanded: false,
+        };
+        return stackInternal;
+    })
 });
 
 useSortable(sortableRoot, stacksInternal, {

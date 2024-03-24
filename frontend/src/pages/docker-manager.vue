@@ -49,8 +49,7 @@ async function generateTestData(): Promise<Stack[]> {
                     isUpToDate: i % 2 === 0,
                 },
             ],
-            GlobalPriority: -1,
-            WithinGroupPriority: -1,
+            priority: -1,
         };
 
         testData.push(stack);

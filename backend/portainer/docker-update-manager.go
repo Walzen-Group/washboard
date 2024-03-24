@@ -482,7 +482,7 @@ func EnqueueUpdateStack(endpointId int, stackId int, prune bool, pullImage bool)
 			return -2, retErr
 		}
 	}
-	glg.Infof("enqueueing stack id: %d", stackId)
+	glg.Infof("enqueueing stack id: %d, prune: %t", stackId, prune)
 
 	stackData, err := getStackRaw(stackId)
 	if err != nil {

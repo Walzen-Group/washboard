@@ -41,24 +41,11 @@ func SyncWithPortainer(c *gin.Context) {
 		containers = append(containers, tmp...)
 	}
 
-	collectedGroups := make(map[string]*types.GroupSettings)
 	collectedStacks := make(map[string]*types.StackSettings)
 	targetError := &werrors.DoesNotExistError{}
 
 	// add missing grups and stakcs (das bleibt so)
 	for _, container := range containers {
-		if groupName, ok := container.Labels[types.StackGroupLabel]; ok {
-			group, err := db.GetGroupSettings(groupName.(string))
-			if errors.As(err, &targetError) {
-				group = &types.GroupSettings{GroupName: groupName.(string)}
-				glg.Infof("adding missing group %s", groupName.(string))
-				db.CreateGroupSettings(group)
-			} else if err != nil {
-				handleError(c, err, fmt.Sprintf("Failed to sync settings with db for: %s", groupName), http.StatusInternalServerError)
-				return
-			}
-			collectedGroups[groupName.(string)] = group
-		}
 		if stackName, ok := container.Labels[types.StackLabel]; ok {
 			stack, err := db.GetStackSettings(stackName.(string))
 			if errors.As(err, &targetError) {
@@ -73,29 +60,17 @@ func SyncWithPortainer(c *gin.Context) {
 		}
 	}
 
-	allGroupSettings, err := db.GetAllGroupSettings()
 	allStackSettings, err2 := db.GetAllStackSettings()
-	if err != nil {
-		handleError(c, err, "Failed to get all group settings", http.StatusInternalServerError)
-		return
-	}
 	if err2 != nil {
 		handleError(c, err2, "Failed to get all stack settings", http.StatusInternalServerError)
 		return
 	}
 
 	stacksToRemove := make([]string, 0)
-	groupsToRemove := make([]string, 0)
 
 	for _, stackSettings := range allStackSettings {
 		if _, ok := collectedStacks[stackSettings.StackName]; !ok {
 			stacksToRemove = append(stacksToRemove, stackSettings.StackName)
-		}
-	}
-
-	for _, groupSettings := range allGroupSettings {
-		if _, ok := collectedGroups[groupSettings.GroupName]; !ok {
-			groupsToRemove = append(groupsToRemove, groupSettings.GroupName)
 		}
 	}
 
@@ -104,14 +79,6 @@ func SyncWithPortainer(c *gin.Context) {
 		err := db.DeleteStackSettings(stack)
 		if err != nil {
 			glg.Errorf("Failed to delete orphaned stack %s", stack)
-		}
-	}
-
-	for _, group := range groupsToRemove {
-		glg.Infof("removing orphaned group %s", group)
-		err := db.DeleteGroupSettings(group)
-		if err != nil {
-			glg.Errorf("Failed to delete orphaned group %s", group)
 		}
 	}
 	glg.Infof("sync completed")

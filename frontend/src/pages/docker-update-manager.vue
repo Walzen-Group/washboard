@@ -207,7 +207,7 @@ import { Stack, Container, UpdateQueue, QueueStatus, ImageStatus, Action } from 
 const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
 
 // stores
-const localStore = useLocalStore();
+const localStore: any = useLocalStore();
 const { dockerUpdateManagerSettings: dockerUpdateManagerSettings } = storeToRefs(localStore);
 
 const updateQuelelelStore = useUpdateQuelelelStore();

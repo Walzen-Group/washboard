@@ -73,14 +73,12 @@ type User struct {
 }
 
 type GroupSettings struct {
-	GroupName      string `bson:"groupName" json:"groupName"`
-	GlobalPriority int    `bson:"globalPriority" json:"globalPriority"`
+	GroupName string `bson:"groupName" json:"groupName"`
 }
 
 type StackSettings struct {
-	StackName           string `bson:"stackName" json:"stackName"`
-	GlobalPriority      int    `bson:"globalPriority" json:"globalPriority"`
-	WithinGroupPriority int    `bson:"withinGroupPriority" json:"withinGroupPriority"`
+	StackName string `bson:"stackName" json:"stackName"`
+	Priority  int    `bson:"globalPriority" json:"globalPriority"`
 }
 type SyncOptions struct {
 	EndpointIds []int `json:"endpointIds"`

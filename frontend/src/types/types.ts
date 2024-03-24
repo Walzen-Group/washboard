@@ -10,7 +10,7 @@ interface Container {
 }
 
 interface StackInternal extends Stack {
-  expanded?: boolean;
+  expanded: boolean;
 }
 
 
@@ -22,17 +22,15 @@ interface Stack extends StackSettings {
 }
 
 interface StackSettings {
-  GlobalPriority: number;
-  WithinGroupPriority: number;
+  priority: number;
 }
 
 interface Group extends GroupSettings {
-  Stacks: Stack[];
+  stacks: Stack[];
 }
 
 interface GroupSettings {
-  GroupName: string;
-  GlobalPriority: number;
+  groupName: string;
 }
 
 interface ContainerView {
