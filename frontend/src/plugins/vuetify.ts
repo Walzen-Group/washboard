@@ -21,6 +21,7 @@ const washboardThemeLight: ThemeDefinition = {
     surface: '#fbfbfb',
     wurple: '#CE93D8',
     "washboard-appbar": "#0277BD",
+    "stop": "#D81B60"
   },
 }
 
@@ -31,6 +32,7 @@ const washboardThemeDark: ThemeDefinition = {
     wurple: '#BA68C8',
     "surface-variant": "#c2c2c2",
     "washboard-appbar": "#01579B",
+    "stop": "#FF4081"
   },
 }
 

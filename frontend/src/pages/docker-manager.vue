@@ -7,6 +7,7 @@
 <script lang="ts" setup>
 import { Stack, Container } from "@/types/types";
 import { ref, Ref, onMounted } from "vue";
+import axios from "axios";
 
 const testDataStacks: Ref<Stack[]> = ref([]);
 
@@ -29,6 +30,7 @@ async function generateTestData(): Promise<Stack[]> {
                 image: `image${j}:latest`,
                 upToDate: `2024-02-${j < 10 ? "0" + j : j}`,
                 upToDateIgnored: j % 2 === 0,
+                networks: ["network1", "network2"],
                 status: j % 2 === 0 ? "Running" : "Stopped",
                 ports: [8080 + j, 9090 + j],
                 labels: {
@@ -49,7 +51,7 @@ async function generateTestData(): Promise<Stack[]> {
                     isUpToDate: i % 2 === 0,
                 },
             ],
-            priority: -1,
+            priority: i,
         };
 
         testData.push(stack);
@@ -59,6 +61,9 @@ async function generateTestData(): Promise<Stack[]> {
 }
 
 onMounted(async () => {
-    testDataStacks.value = await generateTestData();
+    //testDataStacks.value = await generateTestData();
+    const request = axios.get("/portainer/stacks");
+    const response = await request;
+    testDataStacks.value = response.data;
 });
 </script>

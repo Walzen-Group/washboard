@@ -6,13 +6,13 @@
                 <div>
                     <slot name="title"></slot>
                 </div>
-                <div>
+                <div class="d-flex flex-wrap ga-2">
                     <slot name="shortcuts"></slot>
                 </div>
             </div>
             <v-expand-transition>
                 <!-- Content -->
-                <div v-if="show">
+                <div v-if="show" class="mt-2">
                     <slot name="content"></slot>
                 </div>
             </v-expand-transition>

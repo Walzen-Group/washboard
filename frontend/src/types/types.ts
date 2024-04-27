@@ -5,6 +5,7 @@ interface Container {
   upToDate: string;
   upToDateIgnored: boolean,
   status: string;
+  networks: string[];
   ports: number[];
   labels: Record<string, string>;
 }

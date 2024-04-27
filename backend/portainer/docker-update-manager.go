@@ -274,6 +274,13 @@ func buildContainerDto(containers []map[string]interface{}) []*types.ContainerDt
 		for port := range uniquePorts {
 			publicPorts = append(publicPorts, port)
 		}
+
+		networksData := container["NetworkSettings"].(map[string]interface{})["Networks"].(map[string]interface{})
+		networkNames := make([]string, 0, len(networksData))
+		for networkName := range networksData {
+			networkNames = append(networkNames, networkName)
+		}
+
 		name := container["Names"].([]interface{})[0].(string)
 		name = helper.RemoveFirstIfMatch(name, "/")
 		containersDto = append(containersDto, &types.ContainerDto{
@@ -283,6 +290,7 @@ func buildContainerDto(containers []map[string]interface{}) []*types.ContainerDt
 			UpToDate: "",
 			Status:   container["State"].(string),
 			Ports:    publicPorts,
+			Networks: networkNames,
 			Labels:   container["Labels"].(map[string]interface{}),
 		})
 	}

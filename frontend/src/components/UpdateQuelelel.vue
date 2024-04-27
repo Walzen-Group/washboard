@@ -190,13 +190,13 @@ const items: ComputedRef<QueueItem[]> = computed(() => {
     items.sort((a, b) => {
         // Prioritize items with status 'queued'
         if (a.status === QueueStatus.Queued && b.status !== QueueStatus.Queued) {
-            return 1;
+            return -1;
         } else if (a.status !== QueueStatus.Queued && b.status === QueueStatus.Queued) {
-            return -1;
-        } else if (a.status === QueueStatus.Error && b.status !== QueueStatus.Error) {
-            return -1;
-        } else if (a.status !== QueueStatus.Error && b.status === QueueStatus.Error) {
             return 1;
+        } else if (a.status === QueueStatus.Error && b.status !== QueueStatus.Error) {
+            return 1;
+        } else if (a.status !== QueueStatus.Error && b.status === QueueStatus.Error) {
+            return -1;
         }
 
         // Then sort alphabetically by stackName

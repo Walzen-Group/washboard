@@ -17,6 +17,7 @@ type ContainerDto struct {
 	Image    string                 `json:"image"`
 	UpToDate string                 `json:"upToDate"`
 	Status   string                 `json:"status"`
+	Networks []string               `json:"networks"`
 	Ports    []int                  `json:"ports"`
 	Labels   map[string]interface{} `json:"labels"`
 }
@@ -52,7 +53,8 @@ const (
 	DbGroupSettingsCollection string          = "group_settings"
 	DbStackSettingsCollection string          = "stack_settings"
 	DbAccountsCollection      string          = "accounts"
-	StackGroupLabel           string          = "org.walzen.washb.group"
+	StackGroupLabel           string          = "org.walzen.washb.webui"
+	WebUIMachineAddressKey    string          = "${ADDRESS}"
 	StackLabel                string          = "com.docker.compose.project"
 	IdentityKey               string          = "id"
 	Start                     ContainerAction = "start"
@@ -73,13 +75,16 @@ type User struct {
 }
 
 type GroupSettings struct {
-	GroupName string `bson:"groupName" json:"groupName"`
+	GroupName    string   `bson:"groupName" json:"groupName"`
+	GroupIconURL string   `bson:"groupIcon" json:"groupIcon"`
+	StackNames   []string `bson:"stackNames" json:"stackNames"`
 }
 
 type StackSettings struct {
 	StackName string `bson:"stackName" json:"stackName"`
 	Priority  int    `bson:"globalPriority" json:"globalPriority"`
 }
+
 type SyncOptions struct {
 	EndpointIds []int `json:"endpointIds"`
 }
