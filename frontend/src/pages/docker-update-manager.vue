@@ -135,6 +135,7 @@
                             v-else
                             :loading="loaderState[item.id]"
                             class="mr-2 mb-2"
+                            color="stop"
                             variant="tonal"
                             prepend-icon="mdi-stop-circle-outline"
                             @click="manageStack(item, Action.Stop)"
@@ -145,6 +146,7 @@
                             :loading="loaderState[item.id]"
                             class="mr-2 mb-2"
                             variant="tonal"
+                            color="green-lighten-1"
                             prepend-icon="mdi-restart"
                             @click="manageStack(item, Action.Restart)"
                             >Restart</v-btn
@@ -196,7 +198,7 @@
 <script lang="ts" setup>
 import axios from "axios";
 import gsap from "gsap";
-import { startStack, stopStack, updateStack, getContainers } from "@/api/lib";
+import { startStack, stopStack, updateStack, getContainers, handleResponse } from "@/api/lib";
 import { useLocalStore } from "@/store/local";
 import { useSnackbarStore } from "@/store/snackbar";
 import { useUpdateQuelelelStore } from "@/store/updateQuelelel";
@@ -285,10 +287,10 @@ async function manageStack(stack: Stack, action: Action) {
         if (action === Action.Restart) {
             await stopStack(stack.id);
             const startResponse = await startStack(stack.id);
-            await handleResponse(stack, Action.Restart, startResponse);
+            await handleResponse(stack, Action.Restart, startResponse, snackbarsStore, items);
         } else {
             const response = await (action === Action.Start ? startStack(stack.id) : stopStack(stack.id));
-            await handleResponse(stack, action, response);
+            await handleResponse(stack, action, response, snackbarsStore, items);
         }
     } catch (error: any) {
         snackbarsStore.addSnackbar(
@@ -299,38 +301,6 @@ async function manageStack(stack: Stack, action: Action) {
     } finally {
         loaderState[stack.id] = false;
     }
-}
-
-async function handleResponse(stack: Stack, action: string, response: any) {
-    if (response.status === 200) {
-        if (action === Action.Start || action === Action.Restart) {
-            await updateContainers(stack);
-        } else {
-            clearStackContainers(stack);
-        }
-        snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Successfully ${action}ed ${stack?.name}`, "success");
-    } else {
-        throw new Error(`Received unexpected response status: ${response.status}`);
-    }
-}
-
-async function updateContainers(stack: Stack) {
-    const containersResponse = await getContainers(stack.name, parseInt(defaultEndpointId));
-    let containers: Container[] = containersResponse.data;
-    containers = await Promise.all(containers.map(async (container) => updateContainerStatus(container)));
-    items.value = items.value.map((item) => (item.id === stack.id ? { ...item, containers } : item));
-}
-
-async function updateContainerStatus(container: Container) {
-    const containerImageStatusResponse = await axios.get(`/portainer/image-status`, {
-        params: { endpointId: defaultEndpointId, containerId: container.id },
-    });
-    const containerImageStatus = containerImageStatusResponse.data;
-    return { ...container, upToDate: containerImageStatus.status };
-}
-
-function clearStackContainers(stack: Stack) {
-    items.value = items.value.map((item) => (item.id === stack.id ? { ...item, containers: [] } : item));
 }
 
 function updateStatusCounts() {

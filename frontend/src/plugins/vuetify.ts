@@ -19,6 +19,7 @@ const washboardThemeLight: ThemeDefinition = {
     primary: '#1E88E5',
     updated: '#42A5F5',
     surface: '#fbfbfb',
+    snakegreen: '#1ed760',
     wurple: '#CE93D8',
     "washboard-appbar": "#0277BD",
     "stop": "#D81B60"
@@ -30,6 +31,7 @@ const washboardThemeDark: ThemeDefinition = {
     primary: '#64B5F6',
     updated: '#0277BD',
     wurple: '#BA68C8',
+    snakegreen: '#1ed760',
     "surface-variant": "#c2c2c2",
     "washboard-appbar": "#01579B",
     "stop": "#FF4081"

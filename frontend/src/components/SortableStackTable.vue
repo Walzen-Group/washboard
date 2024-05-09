@@ -1,75 +1,68 @@
 <template>
-    <div>{{ stacksInternal.map((stack) => stack.name).join(", ") }}</div>
+    <!--<div>{{ stacksInternal.map((stack) => stack.name).join(", ") }}</div>-->
 
-    <div class="mb-3">
-        <v-card class="pt-2" variant="flat">
-            <v-card-title>Manage Stack State</v-card-title>
-            <v-card-text>
-                <div class="d-flex flex-wrap ga-3">
-                    <v-btn
-                           :loading="false"
-                           variant="tonal"
-                           prepend-icon="mdi-arrow-right-drop-circle-outline"
-                           @click="">Stacks
-                    </v-btn>
-                    <v-btn
-                           :loading="false"
-                           color="stop"
-                           variant="tonal"
-                           prepend-icon="mdi-stop-circle-outline"
-                           @click="">Stacks
-                    </v-btn>
 
+    <v-expansion-panels v-model="panel">
+        <v-expansion-panel>
+            <v-expansion-panel-title>
+                <v-card-title class="pl-0 ml-0">Bulk Operations</v-card-title>
+            </v-expansion-panel-title>
+            <v-expansion-panel-text>
+                <div class="ml-2 mb-3">
+                    <v-card class="pt-2" variant="flat">
+                        <v-card-title>Manage Selected Stacks</v-card-title>
+                        <v-card-text>
+                            <div class="d-flex flex-wrap ga-3">
+                                <v-btn
+                                       :loading="false"
+                                       variant="tonal"
+                                       prepend-icon="mdi-arrow-right-drop-circle-outline"
+                                       @click="">Start
+                                </v-btn>
+                                <v-btn
+                                       :loading="false"
+                                       color="stop"
+                                       variant="tonal"
+                                       prepend-icon="mdi-stop-circle-outline"
+                                       @click="">Stop
+                                </v-btn>
+                                <v-btn
+                                       :loading="false"
+                                       variant="tonal"
+                                       color="green-lighten-1"
+                                       prepend-icon="mdi-restart"
+                                       @click="">Restart
+                                </v-btn>
+                            </div>
+
+                        </v-card-text>
+                        <v-card-title>
+                            Select Options
+                        </v-card-title>
+
+                        <v-card-text>
+                            <div>
+                                <v-btn
+                                       :loading="false"
+                                       variant="tonal"
+                                       prepend-icon="mdi-auto-mode"
+                                       @click="">Autostart
+                                </v-btn>
+                            </div>
+                        </v-card-text>
+                    </v-card>
                 </div>
+            </v-expansion-panel-text>
+        </v-expansion-panel>
+    </v-expansion-panels>
 
-            </v-card-text>
 
-            <v-card-title>
-                Manage Container State
-            </v-card-title>
-
-            <v-card-text>
-                <div class="d-flex flex-wrap ga-3">
-                    <v-btn
-                           :loading="false"
-                           variant="tonal"
-                           prepend-icon="mdi-arrow-right-drop-circle-outline"
-                           @click="">Containers
-                    </v-btn>
-                    <v-btn
-                           :loading="false"
-                           color="stop"
-                           variant="tonal"
-                           prepend-icon="mdi-stop-circle-outline"
-                           @click="">Containers
-                    </v-btn>
-                </div>
-
-            </v-card-text>
-
-            <v-card-title>
-                Select Options
-            </v-card-title>
-
-            <v-card-text>
-                <div>
-                    <v-btn
-                           :loading="false"
-                           variant="tonal"
-                           prepend-icon="mdi-auto-mode"
-                           @click="">Autostart
-                    </v-btn>
-                </div>
-            </v-card-text>
-        </v-card>
-    </div>
-
-    <v-divider class="mb-3" />
+    <v-divider class="mb-3 mt-4" />
 
     <div ref="sortableRoot">
         <v-fade-transition group>
             <v-card v-for="element in stacksInternal" class="pb-2 pt-2 mb-2" :key="element.id">
-                <v-row dense>
+                <v-row dense :class="[xs ? 'row-sst' : undefined]">
                     <v-col cols="auto" class="ml-2">
                         <v-sheet class="fill-height d-flex flex-column">
                             <Transition name="slide-fade-up">
@@ -88,8 +81,11 @@
                             </Transition>
 
                             <v-sheet class="d-flex fill-height flex-column">
-                                <v-icon class="ml-2 mr-2 pr-0 cursor-move my-auto jannis" icon="mdi-drag"></v-icon>
+                                <v-checkbox-btn class="my-auto" v-model="element.checked" v-if="panel == 0"
+                                                :inline="true"></v-checkbox-btn>
+                                <v-icon v-else class="ml-2 pr-0 mr-2 cursor-move my-auto jannis" icon="mdi-drag"></v-icon>
                             </v-sheet>
+
                             <Transition name="slide-fade-down">
                                 <v-btn
                                        v-show="element.expanded"
@@ -109,26 +105,81 @@
                         </v-sheet>
                     </v-col>
                     <v-col>
-                        <SortableContainer
-                                           @click:expand="showOrderArrows"
-                                           :name="element.name">
-                            <template #title>
-                                <div class="d-flex align-center">
-                                    <v-checkbox-btn :inline="true"></v-checkbox-btn>
-                                    <div class="d-flex flex-wrap ga-1">
-                                        <div class="text-h6">{{ element.name }} {{ element.id }}</div>
-                                        <div class="">Priority: {{ element.priority }}</div>
-                                    </div>
-                                </div>
-                            </template>
-                            <template #shortcuts>
+                        <v-row dense>
+                            <v-col>
+                                <SortableContainer
+                                                   @click:expand="showOrderArrows"
+                                                   :name="element.name">
+                                    <template #title>
+                                        <v-row align="center" dense>
+                                            <v-col cols="12" sm="6" md="4" lg="3" xl="3">
+                                                <div class="d-flex">
+                                                    <div class="align-self-center text-body-2 mr-2">P{{ element.priority }}
+                                                    </div>
+                                                    <a :href="getPortainerUrl(element, portainerUrlTemplate)" target="_blank"
+                                                       class="align-self-end text-h6"
+                                                       style="text-decoration: none; color: inherit;">
+                                                        {{ element.name }}
+                                                    </a>
+                                                </div>
 
-                            </template>
-                            <template #content>
-                                <StackContent :containers="element.containers">
-                                </StackContent>
-                            </template>
-                        </SortableContainer>
+                                            </v-col>
+
+                                            <v-col cols="6" sm="4" md="6" lg="7" xl="7">
+                                                <div class="d-flex ml-1">
+                                                    <div v-for="container in element.containers"
+                                                         v-if="element.containers.length > 0">
+                                                        <v-icon class="pr-4"
+                                                                :color="getContainerStatusCircleColor(container.status)"
+                                                                size="14">mdi-circle</v-icon>
+                                                    </div>
+                                                    <div v-else>
+                                                        <v-icon class="pr-4" color="grey"
+                                                                size="14">mdi-help-circle</v-icon>
+                                                    </div>
+                                                </div>
+                                            </v-col>
+
+                                            <v-col cols="6" sm="12" md="2" lg="2" xl="2">
+                                                <v-switch color="blue-darken-1" density="compact" hide-details
+                                                          v-model="element.autoStart" inset></v-switch>
+                                            </v-col>
+                                        </v-row>
+                                    </template>
+                                    <template #shortcuts>
+                                    </template>
+                                    <template #content>
+                                        <!-- start stop and restart buttons -->
+                                        <div class="d-flex flex-wrap ga-3">
+                                            <v-btn
+                                                   v-if="element.containers.length === 0"
+                                                   :loading="loaderState[element.id]"
+                                                   variant="tonal"
+                                                   prepend-icon="mdi-arrow-right-drop-circle-outline"
+                                                   @click="manageStack(element, Action.Start)">Start
+                                            </v-btn>
+                                            <v-btn
+                                                   v-else
+                                                   :loading="loaderState[element.id]"
+                                                   color="stop"
+                                                   variant="tonal"
+                                                   prepend-icon="mdi-stop-circle-outline"
+                                                   @click="manageStack(element, Action.Stop)">Stop
+                                            </v-btn>
+                                            <v-btn
+                                                   :loading="loaderState[element.id]"
+                                                   variant="tonal"
+                                                   color="green-lighten-1"
+                                                   prepend-icon="mdi-restart"
+                                                   @click="manageStack(element, Action.Restart)">Restart
+                                            </v-btn>
+                                        </div>
+                                        <StackContent :containers="element.containers">
+                                        </StackContent>
+                                    </template>
+                                </SortableContainer>
+                            </v-col>
+                        </v-row>
                     </v-col>
                 </v-row>
             </v-card>
@@ -137,12 +188,20 @@
 </template>
 
 <script lang="ts" setup>
-import { Stack, StackInternal } from "@/types/types";
+import { startStack, stopStack, handleResponse } from "@/api/lib";
+import { Stack, StackInternal, Action } from "@/types/types";
 import { ref, Ref, watch } from "vue";
 import { useSortable } from "@vueuse/integrations/useSortable";
+import { useSnackbarStore } from "@/store/snackbar";
+import { getPortainerUrl, getContainerStatusCircleColor } from "@/api/lib";
+import { useDisplay } from "vuetify";
 
+const { xs } = useDisplay();
+
+const snackbarsStore = useSnackbarStore();
 const sortableRoot = ref<HTMLElement | null>(null);
-const props = defineProps<{ items: Stack[] }>();
+const panel: Ref<Number | undefined> = ref(undefined);
+const props = defineProps<{ items: Stack[], portainerUrlTemplate: string }>();
 const stacksInternal: Ref<StackInternal[]> = ref([]);
 let loaderState: Record<string, boolean> = reactive({});
 
@@ -151,6 +210,7 @@ watch(props, () => {
         const stackInternal: StackInternal = {
             ...stack,
             expanded: false,
+            checked: false
         };
         return stackInternal;
     })
@@ -161,6 +221,38 @@ useSortable(sortableRoot, stacksInternal, {
     animation: 250,
     forceFallback: true,
 });
+
+function s(arr: any) {
+    return arr.length > 1 ? "s" : "";
+}
+
+async function manageStack(stack: Stack, action: Action) {
+    loaderState[stack.id] = true;
+    if (![Action.Start, Action.Stop, Action.Restart].includes(action)) {
+        throw new Error(
+            `Action should be "${Action.Start}", "${Action.Stop}", or "${Action.Restart}", got "${action}"`
+        );
+    }
+
+    try {
+        if (action === Action.Restart) {
+            await stopStack(stack.id);
+            const startResponse = await startStack(stack.id);
+            await handleResponse(stack, Action.Restart, startResponse, snackbarsStore, stacksInternal);
+        } else {
+            const response = await (action === Action.Start ? startStack(stack.id) : stopStack(stack.id));
+            await handleResponse(stack, action, response, snackbarsStore, stacksInternal);
+        }
+    } catch (error: any) {
+        snackbarsStore.addSnackbar(
+            `${stack.id}_startstop`,
+            `Failed to ${action} ${stack?.name}: ${error.message}`,
+            "error"
+        );
+    } finally {
+        loaderState[stack.id] = false;
+    }
+}
 
 function showOrderArrows(expand: any) {
     stacksInternal.value = stacksInternal.value.map((stack) => {
@@ -232,4 +324,15 @@ function moveElement(element: Stack, action: string) {
     transform: translateY(-15px);
     opacity: 0;
 }
+
+.row-sst {
+    flex-wrap: nowrap;
+    padding-right: 110px;
+}
+
+.stack-icon {
+    min-width: 28px;
+    max-width: 28px;
+}
+
 </style>

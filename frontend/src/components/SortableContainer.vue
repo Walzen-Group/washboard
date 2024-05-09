@@ -1,6 +1,6 @@
 <template>
     <!-- Content title -->
-    <v-row class="fill-height" dense>
+    <v-row class="fill-height row-sc" dense>
         <v-col>
             <div>
                 <div>
@@ -17,8 +17,7 @@
                 </div>
             </v-expand-transition>
         </v-col>
-        <v-divider vertical />
-        <v-col cols="auto" class="pr-3 ml-1 pb-0 fill-height">
+        <v-col cols="auto" class="pr-3 pt-2 ml-1 pb-0 fill-height">
             <v-hover v-slot="{ isHovering, props }">
                 <v-card
                         rounded="md"
@@ -50,4 +49,8 @@ watch(show, () => {
 });
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.row-sc {
+    flex-wrap: nowrap;
+}
+</style>

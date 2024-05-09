@@ -90,6 +90,7 @@ func PortainerGetStacks(c *gin.Context) {
 	}
 
 	res, err := portainer.GetStacks(endpointId, skeletonOnly == "true")
+
 	/*
 	if (skeletonOnly == "false") {
 		time.Sleep(5 * time.Second)
@@ -102,6 +103,7 @@ func PortainerGetStacks(c *gin.Context) {
 		})
 		return
 	}
+
 	c.JSON(http.StatusOK, res)
 }
 

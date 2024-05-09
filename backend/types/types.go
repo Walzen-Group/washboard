@@ -26,6 +26,8 @@ type StackDto struct {
 	Id         int             `json:"id"`
 	Name       string          `json:"name"`
 	Containers []*ContainerDto `json:"containers"`
+	Priority   int             `json:"priority"`
+	AutoStart  bool            `json:"autoStart"`
 }
 
 type StackUpdateStatus struct {
@@ -73,16 +75,10 @@ type Login struct {
 type User struct {
 	UserName string
 }
-
-type GroupSettings struct {
-	GroupName    string   `bson:"groupName" json:"groupName"`
-	GroupIconURL string   `bson:"groupIcon" json:"groupIcon"`
-	StackNames   []string `bson:"stackNames" json:"stackNames"`
-}
-
 type StackSettings struct {
 	StackName string `bson:"stackName" json:"stackName"`
 	Priority  int    `bson:"globalPriority" json:"globalPriority"`
+	AutoStart bool   `bson:"autoStart" json:"autoStart"`
 }
 
 type SyncOptions struct {

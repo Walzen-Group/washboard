@@ -12,8 +12,8 @@ interface Container {
 
 interface StackInternal extends Stack {
   expanded: boolean;
+  checked: boolean;
 }
-
 
 interface Stack extends StackSettings {
   id: number;
@@ -24,6 +24,7 @@ interface Stack extends StackSettings {
 
 interface StackSettings {
   priority: number;
+  autoStart: boolean;
 }
 
 interface Group extends GroupSettings {
@@ -118,5 +119,5 @@ export type {
   DockerUpdateManagerSettings,
   IgnoredImages,
   UpdateQueue, QueueItem,
-  SidebarSettings
+  SidebarSettings,
 };

@@ -66,7 +66,7 @@
                        size="x-small"
                        icon
                        variant="text"
-                       :href="getPortainerUrl(item)"
+                       :href="getPortainerUrl(item, itemUrl)"
                        target="_blank"
                        class="mr-2">
                     <v-icon>mdi-open-in-new</v-icon>
@@ -138,6 +138,7 @@
 import { Container, Stack, ImageStatus, ContainerStatus } from "@/types/types";
 import { ref, onMounted, Ref, onUnmounted, watch, reactive } from "vue";
 import { useDisplay } from "vuetify";
+import { getPortainerUrl } from "@/api/lib";
 
 let keyDownHandler: any;
 let keyUpHandler: any;
@@ -362,10 +363,6 @@ function selectOutdated() {
             selectedRows.value.push(stack.id);
         }
     }
-}
-
-function getPortainerUrl(item: Stack) {
-    return props.itemUrl.replace("${stackId}", item.id.toString()).replace("${stackName}", item.name);
 }
 </script>
 

@@ -138,14 +138,6 @@ func main() {
 	dbStackRoute.PUT("/:name", api.UpdateStackSettings)
 	dbStackRoute.DELETE("/:name", api.DeleteStackSettings)
 
-	// db group routes
-	dbGroupRoute := router.Group("/db/groups", authMiddleware.MiddlewareFunc())
-	dbGroupRoute.POST("", api.CreateGroupSettings)
-	dbGroupRoute.GET("/:name", api.GetGroupSettings)
-	dbGroupRoute.GET("", api.GetGroupSettings)
-	dbGroupRoute.PUT("/:name", api.UpdateGroupSettings)
-	dbGroupRoute.DELETE("/:name", api.DeleteGroupSettings)
-
 	router.POST("/db/sync", authMiddleware.MiddlewareFunc(), api.SyncWithPortainer)
 
 	// authy

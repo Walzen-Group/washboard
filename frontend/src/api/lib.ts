@@ -1,4 +1,9 @@
 import axios, { AxiosError } from "axios";
+import { Stack, StackInternal, Action, Container } from "@/types/types";
+import { Store } from "pinia";
+
+
+const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
 
 async function updateStack(stackId: number, endpointId: number = 1) {
     const response = axios.put(`/portainer/stacks/${stackId}/update`, {
@@ -59,4 +64,56 @@ async function callRefreshTokenRoute() {
     }
     return false;
 }
-export { updateStack, stopStack, startStack, getContainers, isAuthorized, callRefreshTokenRoute };
+
+let loaderState = {} as { [key: string]: boolean };
+
+// Handle response of start/stop/restart stack
+async function handleStackStateChange(stack: Stack, action: string, response: any, snackbarsStore: any, stacksInternal: Ref<Stack[]>) {
+    if (response.status === 200) {
+        if (action === Action.Start || action === Action.Restart) {
+            await updateContainers(stack, stacksInternal);
+        } else {
+            clearStackContainers(stack, stacksInternal);
+        }
+        snackbarsStore.addSnackbar(`${stack.id}_startstop`, `Successfully ${action}ed ${stack?.name}`, "success");
+    } else {
+        throw new Error(`Received unexpected response status: ${response.status}`);
+    }
+}
+
+function clearStackContainers(stack: Stack, stacksInternal: Ref<Stack[]>) {
+    stacksInternal.value = stacksInternal.value.map((item) => (item.id === stack.id ? { ...item, containers: [] } : item));
+}
+
+async function updateContainers(stack: Stack, stacksInternal: Ref<Stack[]>) {
+    const containersResponse = await getContainers(stack.name, parseInt(defaultEndpointId));
+    let containers: Container[] = containersResponse.data;
+    containers = await Promise.all(containers.map(async (container) => updateContainerStatus(container)));
+    stacksInternal.value = stacksInternal.value.map((item) => (item.id === stack.id ? { ...item, containers } : item));
+}
+
+async function updateContainerStatus(container: Container) {
+    const containerImageStatusResponse = await axios.get(`/portainer/image-status`, {
+        params: { endpointId: defaultEndpointId, containerId: container.id },
+    });
+    const containerImageStatus = containerImageStatusResponse.data;
+    return { ...container, upToDate: containerImageStatus.status };
+}
+
+function getPortainerUrl(item: Stack, itemUrl: string) {
+    return itemUrl.replace("${stackId}", item.id.toString()).replace("${stackName}", item.name);
+}
+
+function getContainerStatusCircleColor(status: string) {
+    // suwitcho caseo
+    switch (status) {
+        case "running":
+            return "snakegreen";
+        case "exited":
+            return "stop";
+        default:
+            return "grey";
+    }
+}
+
+export { updateStack, stopStack, startStack, getContainers, isAuthorized, callRefreshTokenRoute, handleStackStateChange as handleResponse, getPortainerUrl, getContainerStatusCircleColor }

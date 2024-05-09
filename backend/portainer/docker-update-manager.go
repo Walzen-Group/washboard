@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"washboard/db"
 	"washboard/helper"
 	"washboard/types"
 
@@ -248,6 +249,16 @@ func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([
 
 	if len(queryImageStatusContainers) > 0 {
 		queryContainerImageStatus(endpointId, queryImageStatusContainers)
+	}
+
+	stackSettings, err := db.GetAllStackSettings()
+	if err == nil {
+		for _, stackSetting := range stackSettings {
+			if val, ok := stacksDto[stackSetting.StackName]; ok {
+				val.Priority = stackSetting.Priority
+				val.AutoStart = stackSetting.AutoStart
+			}
+		}
 	}
 
 	stacksDtoList := make([]types.StackDto, 0, len(stacksDto))
