@@ -18,7 +18,7 @@ type ContainerDto struct {
 	UpToDate string                 `json:"upToDate"`
 	Status   string                 `json:"status"`
 	Networks []string               `json:"networks"`
-	Ports    []int                  `json:"ports"`
+	Ports    []string               `json:"ports"`
 	Labels   map[string]interface{} `json:"labels"`
 }
 
@@ -77,7 +77,7 @@ type User struct {
 }
 type StackSettings struct {
 	StackName string `bson:"stackName" json:"stackName"`
-	Priority  int    `bson:"globalPriority" json:"globalPriority"`
+	Priority  int    `bson:"priority" json:"priority"`
 	AutoStart bool   `bson:"autoStart" json:"autoStart"`
 }
 

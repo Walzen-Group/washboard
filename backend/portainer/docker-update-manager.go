@@ -274,16 +274,18 @@ func buildContainerDto(containers []map[string]interface{}) []*types.ContainerDt
 	for _, container := range containers {
 		portsData := container["Ports"].([]interface{})
 		// Get unique public ports
-		uniquePorts := make(map[int]struct{})
+		uniquePorts := make(map[int]int)
 		for _, portData := range portsData {
 			portMap := portData.(map[string]interface{})
 			if publicPort, ok := portMap["PublicPort"].(float64); ok {
-				uniquePorts[int(publicPort)] = struct{}{}
+				if privatePort, ok := portMap["PrivatePort"].(float64); ok {
+					uniquePorts[int(publicPort)] = int(privatePort)
+				}
 			}
 		}
-		publicPorts := make([]int, 0, len(uniquePorts))
-		for port := range uniquePorts {
-			publicPorts = append(publicPorts, port)
+		outPorts := make([]string, 0, len(uniquePorts))
+		for public, private := range uniquePorts {
+			outPorts = append(outPorts, fmt.Sprintf("%d:%d", public, private))
 		}
 
 		networksData := container["NetworkSettings"].(map[string]interface{})["Networks"].(map[string]interface{})
@@ -300,7 +302,7 @@ func buildContainerDto(containers []map[string]interface{}) []*types.ContainerDt
 			Image:    container["Image"].(string),
 			UpToDate: "",
 			Status:   container["State"].(string),
-			Ports:    publicPorts,
+			Ports:    outPorts,
 			Networks: networkNames,
 			Labels:   container["Labels"].(map[string]interface{}),
 		})

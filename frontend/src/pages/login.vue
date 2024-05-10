@@ -80,7 +80,7 @@ async function submitLogin() {
     loginError.value = false;
     loading.value = true;
     try {
-        const response = await axios.post("/auth/login", {
+        const response = await axios.post("/api/auth/login", {
             username: username.value,
             password: password.value,
         });

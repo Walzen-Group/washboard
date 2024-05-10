@@ -6,7 +6,7 @@ interface Container {
   upToDateIgnored: boolean,
   status: string;
   networks: string[];
-  ports: number[];
+  ports: string[];
   labels: Record<string, string>;
 }
 
@@ -23,6 +23,12 @@ interface Stack extends StackSettings {
 }
 
 interface StackSettings {
+  priority: number;
+  autoStart: boolean;
+}
+
+interface StackSettingsDto {
+  stackName: string;
   priority: number;
   autoStart: boolean;
 }
@@ -109,6 +115,7 @@ export {
 export type {
   Container,
   Stack,
+  StackSettingsDto,
   StackInternal,
   StackSettings,
   GroupSettings,

@@ -56,6 +56,9 @@
         </v-expansion-panel>
     </v-expansion-panels>
 
+    <div class="d-flex mt-4">
+        <v-switch color="blue" v-model="orderEditMode" inset density="compact" hide-details label="Edit Order"></v-switch>
+    </div>
 
     <v-divider class="mb-3 mt-4" />
     <div v-if="loading">
@@ -72,7 +75,7 @@
                         <v-sheet class="fill-height d-flex flex-column">
                             <Transition name="slide-fade-up">
                                 <v-btn
-                                       v-show="element.expanded"
+                                       v-show="element.expanded && orderEditMode"
                                        icon
                                        size="40"
                                        elevation="0"
@@ -80,7 +83,7 @@
                                        density="compact"
                                        :ripple="false"
                                        :disabled="isFirstElement(element)"
-                                       @click="moveElement(element, 'up')">
+                                       @click="moveElementAndUpdate(element, 'up')">
                                     <v-icon size="40"> mdi-chevron-up </v-icon>
                                 </v-btn>
                             </Transition>
@@ -88,12 +91,13 @@
                             <v-sheet class="d-flex fill-height flex-column">
                                 <v-checkbox-btn class="my-auto" v-model="element.checked" v-if="panel == 0"
                                                 :inline="true"></v-checkbox-btn>
-                                <v-icon v-else class="ml-2 pr-0 mr-2 cursor-move my-auto jannis" icon="mdi-drag"></v-icon>
+                                <v-icon v-else-if="orderEditMode" class="ml-2 pr-0 mr-2 cursor-move my-auto jannis"
+                                        icon="mdi-drag"></v-icon>
                             </v-sheet>
 
                             <Transition name="slide-fade-down">
                                 <v-btn
-                                       v-show="element.expanded"
+                                       v-show="element.expanded && orderEditMode"
                                        icon
                                        size="40"
                                        elevation="0"
@@ -102,7 +106,7 @@
                                        :ripple="false"
                                        :disabled="isLastElement(element)"
                                        class="mt-auto"
-                                       @click="moveElement(element, 'down')">
+                                       @click="moveElementAndUpdate(element, 'down')">
 
                                     <v-icon size="40">mdi-chevron-down</v-icon>
                                 </v-btn>
@@ -117,9 +121,47 @@
                                                    :name="element.name">
                                     <template #title>
                                         <v-row align="center" dense>
-                                            <v-col align-self="end" cols="12" sm="6" md="4" lg="3" xl="3">
+                                            <v-col align-self="end" cols="10" sm="6" md="4" lg="3" xl="3">
+                                                <div class="mr-2 d-flex align-end">
+                                                    <div class="text-caption ">P{{ element.priority }}</div>
 
-                                                <div class="text-caption mr-2">P{{ element.priority }}
+                                                    <v-menu v-if="checkWebUILabel(element) > 1">
+                                                        <template v-slot:activator="{ props }">
+                                                            <v-chip color="wurple"
+                                                                    v-bind="props"
+                                                                    class="ml-2 px-2"
+                                                                    density="comfortable" rounded="20"
+                                                                    size="small">WebUI
+                                                            </v-chip>
+                                                        </template>
+
+                                                        <v-list nav density="compact">
+                                                            <v-list-item :href="resolveWebUILink(container)"
+                                                                         v-for="container in element.containers.filter((container) => webUILabel in container.labels)"
+                                                                         :key="container.id">
+
+                                                                <div class="d-flex flex-column align-center">
+                                                                    <v-list-item-title class="pb-1">
+                                                                        {{ container.name }}
+                                                                    </v-list-item-title>
+
+                                                                    <v-img
+                                                                           v-if="container.labels['net.unraid.docker.icon']"
+                                                                           height="25" width="25"
+                                                                           :src="container.labels['net.unraid.docker.icon']"></v-img>
+                                                                    <v-icon v-else size="31">mdi-docker</v-icon>
+                                                                </div>
+                                                            </v-list-item>
+                                                        </v-list>
+                                                    </v-menu>
+                                                    <v-chip v-else-if="checkWebUILabel(element) == 1"
+                                                            color="wurple"
+                                                            v-bind="props"
+                                                            :href="resolveWebUILink(element.containers.filter((container) => webUILabel in container.labels)[0])"
+                                                            class="ml-2 px-2"
+                                                            density="comfortable" rounded="20"
+                                                            size="small">WebUI
+                                                    </v-chip>
                                                 </div>
 
                                                 <a :href="getPortainerUrl(element, portainerUrlTemplate)" target="_blank"
@@ -130,7 +172,8 @@
 
                                             </v-col>
 
-                                            <v-col :class="[xs ? 'pb-3' : undefined]" cols="6" sm="4" md="6" lg="7" xl="7">
+                                            <v-col v-if="!element.expanded" :class="[xs ? 'pb-3' : undefined]" cols="6"
+                                                   sm="4" md="6" lg="7" xl="7">
                                                 <div class="d-flex ml-1">
                                                     <div v-for="container in element.containers"
                                                          v-if="element.containers.length > 0">
@@ -145,9 +188,16 @@
                                                 </div>
                                             </v-col>
 
-                                            <v-col :class="[xs ? 'pb-3' : undefined]" cols="6" sm="2" md="2" lg="2" xl="2">
+                                            <v-col :class="[xs ? 'pb-3' : undefined]"
+                                                   :cols="element.expanded ? '2' : '6'"
+                                                   :sm="element.expanded ? '6' : '2'"
+                                                   :md="element.expanded ? '8' : '2'"
+                                                   :lg="element.expanded ? '9' : '2'"
+                                                   :xl="element.expanded ? '9' : '2'">
                                                 <v-row :class="[xs ? 'pr-4' : 'pr-10']" justify="end">
-                                                    <v-switch color="blue-darken-1" density="compact" hide-details
+                                                    <v-switch :loading="loaderState[element.id]"
+                                                              @click="toggleAutoStart(element)" color="blue-darken-1"
+                                                              density="compact" hide-details
                                                               v-model="element.autoStart" inset></v-switch>
                                                 </v-row>
                                             </v-col>
@@ -195,17 +245,20 @@
 </template>
 
 <script lang="ts" setup>
-import { startStack, stopStack, handleResponse } from "@/api/lib";
-import { Stack, StackInternal, Action, PaddingClass } from "@/types/types";
+import { startStack, stopStack, handleStackStateChange, webUILabel, webUIAddressKey } from "@/api/lib";
+import { Stack, StackInternal, Action, PaddingClass, Container, StackSettingsDto } from "@/types/types";
 import { ref, Ref, watch } from "vue";
-import { useSortable } from "@vueuse/integrations/useSortable";
+import { moveArrayElement, useSortable } from "@vueuse/integrations/useSortable";
 import { useSnackbarStore } from "@/store/snackbar";
 import { getPortainerUrl, getContainerStatusCircleColor } from "@/api/lib";
 import { useDisplay } from "vuetify";
+import axios from "axios";
 
 const { xs } = useDisplay();
 
 const snackbarsStore = useSnackbarStore();
+const webUIAddress: Ref<string> = ref(location.hostname);
+const orderEditMode: Ref<boolean> = ref(false);
 const sortableRoot = ref<HTMLElement | null>(null);
 const panel: Ref<Number | undefined> = ref(undefined);
 const props = defineProps<{ items: Stack[], portainerUrlTemplate: string, loading: boolean }>();
@@ -220,6 +273,7 @@ watch(props, () => {
             expanded: false,
             checked: false
         };
+        paddingClass.value[stack.name] = "row-sst";
         return stackInternal;
     })
 });
@@ -227,21 +281,98 @@ watch(props, () => {
 watch(xs, (value) => {
     for (const stack of stacksInternal.value) {
         if (stack.expanded && value) {
-            paddingClass.value[stack.name] = "row-sst-pad";
+            if (orderEditMode.value) {
+                paddingClass.value[stack.name] = "row-sst-pad";
+            } else {
+                paddingClass.value[stack.name] = "row-sst-pad-noorder";
+            }
         } else {
-            paddingClass.value[stack.name] = undefined;
+            paddingClass.value[stack.name] = "row-sst";
         }
     }
 });
 
 useSortable(sortableRoot, stacksInternal, {
     handle: ".jannis",
-    animation: 250,
+    animation: 150,
     forceFallback: true,
+    onUpdate: (e: any) => {
+        setTimeout(() => {
+            if (e.oldIndex < e.newIndex) {
+                console.log(`direction: down, positions: ${e.newIndex - e.oldIndex}`)
+                moveElement(stacksInternal.value[e.oldIndex], "down", e.newIndex - e.oldIndex);
+            } else {
+                console.log(`direction: up, positions: ${e.oldIndex - e.newIndex}`)
+                moveElement(stacksInternal.value[e.oldIndex], "up", e.oldIndex - e.newIndex);
+            }
+
+            nextTick(async () => {
+                for (let stack of stacksInternal.value) {
+                    stack.priority = stacksInternal.value.indexOf(stack);
+                }
+                try {
+                    const newStack: StackInternal = stacksInternal.value[e.newIndex];
+                    const dto: StackSettingsDto = {
+                        stackName: newStack.name,
+                        priority: newStack.priority,
+                        autoStart: newStack.autoStart
+                    };
+                    const response = await axios.put(`/api/db/stacks/${newStack.name}`, dto, { params: { updatePrio: true } });
+                    snackbarsStore.addSnackbar("stacks_order", "Stack order updated", "success");
+                } catch (error: any) {
+                    snackbarsStore.addSnackbar("stacks_order", `Failed to update stack order: ${error.message}`, "error");
+                }
+            });
+
+        }, 100);
+    }
 });
 
 function s(arr: any) {
     return arr.length > 1 ? "s" : "";
+}
+
+async function toggleAutoStart(stack: Stack) {
+    loaderState[stack.id] = true;
+    if (!stack) {
+        return;
+    }
+
+    stack.autoStart = !stack.autoStart;
+    let dto: StackSettingsDto = {
+        stackName: stack.name,
+        priority: stack.priority,
+        autoStart: stack.autoStart
+    };
+    try {
+        const result = await axios.put(`/api/db/stacks/${stack.name}`, dto);
+        snackbarsStore.addSnackbar(`${stack.name}_autoStart`, `Auto start for ${stack.name} ${stack.autoStart ? "enabled" : "disabled"}`, "success");
+    } catch (error: any) {
+        stack.autoStart = !stack.autoStart;
+        snackbarsStore.addSnackbar(`${stack.name}_autoStart`, `Failed to update auto start for ${stack.name}: ${error.message}`, "error");
+    }
+    loaderState[stack.id] = false;
+}
+
+function checkWebUILabel(stack: Stack) {
+    const webUIContainers: Container[] | undefined = stack.containers.filter((container) => webUILabel in container.labels);
+    return webUIContainers.length;
+}
+
+function resolveWebUILink(container: Container) {
+    const ports = container.ports.map((port) => port.split(":")).map((p) => [p[1], p[0]]);
+    const portDict = Object.fromEntries(ports);
+
+    let target = webUIAddress.value;
+    let outputUrl = container.labels[webUILabel].replace(webUIAddressKey, target);
+
+    // iterate to portdict and replace all private with public ports
+    for (const [privatePort, publicPort] of Object.entries(portDict) as [string, string][]) {
+        outputUrl = outputUrl.replace(privatePort, publicPort);
+    }
+
+    console.log(`output url: ${outputUrl}`);
+    return outputUrl
 }
 
 async function manageStack(stack: Stack, action: Action) {
@@ -256,10 +387,10 @@ async function manageStack(stack: Stack, action: Action) {
         if (action === Action.Restart) {
             await stopStack(stack.id);
             const startResponse = await startStack(stack.id);
-            await handleResponse(stack, Action.Restart, startResponse, snackbarsStore, stacksInternal);
+            await handleStackStateChange(stack, Action.Restart, startResponse, snackbarsStore, stacksInternal, false);
         } else {
             const response = await (action === Action.Start ? startStack(stack.id) : stopStack(stack.id));
-            await handleResponse(stack, action, response, snackbarsStore, stacksInternal);
+            await handleStackStateChange(stack, action, response, snackbarsStore, stacksInternal, false);
         }
     } catch (error: any) {
         snackbarsStore.addSnackbar(
@@ -281,7 +412,11 @@ function showOrderArrows(expand: any) {
     if (elem.name === expand.name) {
         elem.expanded = !elem.expanded;
         if (xs.value && elem.expanded) {
-            paddingClass.value[elem.name] = "row-sst-pad";
+            if (orderEditMode.value) {
+                paddingClass.value[elem.name] = "row-sst-pad";
+            } else {
+                paddingClass.value[elem.name] = "row-sst-pad-noorder";
+            }
         } else {
             paddingClass.value[elem.name] = "row-sst";
         }
@@ -296,21 +431,46 @@ function isLastElement(element: Stack) {
     return stacksInternal.value[stacksInternal.value.length - 1].id === element.id;
 }
 
-function moveElement(element: Stack, action: string) {
+function moveElement(element: Stack, action: string, amount: number = 1) {
     let toIndex;
     const currIdx = stacksInternal.value.findIndex((i) => i.id == element.id);
     if (action === "up") {
         if (currIdx === 0) return;
-        toIndex = currIdx - 1;
+        toIndex = currIdx - amount;
     } else if (action === "down") {
         if (currIdx === stacksInternal.value.length - 1) return;
-        toIndex = currIdx + 1;
+        toIndex = currIdx + amount;
     } else {
         toIndex = currIdx;
     }
     const [removed] = stacksInternal.value.splice(currIdx, 1);
+    removed.priority = toIndex;
     stacksInternal.value.splice(toIndex, 0, removed);
+    return removed;
 }
+
+function moveElementAndUpdate(element: Stack, action: string) {
+    const stack = moveElement(element, action, 1);
+    if (stack) {
+        updatePriority(stack);
+    }
+}
+
+async function updatePriority(stack: StackInternal) {
+    try {
+        const newStack: StackInternal = stack;
+        const dto: StackSettingsDto = {
+            stackName: newStack.name,
+            priority: newStack.priority,
+            autoStart: newStack.autoStart
+        };
+        const response = await axios.put(`/api/db/stacks/${newStack.name}`, dto, { params: { updatePrio: true } });
+    } catch (error: any) {
+        snackbarsStore.addSnackbar("stacks_order", `Failed to update stack order: ${error.message}`, "error");
+    }
+}
+
+
 </script>
 
 <style lang="scss">
@@ -353,6 +513,11 @@ function moveElement(element: Stack, action: string) {
 .row-sst-pad {
     flex-wrap: nowrap;
     padding-right: 110px;
+}
+
+.row-sst-pad-noorder {
+    flex-wrap: nowrap;
+    padding-right: 72px;
 }
 
 .row-sst {

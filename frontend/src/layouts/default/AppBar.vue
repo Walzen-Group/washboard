@@ -190,7 +190,7 @@ function toggleTheme() {
 
 async function signOut() {
     try {
-        await axios.post("/auth/logout");
+        await axios.post("/api/auth/logout");
         renderInitCompleted.value = false;
         router.push({ path: "/login" });
     } catch (e) {

@@ -198,7 +198,7 @@
 <script lang="ts" setup>
 import axios from "axios";
 import gsap from "gsap";
-import { startStack, stopStack, updateStack, getContainers, handleResponse } from "@/api/lib";
+import { startStack, stopStack, updateStack, getContainers, handleStackStateChange } from "@/api/lib";
 import { useLocalStore } from "@/store/local";
 import { useSnackbarStore } from "@/store/snackbar";
 import { useUpdateQuelelelStore } from "@/store/updateQuelelel";
@@ -287,10 +287,10 @@ async function manageStack(stack: Stack, action: Action) {
         if (action === Action.Restart) {
             await stopStack(stack.id);
             const startResponse = await startStack(stack.id);
-            await handleResponse(stack, Action.Restart, startResponse, snackbarsStore, items);
+            await handleStackStateChange(stack, Action.Restart, startResponse, snackbarsStore, items);
         } else {
             const response = await (action === Action.Start ? startStack(stack.id) : stopStack(stack.id));
-            await handleResponse(stack, action, response, snackbarsStore, items);
+            await handleStackStateChange(stack, action, response, snackbarsStore, items);
         }
     } catch (error: any) {
         snackbarsStore.addSnackbar(
@@ -324,7 +324,7 @@ function updateStatusCounts() {
 }
 
 async function init() {
-    const response = await axios.get("/portainer/stacks", { params: { skeletonOnly: true } });
+    const response = await axios.get("/api/portainer/stacks", { params: { skeletonOnly: true } });
     items.value = response.data;
     loading.value = false;
     waitingForImageStatus.value = true;
@@ -334,7 +334,7 @@ async function init() {
 async function leeroad() {
     refreshing.value = true;
     try {
-        const request = axios.get("/portainer/stacks");
+        const request = axios.get("/api/portainer/stacks");
         const timeout = awaitTimeout(5000);
         const first = await Promise.any([request, timeout]);
         if (first === "loading") {

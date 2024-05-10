@@ -56,7 +56,7 @@ onMounted(async () => {
 
 function connectWebSocket() {
   console.log("connecting to websocket...")
-  let wsAddr = `${axios.defaults.baseURL}/ws/stacks-update`.replace('http://', 'ws://').replace('https://', 'wss://');
+  let wsAddr = `${axios.defaults.baseURL}/api/ws/stacks-update`.replace('http://', 'ws://').replace('https://', 'wss://');
   let socket = new WebSocket(wsAddr);
   socket.onmessage = function (event) {
     let data: UpdateQueue = JSON.parse(event.data);

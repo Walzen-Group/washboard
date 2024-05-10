@@ -3,6 +3,7 @@ package main
 import (
 	"math/rand"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -106,8 +107,10 @@ func main() {
 		glg.Fatalf("Error creating JWT middleware: %s", err)
 	}
 
+	apiRoute := router.Group("/api")
+
 	// portainer api routes
-	portainerRoute := router.Group("/portainer", authMiddleware.MiddlewareFunc())
+	portainerRoute := apiRoute.Group("/portainer", authMiddleware.MiddlewareFunc())
 	portainerRoute.GET("/endpoint", api.PortainerGetEndpoint)
 	portainerRoute.GET("/containers", api.PortainerGetContainers)
 	portainerRoute.GET("/image-status", api.PortainerGetImageStatus)
@@ -125,32 +128,47 @@ func main() {
 	prtStackRoute.PUT("/:id/update", api.PortainerUpdateStack)
 
 	// websocket stuff
-	websocketRoute := router.Group("/ws")
+	websocketRoute := apiRoute.Group("/ws")
 	websocketRoute.GET("/stacks-update", api.WsHandler)
 
 	// db CRUD
 
 	// db stack routes
-	dbStackRoute := router.Group("/db/stacks", authMiddleware.MiddlewareFunc())
+	dbStackRoute := apiRoute.Group("/db/stacks", authMiddleware.MiddlewareFunc())
 	dbStackRoute.POST("", api.CreateStackSettings)
 	dbStackRoute.GET("/:name", api.GetStackSettings)
 	dbStackRoute.GET("", api.GetStackSettings)
 	dbStackRoute.PUT("/:name", api.UpdateStackSettings)
 	dbStackRoute.DELETE("/:name", api.DeleteStackSettings)
 
-	router.POST("/db/sync", authMiddleware.MiddlewareFunc(), api.SyncWithPortainer)
+	apiRoute.POST("/db/sync", authMiddleware.MiddlewareFunc(), api.SyncWithPortainer)
 
 	// authy
-	authGroup := router.Group("/auth")
+	authGroup := apiRoute.Group("/auth")
 	authGroup.POST("/login", authMiddleware.LoginHandler)
 	authGroup.POST("/logout", authMiddleware.LogoutHandler)
 	authGroup.POST("/refresh_token", authMiddleware.RefreshHandler)
 
-	router.GET("/", authMiddleware.MiddlewareFunc(), func(c *gin.Context) {
+	router.GET("/api", authMiddleware.MiddlewareFunc(), func(c *gin.Context) {
 		c.JSON(200, gin.H{"code": "OK", "message": "nothing to see here"})
 	})
 
-	router.NoRoute(authMiddleware.MiddlewareFunc(), func(c *gin.Context) {
+	router.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+		// Define the root directory for static files
+		root := "../frontend/dist"
+
+		// Check if the request is for a GET or HEAD method and does not start with /api
+		if (c.Request.Method == "GET" || c.Request.Method == "HEAD") && !strings.HasPrefix(path, "/api") {
+			// Attempt to serve a file from the static directory
+			file := root + path
+			if _, err := os.Stat(file); err == nil {
+				c.File(file)
+				return
+			}
+		}
+
+		// If no file found or path starts with /api, return JSON 404
 		c.JSON(404, gin.H{"code": "PAGE_NOT_FOUND", "message": "Pagenius nicht gefunden!"})
 	})
 

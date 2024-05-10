@@ -32,7 +32,7 @@
         </template>
 
         <template v-slot:item.ports="{ item }">
-            {{ item.ports.join(", ") }}
+            {{ item.ports.map(p => p.split(":")[0]).join(", ") }}
         </template>
 
         <template v-slot:item.networks="{ item }">

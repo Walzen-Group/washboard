@@ -96,7 +96,7 @@ func GetStackSettings(name string) (*types.StackSettings, error) {
 	err := collection.FindOne(ctx, bson.M{"stackName": name}).Decode(&stackSettings)
 	if err != nil {
 		if err.Error() == "mongo: no documents in result" {
-			return nil , &werrors.DoesNotExistError{
+			return nil, &werrors.DoesNotExistError{
 				Context: "empty response",
 				Err:     err,
 			}
@@ -130,6 +130,59 @@ func GetAllStackSettings() ([]types.StackSettings, error) {
 		return nil, err
 	}
 	return stackSettings, nil
+}
+
+func UpdateStackPriority(stackSettings *types.StackSettings) error {
+	conn, conErr := GetConnection()
+	if conErr != nil {
+		return conErr
+	}
+	collection := conn.db.Collection(types.DbStackSettingsCollection)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// get all stack settings and move the priorities downwards from the inser position and upwards from where it was taken from
+	allStackSettings, err := GetAllStackSettings()
+	if err != nil {
+		return err
+	}
+	oldStackSettings, err := GetStackSettings(stackSettings.StackName)
+	if err != nil {
+		return err
+	}
+
+	moveUp := false
+	if oldStackSettings.Priority > stackSettings.Priority {
+		moveUp = true
+	}
+
+	var updates []mongo.WriteModel
+	for _, liveStackSetting := range allStackSettings {
+		if liveStackSetting.StackName == stackSettings.StackName {
+			liveStackSetting.Priority = stackSettings.Priority
+		} else if moveUp {
+			if liveStackSetting.Priority >= stackSettings.Priority && liveStackSetting.Priority < oldStackSettings.Priority {
+				liveStackSetting.Priority++
+			}
+		} else {
+			if liveStackSetting.Priority <= stackSettings.Priority && liveStackSetting.Priority > oldStackSettings.Priority {
+				liveStackSetting.Priority--
+			}
+		}
+
+		update := mongo.NewUpdateOneModel()
+		update.SetFilter(bson.M{"stackName": liveStackSetting.StackName})
+		update.SetUpdate(bson.M{"$set": bson.M{"priority": liveStackSetting.Priority}})
+		update.SetUpsert(false)
+		updates = append(updates, update)
+	}
+
+	_, err = collection.BulkWrite(ctx, updates)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // UpdateStackSettings updates a stack settings document in the database

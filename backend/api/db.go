@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sort"
 	"time"
 	"washboard/db"
 	"washboard/portainer"
@@ -29,35 +30,59 @@ func SyncWithPortainer(c *gin.Context) {
 		return
 	}
 
-	var containers []*types.ContainerDto
+	var stacks []types.StackDto
 
 	for _, endpoint := range syncOptions.EndpointIds {
-		tmp, err := portainer.GetContainers(endpoint, "")
+		tmp, err := portainer.GetStacks(endpoint, true)
 
 		if err != nil {
 			handleError(c, err, fmt.Sprintf("Failed to get containers for endpoint %d", endpoint), http.StatusBadRequest)
 			return
 		}
-		containers = append(containers, tmp...)
+		stacks = append(stacks, tmp...)
 	}
 
-	collectedStacks := make(map[string]*types.StackSettings)
-	targetError := &werrors.DoesNotExistError{}
+	collectedStackMap := make(map[string]*types.StackSettings)
+
+
+	allStackSettings, err := db.GetAllStackSettings()
+	if err != nil {
+		handleError(c, err, "Failed to get all stack settings", http.StatusInternalServerError)
+		return
+	}
+
+	for _, stack := range allStackSettings {
+		collectedStackMap[stack.StackName] = &stack
+	}
+
+	newStackCount := 0
+
+	stackSettingsToAdd := make([]*types.StackSettings, 0)
 
 	// add missing grups and stakcs (das bleibt so)
-	for _, container := range containers {
-		if stackName, ok := container.Labels[types.StackLabel]; ok {
-			stack, err := db.GetStackSettings(stackName.(string))
-			if errors.As(err, &targetError) {
-				stack = &types.StackSettings{StackName: stackName.(string), AutoStart: true}
-				glg.Infof("adding missing stack %s", stackName.(string))
-				db.CreateStackSettings(stack)
-			} else if err != nil {
-				handleError(c, err, fmt.Sprintf("Failed to sync settings with db for: %s", stackName), http.StatusInternalServerError)
-				return
+	for _, stack := range stacks {
+		if stackSetting, ok := collectedStackMap[stack.Name]; !ok {
+			autoStart := false
+			if len(stack.Containers) > 0 {
+				autoStart = true
 			}
-			collectedStacks[stackName.(string)] = stack
+			stackSetting = &types.StackSettings{StackName: stack.Name, AutoStart: autoStart, Priority: -1}
+			stackSettingsToAdd = append(stackSettingsToAdd, stackSetting)
+			newStackCount++
+			collectedStackMap[stack.Name] = stackSetting
+		} else {
+			collectedStackMap[stack.Name] = stackSetting
 		}
+	}
+
+	// sort stackSettingsToAdd alphabetically
+	sort.Slice(stackSettingsToAdd, func(i, j int) bool {
+		return stackSettingsToAdd[i].StackName < stackSettingsToAdd[j].StackName
+	})
+
+	for _, stackSetting := range stackSettingsToAdd {
+		glg.Infof("adding missing stack %s", stackSetting.StackName)
+		db.CreateStackSettings(stackSetting)
 	}
 
 	allStackSettings, err2 := db.GetAllStackSettings()
@@ -69,7 +94,7 @@ func SyncWithPortainer(c *gin.Context) {
 	stacksToRemove := make([]string, 0)
 
 	for _, stackSettings := range allStackSettings {
-		if _, ok := collectedStacks[stackSettings.StackName]; !ok {
+		if _, ok := collectedStackMap[stackSettings.StackName]; !ok {
 			stacksToRemove = append(stacksToRemove, stackSettings.StackName)
 		}
 	}
@@ -81,6 +106,27 @@ func SyncWithPortainer(c *gin.Context) {
 			glg.Errorf("Failed to delete orphaned stack %s", stack)
 		}
 	}
+
+	allStackSettings, err2 = db.GetAllStackSettings()
+	if err2 != nil {
+		handleError(c, err2, "Failed to get all stack settings 2", http.StatusInternalServerError)
+		return
+	}
+
+	newIndex := 0
+	if newStackCount > 0 {
+		for _, settings := range allStackSettings {
+			if settings.Priority == -1 {
+				settings.Priority = newIndex
+				newIndex++
+				glg.Debugf("setting position of new stack %v", settings)
+			} else {
+				settings.Priority = settings.Priority + newStackCount
+			}
+			db.UpdateStackSettings(&settings, settings.StackName)
+		}
+	}
+
 	glg.Infof("sync completed")
 }
 
@@ -144,6 +190,9 @@ func GetStackSettings(c *gin.Context) {
 
 func UpdateStackSettings(c *gin.Context) {
 	name := c.Param("name")
+	updatePriority := c.DefaultQuery("updatePrio", "false")
+
+
 
 	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -158,8 +207,13 @@ func UpdateStackSettings(c *gin.Context) {
 		handleError(c, err, errorMessage, http.StatusBadRequest)
 		return
 	}
+	var err error
+	if updatePriority == "true" {
+		err = db.UpdateStackPriority(stackSettings)
+	} else {
+		err = db.UpdateStackSettings(stackSettings, name)
+	}
 
-	err := db.UpdateStackSettings(stackSettings, name)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
