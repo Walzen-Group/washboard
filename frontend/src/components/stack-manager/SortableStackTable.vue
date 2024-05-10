@@ -41,12 +41,19 @@
                         </v-card-title>
 
                         <v-card-text>
-                            <div>
+                            <div class="d-flex ga-3">
                                 <v-btn
                                        :loading="false"
                                        variant="tonal"
                                        prepend-icon="mdi-auto-mode"
-                                       @click="">Autostart
+                                       @click="handleSelectAutostartContainers">Autostart
+                                </v-btn>
+                                <v-btn
+                                       :loading="false"
+                                       variant="tonal"
+                                       color="stop"
+                                       prepend-icon="mdi-notification-clear-all"
+                                       @click="clearSelection">Clear
                                 </v-btn>
                             </div>
                         </v-card-text>
@@ -57,10 +64,11 @@
     </v-expansion-panels>
 
     <div class="d-flex mt-4">
-        <v-switch color="blue" v-model="orderEditMode" inset density="compact" hide-details label="Change Autostart Order"></v-switch>
+        <v-switch color="blue" v-model="orderEditMode" inset density="compact" hide-details
+                  label="Change Autostart Order"></v-switch>
     </div>
 
-    <v-divider class="mb-3 mt-4" />
+    <v-divider class="mb-2 mt-4" />
     <div v-if="loading">
         <v-skeleton-loader v-for="index in 10" :key="index" class="mb-2"
                            :loading="loading"
@@ -480,6 +488,20 @@ async function updatePriority(stack: StackInternal) {
     } catch (error: any) {
         snackbarsStore.addSnackbar("stacks_order", `Failed to update stack order: ${error.message}`, "error");
     }
+}
+
+function handleSelectAutostartContainers() {
+    stacksInternal.value.forEach((stack) => {
+        if (stack.autoStart) {
+            stack.checked = true;
+        }
+    });
+}
+
+function clearSelection() {
+    stacksInternal.value.forEach((stack) => {
+        stack.checked = false;
+    });
 }
 
 

@@ -43,3 +43,6 @@ onMounted(async () => {
     loading.value = false;
 });
 </script>
+
+<style scoped lang="scss">
+</style>
