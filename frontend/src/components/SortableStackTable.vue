@@ -64,7 +64,7 @@
                            type="list-item-two-line">
         </v-skeleton-loader>
     </div>
-    <div v-else ref="sortableRoot">
+    <div ref="sortableRoot">
         <v-fade-transition group>
             <v-card v-for="element in stacksInternal" class="pb-2 pt-3 mb-2" :key="element.id">
                 <v-row dense :class="[paddingClass[element.name]]">
