@@ -43,6 +43,7 @@ declare module 'vue-router/auto/routes' {
     '/docker-manager': RouteRecordInfo<'/docker-manager', '/docker-manager', Record<never, never>, Record<never, never>>,
     '/docker-update-manager': RouteRecordInfo<'/docker-update-manager', '/docker-update-manager', Record<never, never>, Record<never, never>>,
     '/login': RouteRecordInfo<'/login', '/login', Record<never, never>, Record<never, never>>,
+    '/settings': RouteRecordInfo<'/settings', '/settings', Record<never, never>, Record<never, never>>,
   }
 }
 

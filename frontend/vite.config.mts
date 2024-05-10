@@ -55,7 +55,8 @@ export default defineConfig({
   ],
   define: {
     'process.env': {
-      PORTAINER_BASE_URL: "http://10.10.194.5:5221/#!/${endpointId}/docker/stacks/${stackName}?id=${stackId}&type=2&regular=true&external=false&orphaned=false",
+      PORTAINER_BASE_URL: "http://10.10.194.5:5221",
+      PORTAINER_QUERY_TEMPlATE: "/#!/${endpointId}/docker/stacks/${stackName}?id=${stackId}&type=2&regular=true&external=false&orphaned=false",
       PORTAINER_DEFAULT_ENDPOINT_ID: 1,
     }
   },

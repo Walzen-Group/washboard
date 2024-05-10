@@ -124,6 +124,11 @@ const items: any[] = [
         title: "Manage Stacks",
         to: "/docker-manager",
     },
+    {
+        icon: "mdi-cog",
+        title: "Settings",
+        to: "/settings",
+    },
 ];
 const clipped = ref(true);
 const drawer = ref(false);

@@ -10,7 +10,11 @@ import { Stack, Container } from "@/types/types";
 import { ref, Ref, onMounted } from "vue";
 import axios from "axios";
 import { useSnackbarStore } from "@/store/snackbar";
+import { useLocalStore } from "@/store/local";
+import { storeToRefs } from "pinia";
 const snackbarsStore = useSnackbarStore();
+const localStore = useLocalStore();
+const { urlConfig } = storeToRefs(localStore);
 
 const dataStacks: Ref<Stack[]> = ref([]);
 const loading: Ref<boolean> = ref(true);
@@ -18,9 +22,8 @@ const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
 
 // computed properties
 const portainerStackUrl = computed(() => {
-    return (
-        process.env.PORTAINER_BASE_URL?.replace("${endpointId}", defaultEndpointId) || process.env.BASE_URL || ""
-    );
+    const prebuildUrl = urlConfig.value.defaultPortainerAddress + process.env.PORTAINER_QUERY_TEMPlATE;
+    return prebuildUrl.replace("${endpointId}", defaultEndpointId);
 });
 
 onMounted(async () => {

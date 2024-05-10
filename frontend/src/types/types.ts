@@ -68,6 +68,11 @@ interface SidebarSettings {
   clipped?: boolean;
 }
 
+interface URLConfig {
+  defaultHost: string;
+  defaultPortainerAddress: string;
+}
+
 interface UpdateQueue extends Record<QueueStatus, Record<string, QueueItem>> { }
 
 enum QueueStatus {
@@ -127,4 +132,5 @@ export type {
   IgnoredImages,
   UpdateQueue, QueueItem,
   SidebarSettings,
+  URLConfig
 };

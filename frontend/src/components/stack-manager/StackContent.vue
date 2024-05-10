@@ -58,4 +58,9 @@ const props = defineProps<{ containers: Container[] }>();
 
 </script>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.stack-icon {
+    min-width: 28px;
+    max-width: 28px;
+}
+</style>

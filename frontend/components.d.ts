@@ -7,14 +7,16 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    AppSettings: typeof import('./src/components/AppSettings.vue')['default']
     Landing: typeof import('./src/components/Landing.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    SortableContainer: typeof import('./src/components/SortableContainer.vue')['default']
-    SortableStackTable: typeof import('./src/components/SortableStackTable.vue')['default']
-    StackContent: typeof import('./src/components/StackContent.vue')['default']
-    StackUpdateTable: typeof import('./src/components/StackUpdateTable.vue')['default']
-    UpdateQuelelel: typeof import('./src/components/UpdateQuelelel.vue')['default']
+    Settings: typeof import('./src/components/Settings.vue')['default']
+    SortableContainer: typeof import('./src/components/stack-manager/SortableContainer.vue')['default']
+    SortableStackTable: typeof import('./src/components/stack-manager/SortableStackTable.vue')['default']
+    StackContent: typeof import('./src/components/stack-manager/StackContent.vue')['default']
+    StackUpdateTable: typeof import('./src/components/update-manager/StackUpdateTable.vue')['default']
+    UpdateQuelelel: typeof import('./src/components/update-manager/UpdateQuelelel.vue')['default']
     WashingMachine: typeof import('./src/components/WashingMachine.vue')['default']
   }
 }

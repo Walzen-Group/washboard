@@ -57,7 +57,7 @@
     </v-expansion-panels>
 
     <div class="d-flex mt-4">
-        <v-switch color="blue" v-model="orderEditMode" inset density="compact" hide-details label="Edit Order"></v-switch>
+        <v-switch color="blue" v-model="orderEditMode" inset density="compact" hide-details label="Change Autostart Order"></v-switch>
     </div>
 
     <v-divider class="mb-3 mt-4" />
@@ -137,6 +137,7 @@
 
                                                         <v-list nav density="compact">
                                                             <v-list-item :href="resolveWebUILink(container)"
+                                                                         target="_blank"
                                                                          v-for="container in element.containers.filter((container) => webUILabel in container.labels)"
                                                                          :key="container.id">
 
@@ -157,6 +158,7 @@
                                                     <v-chip v-else-if="checkWebUILabel(element) == 1"
                                                             color="wurple"
                                                             v-bind="props"
+                                                            target="_blank"
                                                             :href="resolveWebUILink(element.containers.filter((container) => webUILabel in container.labels)[0])"
                                                             class="ml-2 px-2"
                                                             density="comfortable" rounded="20"
@@ -250,14 +252,18 @@ import { Stack, StackInternal, Action, PaddingClass, Container, StackSettingsDto
 import { ref, Ref, watch } from "vue";
 import { moveArrayElement, useSortable } from "@vueuse/integrations/useSortable";
 import { useSnackbarStore } from "@/store/snackbar";
-import { getPortainerUrl, getContainerStatusCircleColor } from "@/api/lib";
+import { useLocalStore } from "@/store/local";
+import { getPortainerUrl, getContainerStatusCircleColor, getFirstContainerIcon } from "@/api/lib";
 import { useDisplay } from "vuetify";
 import axios from "axios";
+import { storeToRefs } from "pinia";
 
 const { xs } = useDisplay();
 
 const snackbarsStore = useSnackbarStore();
-const webUIAddress: Ref<string> = ref(location.hostname);
+const localStore = useLocalStore();
+const { urlConfig } = storeToRefs(localStore);
+
 const orderEditMode: Ref<boolean> = ref(false);
 const sortableRoot = ref<HTMLElement | null>(null);
 const panel: Ref<Number | undefined> = ref(undefined);
@@ -363,7 +369,13 @@ function resolveWebUILink(container: Container) {
     const ports = container.ports.map((port) => port.split(":")).map((p) => [p[1], p[0]]);
     const portDict = Object.fromEntries(ports);
 
-    let target = webUIAddress.value;
+    let target = urlConfig.value.defaultHost;
+
+    if (!container.labels[webUILabel].includes(webUIAddressKey)) {
+        //console.log(`container: ${container.name} has no address key`);
+        return container.labels[webUILabel];
+    }
+
     let outputUrl = container.labels[webUILabel].replace(webUIAddressKey, target);
 
     // iterate to portdict and replace all private with public ports
@@ -371,7 +383,7 @@ function resolveWebUILink(container: Container) {
         outputUrl = outputUrl.replace(privatePort, publicPort);
     }
 
-    console.log(`output url: ${outputUrl}`);
+    //console.log(`container: ${container.name} output url: ${outputUrl}`);
     return outputUrl
 }
 
@@ -473,7 +485,7 @@ async function updatePriority(stack: StackInternal) {
 
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .draggable {
     cursor: move;
 }
@@ -525,7 +537,7 @@ async function updatePriority(stack: StackInternal) {
 }
 
 .stack-icon {
-    min-width: 28px;
-    max-width: 28px;
+    min-width: 20px;
+    max-width: 20px;
 }
 </style>

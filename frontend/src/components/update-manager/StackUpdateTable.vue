@@ -138,7 +138,7 @@
 import { Container, Stack, ImageStatus, ContainerStatus } from "@/types/types";
 import { ref, onMounted, Ref, onUnmounted, watch, reactive } from "vue";
 import { useDisplay } from "vuetify";
-import { getPortainerUrl } from "@/api/lib";
+import { getPortainerUrl, getFirstContainerIcon } from "@/api/lib";
 
 let keyDownHandler: any;
 let keyUpHandler: any;
@@ -228,17 +228,6 @@ onUnmounted(() => {
     window.removeEventListener("keyup", keyUpHandler);
 });
 
-function getFirstContainerIcon(containers: Container[]): string | undefined {
-    // get random number between 0 and 1
-    if (Math.random() < 0.995) {
-        const ico = containers.find((container) => container.labels["net.unraid.docker.icon"])?.labels[
-            "net.unraid.docker.icon"
-        ];
-        return ico;
-    } else {
-        return `/img/craughing.png`;
-    }
-}
 
 function createLoaderState(items: Stack[]) {
     const data: Record<string, boolean> = {};

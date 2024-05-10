@@ -131,6 +131,19 @@ function getContainerStatusCircleColor(status: string) {
     }
 }
 
+function getFirstContainerIcon(containers: Container[]): string | undefined {
+    // get random number between 0 and 1
+    if (Math.random() < 0.995) {
+        const ico = containers.find((container) => container.labels["net.unraid.docker.icon"])?.labels[
+            "net.unraid.docker.icon"
+        ];
+        return ico;
+    } else {
+        return `/img/craughing.png`;
+    }
+}
+
+
 export {
     updateStack,
     stopStack,
@@ -140,6 +153,7 @@ export {
     callRefreshTokenRoute,
     webUILabel,
     webUIAddressKey,
+    getFirstContainerIcon,
     handleStackStateChange,
     getPortainerUrl,
     getContainerStatusCircleColor,

@@ -114,7 +114,6 @@
                         @click="confirmUpdateSelected"
                         color="primary"
                         :disabled="!selectedRows.length"
-                        :loading="loadingUpdateButton"
                     >
                         Update Selected
                     </v-btn>
@@ -210,7 +209,7 @@ const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
 
 // stores
 const localStore: any = useLocalStore();
-const { dockerUpdateManagerSettings: dockerUpdateManagerSettings } = storeToRefs(localStore);
+const { dockerUpdateManagerSettings: dockerUpdateManagerSettings, urlConfig } = storeToRefs(localStore);
 
 const updateQuelelelStore = useUpdateQuelelelStore();
 const { queue, queueCount } = storeToRefs(updateQuelelelStore);
@@ -241,9 +240,8 @@ const waitingForImageStatus: Ref<boolean> = ref(false);
 
 // computed properties
 const portainerStackUrl = computed(() => {
-    return (
-        process.env.PORTAINER_BASE_URL?.replace("${endpointId}", defaultEndpointId) || process.env.BASE_URL || ""
-    );
+    const prebuildUrl = urlConfig.value.defaultPortainerAddress + process.env.PORTAINER_QUERY_TEMPlATE;
+    return prebuildUrl.replace("${endpointId}", defaultEndpointId);
 });
 
 const containersNeedUpdate = computed(() => {

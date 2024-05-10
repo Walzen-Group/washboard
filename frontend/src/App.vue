@@ -27,7 +27,9 @@ import { onMounted } from 'vue';
 import axios, { AxiosError } from 'axios';
 import { UpdateQueue, QueueStatus, QueueItem } from './types/types';
 import { callRefreshTokenRoute } from '@/api/lib';
+import { useLocalStore } from "@/store/local";
 
+const localStore = useLocalStore();
 const snackbarStore = useSnackbarStore();
 const { snackbars: snackbars } = storeToRefs(snackbarStore);
 
