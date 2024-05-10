@@ -1,7 +1,7 @@
 <!-- eslint-disable vue/valid-v-slot -->
 <template>
     <div class="mt-2 mb-4 text-h4">Manage & Configure Stacks</div>
-    <SortableStackTable :items="dataStacks" :portainer-url-template="portainerStackUrl"></SortableStackTable>
+    <SortableStackTable :loading="loading" :items="dataStacks" :portainer-url-template="portainerStackUrl"></SortableStackTable>
 </template>
 
 <script lang="ts" setup>
@@ -10,6 +10,7 @@ import { ref, Ref, onMounted } from "vue";
 import axios from "axios";
 
 const dataStacks: Ref<Stack[]> = ref([]);
+const loading: Ref<boolean> = ref(true);
 const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
 
 // computed properties
@@ -26,5 +27,6 @@ onMounted(async () => {
     // Change sorting to priority
     dataStacks.value = response.data.sort((a: Stack, b: Stack) => a.name.localeCompare(b.name));
     dataStacks.value = response.data.sort((a: Stack, b: Stack) => a.priority - b.priority);
+    loading.value = false;
 });
 </script>

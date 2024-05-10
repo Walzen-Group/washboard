@@ -58,8 +58,13 @@
 
 
     <v-divider class="mb-3 mt-4" />
-
-    <div ref="sortableRoot">
+    <div v-if="loading">
+        <v-skeleton-loader v-for="index in 10" :key="index" class="mb-2"
+                           :loading="loading"
+                           type="list-item-two-line">
+        </v-skeleton-loader>
+    </div>
+    <div v-else ref="sortableRoot">
         <v-fade-transition group>
             <v-card v-for="element in stacksInternal" class="pb-2 pt-3 mb-2" :key="element.id">
                 <v-row dense :class="[paddingClass[element.name]]">
@@ -115,13 +120,13 @@
                                             <v-col align-self="end" cols="12" sm="6" md="4" lg="3" xl="3">
 
                                                 <div class="text-caption mr-2">P{{ element.priority }}
-                                                    </div>
+                                                </div>
 
-                                                    <a :href="getPortainerUrl(element, portainerUrlTemplate)" target="_blank"
-                                                       class="text-h6"
-                                                       style="text-decoration: none; color: inherit;">
-                                                        {{ element.name }}
-                                                    </a>
+                                                <a :href="getPortainerUrl(element, portainerUrlTemplate)" target="_blank"
+                                                   class="text-h6"
+                                                   style="text-decoration: none; color: inherit;">
+                                                    {{ element.name }}
+                                                </a>
 
                                             </v-col>
 
@@ -203,7 +208,7 @@ const { xs } = useDisplay();
 const snackbarsStore = useSnackbarStore();
 const sortableRoot = ref<HTMLElement | null>(null);
 const panel: Ref<Number | undefined> = ref(undefined);
-const props = defineProps<{ items: Stack[], portainerUrlTemplate: string }>();
+const props = defineProps<{ items: Stack[], portainerUrlTemplate: string, loading: boolean }>();
 const stacksInternal: Ref<StackInternal[]> = ref([]);
 const paddingClass: Ref<PaddingClass> = ref({});
 let loaderState: Record<string, boolean> = reactive({});
@@ -215,7 +220,6 @@ watch(props, () => {
             expanded: false,
             checked: false
         };
-        paddingClass.value[stack.name] = undefined;
         return stackInternal;
     })
 });
@@ -278,7 +282,7 @@ function showOrderArrows(expand: any) {
                 paddingClass.value[stack.name] = "row-sst";
                 setTimeout(() => {
                     paddingClass.value[stack.name] = undefined;
-                }, 500);
+                }, 1000);
             }
         }
         return stack;
