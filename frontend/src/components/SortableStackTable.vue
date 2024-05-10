@@ -273,20 +273,19 @@ async function manageStack(stack: Stack, action: Action) {
 }
 
 function showOrderArrows(expand: any) {
-    stacksInternal.value = stacksInternal.value.map((stack) => {
-        if (stack.name === expand.name) {
-            stack.expanded = !stack.expanded;
-            if (xs.value && stack.expanded) {
-                paddingClass.value[stack.name] = "row-sst-pad";
-            } else {
-                paddingClass.value[stack.name] = "row-sst";
-                setTimeout(() => {
-                    paddingClass.value[stack.name] = undefined;
-                }, 1000);
-            }
+    const elem: StackInternal | undefined = stacksInternal.value.find((stack) => stack.name === expand.name);
+    if (!elem) {
+        return;
+    }
+
+    if (elem.name === expand.name) {
+        elem.expanded = !elem.expanded;
+        if (xs.value && elem.expanded) {
+            paddingClass.value[elem.name] = "row-sst-pad";
+        } else {
+            paddingClass.value[elem.name] = "row-sst";
         }
-        return stack;
-    });
+    }
 }
 
 function isFirstElement(element: Stack) {
