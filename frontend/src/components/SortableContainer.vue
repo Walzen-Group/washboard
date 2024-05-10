@@ -12,12 +12,12 @@
             </div>
             <v-expand-transition>
                 <!-- Content -->
-                <div v-if="show" class="mt-2">
+                <div v-if="show">
                     <slot name="content"></slot>
                 </div>
             </v-expand-transition>
         </v-col>
-        <v-col cols="auto" class="pr-3 pt-2 ml-1 pb-0 fill-height">
+        <v-col cols="auto" class="pr-3 ml-1 pb-0 fill-height">
             <v-hover v-slot="{ isHovering, props }">
                 <v-card
                         rounded="md"

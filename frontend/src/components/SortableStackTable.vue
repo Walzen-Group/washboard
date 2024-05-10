@@ -61,8 +61,8 @@
 
     <div ref="sortableRoot">
         <v-fade-transition group>
-            <v-card v-for="element in stacksInternal" class="pb-2 pt-2 mb-2" :key="element.id">
-                <v-row dense :class="[xs ? 'row-sst' : undefined]">
+            <v-card v-for="element in stacksInternal" class="pb-2 pt-3 mb-2" :key="element.id">
+                <v-row dense :class="[paddingClass[element.name]]">
                     <v-col cols="auto" class="ml-2">
                         <v-sheet class="fill-height d-flex flex-column">
                             <Transition name="slide-fade-up">
@@ -112,20 +112,20 @@
                                                    :name="element.name">
                                     <template #title>
                                         <v-row align="center" dense>
-                                            <v-col cols="12" sm="6" md="4" lg="3" xl="3">
-                                                <div class="d-flex">
-                                                    <div class="align-self-center text-body-2 mr-2">P{{ element.priority }}
+                                            <v-col align-self="end" cols="12" sm="6" md="4" lg="3" xl="3">
+
+                                                <div class="text-caption mr-2">P{{ element.priority }}
                                                     </div>
+
                                                     <a :href="getPortainerUrl(element, portainerUrlTemplate)" target="_blank"
-                                                       class="align-self-end text-h6"
+                                                       class="text-h6"
                                                        style="text-decoration: none; color: inherit;">
                                                         {{ element.name }}
                                                     </a>
-                                                </div>
 
                                             </v-col>
 
-                                            <v-col cols="6" sm="4" md="6" lg="7" xl="7">
+                                            <v-col :class="[xs ? 'pb-3' : undefined]" cols="6" sm="4" md="6" lg="7" xl="7">
                                                 <div class="d-flex ml-1">
                                                     <div v-for="container in element.containers"
                                                          v-if="element.containers.length > 0">
@@ -140,9 +140,11 @@
                                                 </div>
                                             </v-col>
 
-                                            <v-col cols="6" sm="12" md="2" lg="2" xl="2">
-                                                <v-switch color="blue-darken-1" density="compact" hide-details
-                                                          v-model="element.autoStart" inset></v-switch>
+                                            <v-col :class="[xs ? 'pb-3' : undefined]" cols="6" sm="2" md="2" lg="2" xl="2">
+                                                <v-row :class="[xs ? 'pr-4' : 'pr-10']" justify="end">
+                                                    <v-switch color="blue-darken-1" density="compact" hide-details
+                                                              v-model="element.autoStart" inset></v-switch>
+                                                </v-row>
                                             </v-col>
                                         </v-row>
                                     </template>
@@ -150,7 +152,7 @@
                                     </template>
                                     <template #content>
                                         <!-- start stop and restart buttons -->
-                                        <div class="d-flex flex-wrap ga-3">
+                                        <div class="d-flex flex-wrap ga-3 mt-3">
                                             <v-btn
                                                    v-if="element.containers.length === 0"
                                                    :loading="loaderState[element.id]"
@@ -189,7 +191,7 @@
 
 <script lang="ts" setup>
 import { startStack, stopStack, handleResponse } from "@/api/lib";
-import { Stack, StackInternal, Action } from "@/types/types";
+import { Stack, StackInternal, Action, PaddingClass } from "@/types/types";
 import { ref, Ref, watch } from "vue";
 import { useSortable } from "@vueuse/integrations/useSortable";
 import { useSnackbarStore } from "@/store/snackbar";
@@ -203,6 +205,7 @@ const sortableRoot = ref<HTMLElement | null>(null);
 const panel: Ref<Number | undefined> = ref(undefined);
 const props = defineProps<{ items: Stack[], portainerUrlTemplate: string }>();
 const stacksInternal: Ref<StackInternal[]> = ref([]);
+const paddingClass: Ref<PaddingClass> = ref({});
 let loaderState: Record<string, boolean> = reactive({});
 
 watch(props, () => {
@@ -212,8 +215,19 @@ watch(props, () => {
             expanded: false,
             checked: false
         };
+        paddingClass.value[stack.name] = undefined;
         return stackInternal;
     })
+});
+
+watch(xs, (value) => {
+    for (const stack of stacksInternal.value) {
+        if (stack.expanded && value) {
+            paddingClass.value[stack.name] = "row-sst-pad";
+        } else {
+            paddingClass.value[stack.name] = undefined;
+        }
+    }
 });
 
 useSortable(sortableRoot, stacksInternal, {
@@ -258,6 +272,14 @@ function showOrderArrows(expand: any) {
     stacksInternal.value = stacksInternal.value.map((stack) => {
         if (stack.name === expand.name) {
             stack.expanded = !stack.expanded;
+            if (xs.value && stack.expanded) {
+                paddingClass.value[stack.name] = "row-sst-pad";
+            } else {
+                paddingClass.value[stack.name] = "row-sst";
+                setTimeout(() => {
+                    paddingClass.value[stack.name] = undefined;
+                }, 500);
+            }
         }
         return stack;
     });
@@ -325,14 +347,17 @@ function moveElement(element: Stack, action: string) {
     opacity: 0;
 }
 
-.row-sst {
+.row-sst-pad {
     flex-wrap: nowrap;
     padding-right: 110px;
+}
+
+.row-sst {
+    flex-wrap: nowrap;
 }
 
 .stack-icon {
     min-width: 28px;
     max-width: 28px;
 }
-
 </style>

@@ -35,8 +35,8 @@ interface GroupSettings {
   groupName: string;
 }
 
-interface ContainerView {
-
+interface PaddingClass {
+  [key: string]: string | undefined;
 }
 
 interface Snackbar {
@@ -113,7 +113,7 @@ export type {
   StackSettings,
   GroupSettings,
   Group,
-  ContainerView,
+  PaddingClass,
   Snackbar,
   AppSettings,
   DockerUpdateManagerSettings,
