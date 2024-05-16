@@ -128,7 +128,7 @@ func main() {
 	prtStackRoute.PUT("/:id/update", api.PortainerUpdateStack)
 
 	// websocket stuff
-	websocketRoute := apiRoute.Group("/ws")
+	websocketRoute := apiRoute.Group("/ws", authMiddleware.MiddlewareFunc())
 	websocketRoute.GET("/stacks-update", api.WsHandler)
 
 	// db CRUD

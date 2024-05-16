@@ -195,7 +195,10 @@ function toggleTheme() {
 
 async function signOut() {
     try {
-        webSocketStacksUpdate.value?.close();
+        if (webSocketStacksUpdate.value) {
+            webSocketStacksUpdate.value.onclose = () => {};
+            webSocketStacksUpdate.value.close();
+        }
         await axios.post("/api/auth/logout");
         renderInitCompleted.value = false;
         router.push({ path: "/login" });
