@@ -56,6 +56,12 @@ func main() {
 	router := gin.Default()
 	//router.SetTrustedProxies([]string{"localhost"})
 
+	if len(appState.Config.Cors) == 0 {
+		glg.Warnf("No CORS allowed origins found in config, allowing all origins")
+		appState.Config.Cors = []string{"*"}
+	}
+
+	glg.Infof("CORS allowed origins: %v", appState.Config.Cors)
 	router.Use(cors.New(cors.Config{
 		//AllowOrigins:     []string{"http://localhost:3000", "http://192.168.0.38:3000", "http://10.10.194.2:3000", "http://172.31.0.37:3000", "http://10.10.10.37:3000"},
 		AllowOrigins:     state.Instance().Config.Cors,
@@ -91,7 +97,7 @@ func main() {
 		CookieHTTPOnly: true,  // JS can't modify
 		// CookieDomain:   "localhost:8080, 10.10.194.2:8080, 172.31.0.37:8080, 10.10.10.37:8080",
 		CookieName:     "jwt",                    // default jwt
-		CookieSameSite: http.SameSiteDefaultMode, //SameSiteDefaultMode, SameSiteLaxMode, SameSiteStrictMode, SameSiteNoneMode
+		CookieSameSite: http.SameSiteStrictMode, //SameSiteDefaultMode, SameSiteLaxMode, SameSiteStrictMode, SameSiteNoneMode
 		TokenLookup:    "header: Authorization, query: token, cookie: jwt",
 		// TokenLookup: "query:token",
 		// TokenLookup: "cookie:token",

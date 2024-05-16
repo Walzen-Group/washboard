@@ -121,6 +121,10 @@ func overwriteConfigWithEnv(config *Config) {
 		}
 	}
 	if value, exists := os.LookupEnv("CORS"); exists {
-		config.Cors = strings.Split(value, ",")
+		cors := strings.Split(value, ",")
+		for i := range cors {
+			cors[i] = strings.TrimSpace(cors[i])
+		}
+		config.Cors = cors
 	}
 }

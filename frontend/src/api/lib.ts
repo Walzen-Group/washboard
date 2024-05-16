@@ -65,7 +65,7 @@ async function callRefreshTokenRoute() {
     } catch (e) {
         const error = e as AxiosError;
         if (error.response?.status === 401) {
-            console.log("refresh token invalid, redirecting to login");
+            console.log("refresh token invalid");
         }
     }
     return false;

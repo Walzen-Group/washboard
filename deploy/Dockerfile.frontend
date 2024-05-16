@@ -14,9 +14,19 @@ RUN pnpm run build
 # Stage 2: Serve with nginx
 FROM nginx:stable-alpine
 
-# Copy the built files and set ownership to nginx user and group
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY ./deploy/nginx.conf /etc/nginx/nginx.conf
+
 RUN chown -R nginx:nginx /usr/share/nginx/html /etc/nginx/nginx.conf
+# give permission to nginx to run as non-root
+RUN chown -R nginx:nginx /var/cache/nginx \
+    && chown -R nginx:nginx /var/log/nginx \
+    && chown -R nginx:nginx /etc/nginx/conf.d \
+    && touch /var/run/nginx.pid \
+    && chown -R nginx:nginx /var/run/nginx.pid
+
+
+
+USER nginx
 
 CMD ["nginx", "-g", "daemon off;"]

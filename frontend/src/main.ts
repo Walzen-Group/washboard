@@ -23,8 +23,8 @@ if (process.env.NODE_ENV !== "production") {
   axios.defaults.baseURL = `http://${location.hostname}:8080`;
   console.log("Development mode, base url: " + axios.defaults.baseURL);
 } else {
-  axios.defaults.baseURL = `http://${location.hostname}:8080`;
-  //axios.defaults.baseURL = location.protocol + '//' + location.host;
+  //axios.defaults.baseURL = `http://${location.hostname}:8080`;
+  axios.defaults.baseURL = location.protocol + '//' + location.host;
   console.log("Production mode, base urL: " + axios.defaults.baseURL);
 }
 

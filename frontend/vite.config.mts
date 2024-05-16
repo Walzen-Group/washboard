@@ -1,15 +1,15 @@
 // Plugins
-import AutoImport from 'unplugin-auto-import/vite'
-import Components from 'unplugin-vue-components/vite'
-import Fonts from 'unplugin-fonts/vite'
-import Layouts from 'vite-plugin-vue-layouts'
-import Vue from '@vitejs/plugin-vue'
-import VueRouter from 'unplugin-vue-router/vite'
-import Vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
+import AutoImport from "unplugin-auto-import/vite";
+import Components from "unplugin-vue-components/vite";
+import Fonts from "unplugin-fonts/vite";
+import Layouts from "vite-plugin-vue-layouts";
+import Vue from "@vitejs/plugin-vue";
+import VueRouter from "unplugin-vue-router/vite";
+import Vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 
 // Utilities
-import { defineConfig } from 'vite'
-import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from "vite";
+import { fileURLToPath, URL } from "node:url";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -23,7 +23,7 @@ export default defineConfig({
     Vuetify({
       autoImport: true,
       styles: {
-        configFile: 'src/styles/settings.scss',
+        configFile: "src/styles/settings.scss",
       },
     }),
     Components(),
@@ -31,21 +31,18 @@ export default defineConfig({
       google: {
         families: [
           {
-            name: 'Roboto',
-            styles: 'wght@100;300;400;500;700;900',
+            name: "Roboto",
+            styles: "wght@100;300;400;500;700;900",
           },
           {
-            name: 'Inter',
-            styles: 'wght@100;300;400;500;700;900',
-          }
+            name: "Inter",
+            styles: "wght@100;300;400;500;700;900",
+          },
         ],
       },
     }),
     AutoImport({
-      imports: [
-        'vue',
-        'vue-router',
-      ],
+      imports: ["vue", "vue-router"],
       dts: true,
       eslintrc: {
         enabled: true,
@@ -54,27 +51,23 @@ export default defineConfig({
     }),
   ],
   define: {
-    'process.env': {
+    "process.env": {
       PORTAINER_BASE_URL: "http://10.10.194.5:5221",
-      PORTAINER_QUERY_TEMPlATE: "/#!/${endpointId}/docker/stacks/${stackName}?id=${stackId}&type=2&regular=true&external=false&orphaned=false",
+      PORTAINER_QUERY_TEMPlATE:
+        "/#!/${endpointId}/docker/stacks/${stackName}?id=${stackId}&type=2&regular=true&external=false&orphaned=false",
       PORTAINER_DEFAULT_ENDPOINT_ID: 1,
-    }
+    },
   },
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
-    extensions: [
-      '.js',
-      '.json',
-      '.jsx',
-      '.mjs',
-      '.ts',
-      '.tsx',
-      '.vue',
-    ],
+    extensions: [".js", ".json", ".jsx", ".mjs", ".ts", ".tsx", ".vue"],
   },
   server: {
     port: 3000,
   },
-})
+  build: {
+    modulePreload: { polyfill: true },
+  },
+});
