@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.backend
+    env_file:
+      - .env
+    working_dir: /app/data
+    networks:
+      - washboard-network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+    networks:
+      - washboard-network
+
+networks:
+  washboard-network:
+    driver: bridge

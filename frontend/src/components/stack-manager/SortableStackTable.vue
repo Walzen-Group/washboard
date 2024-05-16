@@ -392,7 +392,7 @@ function resolveWebUILink(container: Container) {
     }
 
     //console.log(`container: ${container.name} output url: ${outputUrl}`);
-    return outputUrl
+    return "//" + outputUrl;
 }
 
 async function manageStack(stack: Stack, action: Action) {

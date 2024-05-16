@@ -72,6 +72,7 @@ const loginErrorMessage: Ref<string> = ref("");
 
 import { storeToRefs } from "pinia";
 import { useAppStore } from "@/store/app";
+import { connectWebSocket } from "@/api/lib";
 
 const appStore = useAppStore();
 const { renderInitCompleted } = storeToRefs(appStore);
@@ -90,6 +91,7 @@ async function submitLogin() {
         } else {
             router.push({ path: "/" });
         }
+        connectWebSocket();
     } catch (e) {
         if ((e as AxiosError).response?.status === 401) {
             loginError.value = true;

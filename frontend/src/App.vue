@@ -24,18 +24,12 @@ import { useUpdateQuelelelStore } from '@/store/updateQuelelel';
 import { storeToRefs } from 'pinia';
 import { useTheme } from 'vuetify'
 import { onMounted } from 'vue';
-import axios, { AxiosError } from 'axios';
-import { UpdateQueue, QueueStatus, QueueItem } from './types/types';
-import { callRefreshTokenRoute } from '@/api/lib';
+import { callRefreshTokenRoute, connectWebSocket } from '@/api/lib';
 import { useLocalStore } from "@/store/local";
 
-const localStore = useLocalStore();
 const snackbarStore = useSnackbarStore();
 const { snackbars: snackbars } = storeToRefs(snackbarStore);
 
-const updateQuelelelStore = useUpdateQuelelelStore();
-const { queue: stackQueue } = storeToRefs(updateQuelelelStore);
-const snackbarsStore = useSnackbarStore();
 
 const theme = useTheme();
 
@@ -50,63 +44,14 @@ onMounted(async () => {
     theme.global.name.value = "light";
   }
 
-  connectWebSocket();
-  callRefreshTokenRoute();
+  callRefreshTokenRoute().then((result) => {
+     if (result) {
+       connectWebSocket();
+     }
+  });
 });
 
 
-
-function connectWebSocket() {
-  console.log("connecting to websocket...")
-  let wsAddr = `${axios.defaults.baseURL}/api/ws/stacks-update`.replace('http://', 'ws://').replace('https://', 'wss://');
-  let socket = new WebSocket(wsAddr);
-  socket.onmessage = function (event) {
-    let data: UpdateQueue = JSON.parse(event.data);
-
-
-    for (let [newStatus, newItems] of Object.entries(data) as [QueueStatus, Record<string, QueueItem>][]) {
-      for (let stackName in newItems) {
-        const queueItem = newItems[stackName];
-
-        let previousBucket: string | undefined = undefined;
-        for (let [oldStatus, oldItems] of Object.entries(stackQueue.value)) {
-          if (queueItem.stackName in oldItems) {
-            previousBucket = oldStatus;
-            break;
-          }
-        }
-
-        switch (newStatus) {
-          case QueueStatus.Queued:
-            break;
-          case QueueStatus.Done:
-            if (previousBucket && previousBucket != newStatus) {
-              snackbarsStore.addSnackbar(`${queueItem.stackId}_update`, `Stack ${queueItem.stackName} updated successfully`, "success");
-            }
-            break;
-          case QueueStatus.Error:
-            if (previousBucket && previousBucket != newStatus) {
-              snackbarsStore.addSnackbar(`${queueItem.stackId}_update`, `Stack ${queueItem.stackName} update failed`, "error");
-            }
-            break;
-        }
-      }
-    }
-    updateQuelelelStore.update(data);
-  };
-
-  socket.onclose = function (event) {
-    console.log('Socket is closed. Reconnect will be attempted in 1 second.', event.reason);
-    setTimeout(function () {
-      connectWebSocket();
-    }, 1000);
-  };
-
-  socket.onerror = function () {
-    console.error('Socket encountered error, closing socket');
-    socket.close();
-  };
-}
 
 function handleSystemThemeUpdate(e: any) {
   console.log(`updating theme based on system preference ${e.matches ? "dark" : "light"}`);

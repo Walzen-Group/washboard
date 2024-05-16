@@ -3,7 +3,6 @@ package main
 import (
 	"math/rand"
 	"net/http"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -58,7 +57,8 @@ func main() {
 	//router.SetTrustedProxies([]string{"localhost"})
 
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://192.168.0.38:3000", "http://10.10.194.2:3000", "http://172.31.0.37:3000", "http://10.10.10.37:3000"},
+		//AllowOrigins:     []string{"http://localhost:3000", "http://192.168.0.38:3000", "http://10.10.194.2:3000", "http://172.31.0.37:3000", "http://10.10.10.37:3000"},
+		AllowOrigins:     state.Instance().Config.Cors,
 		AllowMethods:     []string{"*, PUT"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -153,6 +153,7 @@ func main() {
 		c.JSON(200, gin.H{"code": "OK", "message": "nothing to see here"})
 	})
 
+	/*
 	router.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path
 		// Define the root directory for static files
@@ -169,6 +170,11 @@ func main() {
 		}
 
 		// If no file found or path starts with /api, return JSON 404
+		c.JSON(404, gin.H{"code": "PAGE_NOT_FOUND", "message": "Pagenius nicht gefunden!"})
+	})
+	*/
+
+	router.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{"code": "PAGE_NOT_FOUND", "message": "Pagenius nicht gefunden!"})
 	})
 

@@ -1,0 +1,20 @@
+# Stage 1: Build the Go application
+FROM golang:1.22-alpine AS builder
+WORKDIR /app
+COPY ./backend .
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -o washboard-backend
+
+# Stage 2: Prepare the final image
+FROM alpine:latest
+
+# Check if the group and user IDs are available before adding them
+RUN addgroup -g 1000 -S walzen && adduser -u 1000 -S walzen -G walzen -D
+
+WORKDIR /app
+COPY --from=builder /app/washboard-backend .
+RUN mkdir -p /app/data && chown -R walzen:walzen /app
+RUN ls -la
+
+USER walzen
+ENTRYPOINT ["/app/washboard-backend"]

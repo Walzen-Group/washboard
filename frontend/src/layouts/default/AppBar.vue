@@ -138,7 +138,7 @@ const router = useRouter();
 import { useAppStore } from "@/store/app";
 
 const appStore = useAppStore();
-const { renderInitCompleted } = storeToRefs(appStore);
+const { renderInitCompleted, webSocketStacksUpdate } = storeToRefs(appStore);
 
 const theme = useTheme();
 
@@ -195,6 +195,7 @@ function toggleTheme() {
 
 async function signOut() {
     try {
+        webSocketStacksUpdate.value?.close();
         await axios.post("/api/auth/logout");
         renderInitCompleted.value = false;
         router.push({ path: "/login" });

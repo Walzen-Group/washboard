@@ -11,7 +11,6 @@ declare module 'vue' {
     Landing: typeof import('./src/components/Landing.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
-    Settings: typeof import('./src/components/Settings.vue')['default']
     SortableContainer: typeof import('./src/components/stack-manager/SortableContainer.vue')['default']
     SortableStackTable: typeof import('./src/components/stack-manager/SortableStackTable.vue')['default']
     StackContent: typeof import('./src/components/stack-manager/StackContent.vue')['default']
