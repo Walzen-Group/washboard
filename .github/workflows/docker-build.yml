@@ -51,6 +51,10 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_FRONTEND }}
 
+      - name: Get short Git commit ID
+        id: get_commit_id
+        run: echo "COMMIT_ID_SHORT=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+
       - name: Build and push Docker image for backend
         id: build-and-push-backend
         uses: docker/build-push-action@v4
@@ -68,5 +72,6 @@ jobs:
           context: .
           file: deploy/Dockerfile.frontend
           push: ${{ github.event_name != 'pull_request' }}
+          build-args: COMMIT_ID_SHORT=${{ env.COMMIT_ID_SHORT }}
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
