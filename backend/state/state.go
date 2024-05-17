@@ -136,4 +136,12 @@ func overwriteConfigWithEnv(config *Config) {
 			config.StartStacksOnLaunch = false
 		}
 	}
+
+	if value, exists := os.LookupEnv("START_ENDPOINT_ID"); exists {
+		if intValue, err := strconv.Atoi(value); err == nil {
+			config.StartEndpointId = intValue
+		} else {
+			glg.Warn("invalid START_ENDPOINT_ID value, using default")
+		}
+	}
 }
