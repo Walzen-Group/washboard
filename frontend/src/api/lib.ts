@@ -7,7 +7,7 @@ import { useUpdateQuelelelStore } from "@/store/updateQuelelel";
 import { useAppStore } from "@/store/app";
 
 const webUILabel = "org.walzen.washb.webui";
-const webUIAddressKey = "${ADDRESS}"
+const webUIAddressKey = "${ADDRESS}";
 
 const defaultEndpointId = process.env.PORTAINER_DEFAULT_ENDPOINT_ID || "1";
 
@@ -147,7 +147,6 @@ function getFirstContainerIcon(containers: Container[]): string | undefined {
     }
 }
 
-
 function connectWebSocket() {
     const updateQuelelelStore = useUpdateQuelelelStore();
     const { queue: stackQueue } = storeToRefs(updateQuelelelStore);
@@ -155,57 +154,71 @@ function connectWebSocket() {
     const appStore = useAppStore();
     const { webSocketStacksUpdate } = storeToRefs(appStore);
 
-    console.log("connecting to websocket...")
-    let wsAddr = `${axios.defaults.baseURL}/api/ws/stacks-update`.replace('http://', 'ws://').replace('https://', 'wss://');
+    console.log("connecting to websocket...");
+    let wsAddr = `${axios.defaults.baseURL}/api/ws/stacks-update`
+        .replace("http://", "ws://")
+        .replace("https://", "wss://");
     let socket = new WebSocket(wsAddr);
     webSocketStacksUpdate.value = socket;
     socket.onmessage = function (event) {
-      let data: UpdateQueue = JSON.parse(event.data);
+        let data: UpdateQueue = JSON.parse(event.data);
 
+        for (let [newStatus, newItems] of Object.entries(data) as [QueueStatus, Record<string, QueueItem>][]) {
+            for (let stackName in newItems) {
+                const queueItem = newItems[stackName];
 
-      for (let [newStatus, newItems] of Object.entries(data) as [QueueStatus, Record<string, QueueItem>][]) {
-        for (let stackName in newItems) {
-          const queueItem = newItems[stackName];
+                let previousBucket: string | undefined = undefined;
+                for (let [oldStatus, oldItems] of Object.entries(stackQueue.value)) {
+                    if (queueItem.stackName in oldItems) {
+                        previousBucket = oldStatus;
+                        break;
+                    }
+                }
 
-          let previousBucket: string | undefined = undefined;
-          for (let [oldStatus, oldItems] of Object.entries(stackQueue.value)) {
-            if (queueItem.stackName in oldItems) {
-              previousBucket = oldStatus;
-              break;
+                switch (newStatus) {
+                    case QueueStatus.Queued:
+                        break;
+                    case QueueStatus.Done:
+                        if (previousBucket && previousBucket != newStatus) {
+                            snackbarsStore.addSnackbar(
+                                `${queueItem.stackId}_update`,
+                                `Stack ${queueItem.stackName} updated successfully`,
+                                "success"
+                            );
+                        }
+                        break;
+                    case QueueStatus.Error:
+                        if (previousBucket && previousBucket != newStatus) {
+                            snackbarsStore.addSnackbar(
+                                `${queueItem.stackId}_update`,
+                                `Stack ${queueItem.stackName} update failed`,
+                                "error"
+                            );
+                        }
+                        break;
+                }
             }
-          }
-
-          switch (newStatus) {
-            case QueueStatus.Queued:
-              break;
-            case QueueStatus.Done:
-              if (previousBucket && previousBucket != newStatus) {
-                snackbarsStore.addSnackbar(`${queueItem.stackId}_update`, `Stack ${queueItem.stackName} updated successfully`, "success");
-              }
-              break;
-            case QueueStatus.Error:
-              if (previousBucket && previousBucket != newStatus) {
-                snackbarsStore.addSnackbar(`${queueItem.stackId}_update`, `Stack ${queueItem.stackName} update failed`, "error");
-              }
-              break;
-          }
         }
-      }
-      updateQuelelelStore.update(data);
+        updateQuelelelStore.update(data);
     };
 
     socket.onclose = function (event) {
-      console.log('Socket is closed. Reconnect will be attempted in 1 second.', event.reason);
-      setTimeout(function () {
-        connectWebSocket();
-      }, 1000);
+        console.log("Socket is closed. Reconnect will be attempted in 1 second.", event.reason);
+        setTimeout(function () {
+            connectWebSocket();
+        }, 1000);
     };
 
     socket.onerror = function () {
-      console.error('Socket encountered error, closing socket');
-      socket.close();
+        console.error("Socket encountered error, closing socket");
+        socket.close();
     };
-  }
+}
+
+// functions
+async function awaitTimeout(delay: number) {
+    return new Promise((resolve) => setTimeout(resolve, delay, "loading"));
+}
 
 export {
     updateStack,
@@ -220,5 +233,6 @@ export {
     handleStackStateChange,
     getPortainerUrl,
     getContainerStatusCircleColor,
-    connectWebSocket
+    connectWebSocket,
+    awaitTimeout,
 };

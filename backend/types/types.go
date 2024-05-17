@@ -65,6 +65,7 @@ const (
 	Restart                   ContainerAction = "restart"
 	Pause                     ContainerAction = "pause"
 	Resume                    ContainerAction = "resume"
+	ContainerRunning          string          = "running"
 )
 
 type Login struct {
@@ -77,6 +78,7 @@ type User struct {
 }
 type StackSettings struct {
 	StackName string `bson:"stackName" json:"stackName"`
+	StackId   int    `bson:"stackId" json:"stackId"`
 	Priority  int    `bson:"priority" json:"priority"`
 	AutoStart bool   `bson:"autoStart" json:"autoStart"`
 }

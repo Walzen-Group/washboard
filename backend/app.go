@@ -155,6 +155,10 @@ func main() {
 	authGroup.POST("/logout", authMiddleware.LogoutHandler)
 	authGroup.POST("/refresh_token", authMiddleware.RefreshHandler)
 
+	// control
+	controlGroup := apiRoute.Group("/control", authMiddleware.MiddlewareFunc())
+	controlGroup.POST("/sync-autostart", api.SyncAutoStartState)
+
 	router.GET("/api", authMiddleware.MiddlewareFunc(), func(c *gin.Context) {
 		c.JSON(200, gin.H{"code": "OK", "message": "nothing to see here"})
 	})

@@ -14,24 +14,24 @@
                         <v-card-text>
                             <div class="d-flex flex-wrap ga-3">
                                 <v-btn
-                                       :loading="false"
+                                       :loading="stackOperationInProgress"
                                        variant="tonal"
                                        prepend-icon="mdi-arrow-right-drop-circle-outline"
-                                       @click="">Start
+                                       @click="ModifySelectedContainerStatus(Action.Start)">Start
                                 </v-btn>
                                 <v-btn
-                                       :loading="false"
+                                       :loading="stackOperationInProgress"
                                        color="stop"
                                        variant="tonal"
                                        prepend-icon="mdi-stop-circle-outline"
-                                       @click="">Stop
+                                       @click="ModifySelectedContainerStatus(Action.Stop)">Stop
                                 </v-btn>
                                 <v-btn
-                                       :loading="false"
+                                       :loading="stackOperationInProgress"
                                        variant="tonal"
                                        color="green-lighten-1"
                                        prepend-icon="mdi-restart"
-                                       @click="">Restart
+                                       @click="ModifySelectedContainerStatus(Action.Restart)">Restart
                                 </v-btn>
                             </div>
 
@@ -43,13 +43,13 @@
                         <v-card-text>
                             <div class="d-flex ga-3">
                                 <v-btn
-                                       :loading="false"
+                                       :loading="stackOperationInProgress"
                                        variant="tonal"
                                        prepend-icon="mdi-auto-mode"
                                        @click="handleSelectAutostartContainers">Autostart
                                 </v-btn>
                                 <v-btn
-                                       :loading="false"
+                                       :loading="stackOperationInProgress"
                                        variant="tonal"
                                        color="stop"
                                        prepend-icon="mdi-notification-clear-all"
@@ -278,6 +278,7 @@ const panel: Ref<Number | undefined> = ref(undefined);
 const props = defineProps<{ items: Stack[], portainerUrlTemplate: string, loading: boolean }>();
 const stacksInternal: Ref<StackInternal[]> = ref([]);
 const paddingClass: Ref<PaddingClass> = ref({});
+const stackOperationInProgress: Ref<boolean> = ref(false);
 let loaderState: Record<string, boolean> = reactive({});
 
 watch(props, () => {
@@ -329,7 +330,8 @@ useSortable(sortableRoot, stacksInternal, {
                     const dto: StackSettingsDto = {
                         stackName: newStack.name,
                         priority: newStack.priority,
-                        autoStart: newStack.autoStart
+                        autoStart: newStack.autoStart,
+                        stackId: newStack.id
                     };
                     const response = await axios.put(`/api/db/stacks/${newStack.name}`, dto, { params: { updatePrio: true } });
                     snackbarsStore.addSnackbar("stacks_order", "Stack order updated", "success");
@@ -341,6 +343,16 @@ useSortable(sortableRoot, stacksInternal, {
         }, 100);
     }
 });
+
+async function ModifySelectedContainerStatus(action: Action) {
+    stackOperationInProgress.value = true;
+    for (const stack of stacksInternal.value) {
+        if (stack.checked) {
+            await manageStack(stack, action);
+        }
+    }
+    stackOperationInProgress.value = false;
+}
 
 function s(arr: any) {
     return arr.length > 1 ? "s" : "";
@@ -356,7 +368,8 @@ async function toggleAutoStart(stack: Stack) {
     let dto: StackSettingsDto = {
         stackName: stack.name,
         priority: stack.priority,
-        autoStart: stack.autoStart
+        autoStart: stack.autoStart,
+        stackId: stack.id
     };
     try {
         const result = await axios.put(`/api/db/stacks/${stack.name}`, dto);
@@ -482,7 +495,8 @@ async function updatePriority(stack: StackInternal) {
         const dto: StackSettingsDto = {
             stackName: newStack.name,
             priority: newStack.priority,
-            autoStart: newStack.autoStart
+            autoStart: newStack.autoStart,
+            stackId: newStack.id
         };
         const response = await axios.put(`/api/db/stacks/${newStack.name}`, dto, { params: { updatePrio: true } });
     } catch (error: any) {

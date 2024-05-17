@@ -4,6 +4,7 @@ import { defineStore } from 'pinia'
 const STORE_NAME = 'local';
 const SIDEBAR_SETTINGS = 'sidebarSettings';
 const URL_STORE_NAME = 'urlConfig';
+const PORT_SETTING = 'defaultStartPort';
 
 const getDockerUpdateManagerDefaultSettings = (): DockerUpdateManagerSettings => ({
     ignoredImages: {},
@@ -25,6 +26,7 @@ export const useLocalStore = defineStore(STORE_NAME, {
         dockerUpdateManagerSettings: getDockerUpdateManagerSettings(),
         sidebarSettings: getSidebarSettings(),
         urlConfig: getURLConfig(),
+        defaultStartPort: getDefaultStartPort()
     }),
     actions: {
         updateDockerUpdateManagerSettings(partialSettings: any) {
@@ -51,9 +53,18 @@ export const useLocalStore = defineStore(STORE_NAME, {
         resetURLConfig() {
             resetURLConfig()
             this.urlConfig = getDefaultURLConfig()
+        },
+        updateDefaultStartPort(newPort: number) {
+            this.defaultStartPort = newPort
         }
     },
 })
+
+const getDefaultStartPort = (): number => {
+    const port = localStorage.getItem(PORT_SETTING)
+    return port ? parseInt(port) : 10000
+}
+
 
 const getSidebarSettings = (): SidebarSettings => {
     const settings = localStorage.getItem(SIDEBAR_SETTINGS)

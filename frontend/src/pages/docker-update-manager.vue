@@ -197,7 +197,7 @@
 <script lang="ts" setup>
 import axios from "axios";
 import gsap from "gsap";
-import { startStack, stopStack, updateStack, getContainers, handleStackStateChange } from "@/api/lib";
+import { startStack, stopStack, updateStack, getContainers, handleStackStateChange, awaitTimeout } from "@/api/lib";
 import { useLocalStore } from "@/store/local";
 import { useSnackbarStore } from "@/store/snackbar";
 import { useUpdateQuelelelStore } from "@/store/updateQuelelel";
@@ -268,10 +268,7 @@ watch(queueCount, async (newVal, oldVal) => {
     }
 });
 
-// functions
-async function awaitTimeout(delay: number) {
-    return new Promise((resolve) => setTimeout(resolve, delay, "loading"));
-}
+
 
 async function manageStack(stack: Stack, action: Action) {
     loaderState[stack.id] = true;

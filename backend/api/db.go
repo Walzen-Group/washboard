@@ -66,7 +66,7 @@ func SyncWithPortainer(c *gin.Context) {
 			if len(stack.Containers) > 0 {
 				autoStart = true
 			}
-			stackSetting = &types.StackSettings{StackName: stack.Name, AutoStart: autoStart, Priority: -1}
+			stackSetting = &types.StackSettings{StackName: stack.Name, AutoStart: autoStart, Priority: -1, StackId: stack.Id}
 			stackSettingsToAdd = append(stackSettingsToAdd, stackSetting)
 			newStackCount++
 			collectedStackMap[stack.Name] = stackSetting

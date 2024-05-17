@@ -29,6 +29,7 @@ interface StackSettings {
 
 interface StackSettingsDto {
   stackName: string;
+  stackId: number;
   priority: number;
   autoStart: boolean;
 }
