@@ -10,6 +10,11 @@ import Vuetify, { transformAssetUrls } from "vite-plugin-vuetify";
 // Utilities
 import { defineConfig } from "vite";
 import { fileURLToPath, URL } from "node:url";
+import { execSync } from 'child_process';
+
+// Get the shortened Git commit ID
+const gitCommitIdShort = execSync('git rev-parse --short HEAD').toString().trim();
+
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -56,6 +61,7 @@ export default defineConfig({
       PORTAINER_QUERY_TEMPlATE:
         "/#!/${endpointId}/docker/stacks/${stackName}?id=${stackId}&type=2&regular=true&external=false&orphaned=false",
       PORTAINER_DEFAULT_ENDPOINT_ID: 1,
+      commitHash: gitCommitIdShort,
     },
   },
   resolve: {
