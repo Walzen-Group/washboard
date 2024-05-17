@@ -15,10 +15,15 @@ RUN pnpm run build
 # Stage 2: Serve with nginx
 FROM nginx:stable-alpine
 
+# Install tini
+RUN apk add --no-cache tini
+
+RUN mkdir /app
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY ./deploy/nginx.conf /etc/nginx/nginx.conf
+COPY ./deploy/entrypoint.sh /app/entrypoint.sh
 
-RUN chown -R nginx:nginx /usr/share/nginx/html /etc/nginx/nginx.conf
+RUN chown -R nginx:nginx /usr/share/nginx/html /etc/nginx/nginx.conf /app/entrypoint.sh
 # give permission to nginx to run as non-root
 RUN chown -R nginx:nginx /var/cache/nginx \
     && chown -R nginx:nginx /var/log/nginx \
@@ -29,5 +34,5 @@ RUN chown -R nginx:nginx /var/cache/nginx \
 
 
 USER nginx
-
+ENTRYPOINT ["/sbin/tini", "--"]
 CMD ["nginx", "-g", "daemon off;"]
