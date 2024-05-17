@@ -10,6 +10,7 @@ import (
 )
 
 func StopAllStacks(endpointId int) error {
+	portainer.PerformSync(&types.SyncOptions{EndpointIds: []int{endpointId}})
 	settings, err := db.GetAllStackSettings()
 	if err != nil {
 		return err
@@ -30,8 +31,12 @@ func StopAllStacks(endpointId int) error {
 	})
 
 	for _, setting := range settings {
-		if _, ok := stackMap[setting.StackName]; ok {
-			portainer.StartOrStopStack(endpointId, setting.StackId, "stop")
+		if stack, ok := stackMap[setting.StackName]; ok {
+			if types.CheckWashbImage(stack) {
+				glg.Infof("not modifying stack containing a washboard image")
+				continue
+			}
+			//portainer.StartOrStopStack(endpointId, setting.StackId, "stop")
 			glg.Infof("stopped %s", setting.StackName)
 		}
 	}
@@ -40,6 +45,7 @@ func StopAllStacks(endpointId int) error {
 }
 
 func SyncAutoStartState(endpointId int) error {
+	portainer.PerformSync(&types.SyncOptions{EndpointIds: []int{endpointId}})
 	settings, err := db.GetAllStackSettings()
 	if err != nil {
 		return err
@@ -62,6 +68,12 @@ func SyncAutoStartState(endpointId int) error {
 	for _, setting := range settings {
 		if setting.AutoStart {
 			if stack, ok := stackMap[setting.StackName]; ok {
+
+				if types.CheckWashbImage(stack) {
+					glg.Infof("not modifying stack containing a washboard image")
+					continue
+				}
+
 				if len(stack.Containers) > 0 {
 					// check if all containers are stopped. This is an indicator that it probably got stopped by the user
 					// It's unlikely that all containers crashed at once
@@ -90,3 +102,5 @@ func SyncAutoStartState(endpointId int) error {
 	}
 	return nil
 }
+
+

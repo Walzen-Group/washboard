@@ -205,7 +205,8 @@
                                                    :lg="element.expanded ? '9' : '2'"
                                                    :xl="element.expanded ? '9' : '2'">
                                                 <v-row :class="[xs ? 'pr-4' : 'pr-10']" justify="end">
-                                                    <v-switch :loading="loaderState[element.id]"
+                                                    <v-switch :disabled="checkWashboard(element.containers)"
+                                                              :loading="loaderState[element.id]"
                                                               @click="toggleAutoStart(element)" color="blue-darken-1"
                                                               density="compact" hide-details
                                                               v-model="element.autoStart" inset></v-switch>
@@ -357,6 +358,10 @@ async function ModifySelectedContainerStatus(action: Action) {
         }
     }
     stackOperationInProgress.value = false;
+}
+
+function checkWashboard(containers: Container[]) {
+    return containers.some((container) => container.image.includes("washboard"));
 }
 
 function s(arr: any) {

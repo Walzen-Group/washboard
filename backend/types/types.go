@@ -1,5 +1,7 @@
 package types
 
+import "strings"
+
 type EndpointDto struct {
 	Id         int            `json:"id"`
 	Name       string         `json:"name"`
@@ -85,4 +87,15 @@ type StackSettings struct {
 
 type SyncOptions struct {
 	EndpointIds []int `json:"endpointIds"`
+}
+
+func CheckWashbImage(stack StackDto) bool {
+	isWashb := false
+	for _, container := range stack.Containers {
+		if strings.Contains(container.Image, "washboard") {
+			isWashb = true
+			break
+		}
+	}
+	return isWashb
 }
