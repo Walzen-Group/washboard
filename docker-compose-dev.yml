@@ -1,5 +1,5 @@
 services:
-  backend:
+  washbackend:
     build:
       context: .
       dockerfile: deploy/Dockerfile.backend
@@ -9,14 +9,14 @@ services:
     networks:
       - washboard-network
 
-  frontend:
+  washfrontend:
     build:
       context: .
       dockerfile: deploy/Dockerfile.frontend
     depends_on:
-      - backend
+      - washbackend
     ports:
-      - "8080:80"
+      - "10004:80"
     networks:
       - washboard-network
 
