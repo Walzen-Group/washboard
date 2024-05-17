@@ -25,7 +25,7 @@ func Instance() *Data {
 			glg.Fatal(err)
 		}
 		instance = new(Data)
-		instance.Config = Config{CacheDurationMinutes: 1}
+		instance.Config = Config{CacheDurationMinutes: 1, StartStacksOnLaunch: false, StartEndpointId: 1}
 		instance.StackUpdateQueue = cache.New(5*time.Minute, 10*time.Minute)
 		instance.StateQueue = cache.New(1*time.Minute, 1*time.Minute)
 		reflectionPath = filepath.Dir(ex)
@@ -86,6 +86,8 @@ type Config struct {
 	JwtSecret            string   `yaml:"jwt_secret"`
 	CacheDurationMinutes int      `yaml:"cache_duration_minutes"`
 	Cors                 []string `yaml:"cors"`
+	StartStacksOnLaunch  bool     `yaml:"start_stacks_on_launch"`
+	StartEndpointId      int      `yaml:"start_endpoint_id"`
 }
 
 type Data struct {
@@ -126,5 +128,12 @@ func overwriteConfigWithEnv(config *Config) {
 			cors[i] = strings.TrimSpace(cors[i])
 		}
 		config.Cors = cors
+	}
+	if value, exists := os.LookupEnv("START_STACKS_ON_LAUNCH"); exists {
+		if value == "true" {
+			config.StartStacksOnLaunch = true
+		} else {
+			config.StartStacksOnLaunch = false
+		}
 	}
 }

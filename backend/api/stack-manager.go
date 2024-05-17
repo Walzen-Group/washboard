@@ -176,3 +176,43 @@ func SyncAutoStartState(c *gin.Context) {
 		"message": "Auto start state synced successfully",
 	})
 }
+
+func StopAllStacks(c *gin.Context) {
+	var endpointId int
+
+	var reqBody map[string]interface{}
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		errorMessage := "Failed to bind json. Check the request body."
+		glg.Errorf("%s %s", errorMessage, err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": errorMessage,
+			"error": err,
+		})
+		return
+	}
+
+	if endpointRaw, ok := reqBody["endpointId"]; !ok {
+		glg.Warn("endpointId field is missing")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "endpointId field is missing"})
+		return
+	} else if endpointIdFloat, ok := endpointRaw.(float64); !ok {
+		glg.Warn("endpointId field is not an int")
+		c.JSON(http.StatusBadRequest, gin.H{"message": "endpointId field is not an int"})
+		return
+	} else {
+		endpointId = int(endpointIdFloat)
+	}
+
+	if err := control.StopAllStacks(endpointId); err != nil {
+		glg.Errorf("Failed to sync auto start state: %s", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to sync auto start state",
+			"error":  err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Auto start state synced successfully",
+	})
+}

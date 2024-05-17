@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
+	"washboard/db"
 	"washboard/types"
 
 	"github.com/kpango/glg"
@@ -96,3 +98,101 @@ func ManageContainer(endpointId int, containerId string, action types.ContainerA
 	}
 	return "success", nil
 }
+
+func PerformSync(syncOptions *types.SyncOptions) error {
+	var stacks []types.StackDto
+
+	for _, endpoint := range syncOptions.EndpointIds {
+		tmp, err := GetStacks(endpoint, true)
+		if err != nil {
+			return fmt.Errorf("failed to get containers for endpoint %d: %w", endpoint, err)
+		}
+		stacks = append(stacks, tmp...)
+	}
+
+	collectedStackMap := make(map[string]*types.StackSettings)
+
+	allStackSettings, err := db.GetAllStackSettings()
+	if err != nil {
+		return fmt.Errorf("failed to get all stack settings: %w", err)
+	}
+
+	for _, stack := range allStackSettings {
+		collectedStackMap[stack.StackName] = &stack
+	}
+
+	newStackCount := 0
+	stackSettingsToAdd := make([]*types.StackSettings, 0)
+
+	for _, stack := range stacks {
+		if stackSetting, ok := collectedStackMap[stack.Name]; !ok {
+			autoStart := false
+			if len(stack.Containers) > 0 {
+				autoStart = true
+			}
+			stackSetting = &types.StackSettings{
+				StackName: stack.Name,
+				AutoStart: autoStart,
+				Priority:  -1,
+				StackId:   stack.Id,
+			}
+			stackSettingsToAdd = append(stackSettingsToAdd, stackSetting)
+			newStackCount++
+			collectedStackMap[stack.Name] = stackSetting
+		} else {
+			collectedStackMap[stack.Name] = stackSetting
+		}
+	}
+
+	sort.Slice(stackSettingsToAdd, func(i, j int) bool {
+		return stackSettingsToAdd[i].StackName < stackSettingsToAdd[j].StackName
+	})
+
+	for _, stackSetting := range stackSettingsToAdd {
+		glg.Infof("adding missing stack %s", stackSetting.StackName)
+		db.CreateStackSettings(stackSetting)
+	}
+
+	allStackSettings, err = db.GetAllStackSettings()
+	if err != nil {
+		return fmt.Errorf("failed to get all stack settings: %w", err)
+	}
+
+	stacksToRemove := make([]string, 0)
+
+	for _, stackSettings := range allStackSettings {
+		if _, ok := collectedStackMap[stackSettings.StackName]; !ok {
+			stacksToRemove = append(stacksToRemove, stackSettings.StackName)
+		}
+	}
+
+	for _, stack := range stacksToRemove {
+		glg.Infof("removing orphaned stack %s", stack)
+		err := db.DeleteStackSettings(stack)
+		if err != nil {
+			glg.Errorf("failed to delete orphaned stack %s", stack)
+		}
+	}
+
+	allStackSettings, err = db.GetAllStackSettings()
+	if err != nil {
+		return fmt.Errorf("failed to get all stack settings: %w", err)
+	}
+
+	newIndex := 0
+	if newStackCount > 0 {
+		for _, settings := range allStackSettings {
+			if settings.Priority == -1 {
+				settings.Priority = newIndex
+				newIndex++
+				glg.Debugf("setting position of new stack %v", settings)
+			} else {
+				settings.Priority += newStackCount
+			}
+			db.UpdateStackSettings(&settings, settings.StackName)
+		}
+	}
+
+	return nil
+}
+

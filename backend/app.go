@@ -9,6 +9,8 @@ import (
 
 	"washboard/api"
 	"washboard/auth"
+	"washboard/control"
+	"washboard/portainer"
 	"washboard/state"
 	"washboard/types"
 
@@ -96,7 +98,7 @@ func main() {
 		SecureCookie:   false, //non HTTPS dev environments
 		CookieHTTPOnly: true,  // JS can't modify
 		// CookieDomain:   "localhost:8080, 10.10.194.2:8080, 172.31.0.37:8080, 10.10.10.37:8080",
-		CookieName:     "jwt",                    // default jwt
+		CookieName:     "jwt",                   // default jwt
 		CookieSameSite: http.SameSiteStrictMode, //SameSiteDefaultMode, SameSiteLaxMode, SameSiteStrictMode, SameSiteNoneMode
 		TokenLookup:    "header: Authorization, query: token, cookie: jwt",
 		// TokenLookup: "query:token",
@@ -158,35 +160,54 @@ func main() {
 	// control
 	controlGroup := apiRoute.Group("/control", authMiddleware.MiddlewareFunc())
 	controlGroup.POST("/sync-autostart", api.SyncAutoStartState)
+	controlGroup.POST("/stop-all", api.StopAllStacks)
 
 	router.GET("/api", authMiddleware.MiddlewareFunc(), func(c *gin.Context) {
 		c.JSON(200, gin.H{"code": "OK", "message": "nothing to see here"})
 	})
 
 	/*
-	router.NoRoute(func(c *gin.Context) {
-		path := c.Request.URL.Path
-		// Define the root directory for static files
-		root := "../frontend/dist"
+		router.NoRoute(func(c *gin.Context) {
+			path := c.Request.URL.Path
+			// Define the root directory for static files
+			root := "../frontend/dist"
 
-		// Check if the request is for a GET or HEAD method and does not start with /api
-		if (c.Request.Method == "GET" || c.Request.Method == "HEAD") && !strings.HasPrefix(path, "/api") {
-			// Attempt to serve a file from the static directory
-			file := root + path
-			if _, err := os.Stat(file); err == nil {
-				c.File(file)
-				return
+			// Check if the request is for a GET or HEAD method and does not start with /api
+			if (c.Request.Method == "GET" || c.Request.Method == "HEAD") && !strings.HasPrefix(path, "/api") {
+				// Attempt to serve a file from the static directory
+				file := root + path
+				if _, err := os.Stat(file); err == nil {
+					c.File(file)
+					return
+				}
 			}
-		}
 
-		// If no file found or path starts with /api, return JSON 404
-		c.JSON(404, gin.H{"code": "PAGE_NOT_FOUND", "message": "Pagenius nicht gefunden!"})
-	})
+			// If no file found or path starts with /api, return JSON 404
+			c.JSON(404, gin.H{"code": "PAGE_NOT_FOUND", "message": "Pagenius nicht gefunden!"})
+		})
 	*/
 
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{"code": "PAGE_NOT_FOUND", "message": "Pagenius nicht gefunden!"})
 	})
+
+	if appState.Config.StartStacksOnLaunch {
+		endpointIds := &types.SyncOptions{EndpointIds: []int{appState.Config.StartEndpointId}}
+		err := portainer.PerformSync(endpointIds)
+		if err != nil {
+			glg.Errorf("Failed to sync on launch: %s", err)
+		} else {
+			err = control.SyncAutoStartState(appState.Config.StartEndpointId)
+			if err != nil {
+				glg.Errorf("Failed to sync autostart state on launch: %s", err)
+			}
+		}
+	} else {
+		err = control.SyncAutoStartState(appState.Config.StartEndpointId)
+		if err != nil {
+			glg.Errorf("Failed to sync autostart state on launch: %s", err)
+		}
+	}
 
 	ret := router.Run()
 	if ret != nil {

@@ -9,6 +9,36 @@ import (
 	"github.com/kpango/glg"
 )
 
+func StopAllStacks(endpointId int) error {
+	settings, err := db.GetAllStackSettings()
+	if err != nil {
+		return err
+	}
+
+	stacks, err := portainer.GetStacks(endpointId, true)
+	if err != nil {
+		return err
+	}
+
+	stackMap := make(map[string]types.StackDto)
+	for _, stack := range stacks {
+		stackMap[stack.Name] = stack
+	}
+
+	sort.Slice(settings, func(i, j int) bool {
+		return settings[i].Priority > settings[j].Priority
+	})
+
+	for _, setting := range settings {
+		if _, ok := stackMap[setting.StackName]; ok {
+			portainer.StartOrStopStack(endpointId, setting.StackId, "stop")
+			glg.Infof("stopped %s", setting.StackName)
+		}
+	}
+
+	return nil
+}
+
 func SyncAutoStartState(endpointId int) error {
 	settings, err := db.GetAllStackSettings()
 	if err != nil {

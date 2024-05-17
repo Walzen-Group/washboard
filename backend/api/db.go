@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"sort"
 	"time"
 	"washboard/db"
 	"washboard/portainer"
@@ -30,101 +29,10 @@ func SyncWithPortainer(c *gin.Context) {
 		return
 	}
 
-	var stacks []types.StackDto
-
-	for _, endpoint := range syncOptions.EndpointIds {
-		tmp, err := portainer.GetStacks(endpoint, true)
-
-		if err != nil {
-			handleError(c, err, fmt.Sprintf("Failed to get containers for endpoint %d", endpoint), http.StatusBadRequest)
-			return
-		}
-		stacks = append(stacks, tmp...)
-	}
-
-	collectedStackMap := make(map[string]*types.StackSettings)
-
-
-	allStackSettings, err := db.GetAllStackSettings()
+	err := portainer.PerformSync(syncOptions)
 	if err != nil {
-		handleError(c, err, "Failed to get all stack settings", http.StatusInternalServerError)
+		handleError(c, err, err.Error(), http.StatusInternalServerError)
 		return
-	}
-
-	for _, stack := range allStackSettings {
-		collectedStackMap[stack.StackName] = &stack
-	}
-
-	newStackCount := 0
-
-	stackSettingsToAdd := make([]*types.StackSettings, 0)
-
-	// add missing grups and stakcs (das bleibt so)
-	for _, stack := range stacks {
-		if stackSetting, ok := collectedStackMap[stack.Name]; !ok {
-			autoStart := false
-			if len(stack.Containers) > 0 {
-				autoStart = true
-			}
-			stackSetting = &types.StackSettings{StackName: stack.Name, AutoStart: autoStart, Priority: -1, StackId: stack.Id}
-			stackSettingsToAdd = append(stackSettingsToAdd, stackSetting)
-			newStackCount++
-			collectedStackMap[stack.Name] = stackSetting
-		} else {
-			collectedStackMap[stack.Name] = stackSetting
-		}
-	}
-
-	// sort stackSettingsToAdd alphabetically
-	sort.Slice(stackSettingsToAdd, func(i, j int) bool {
-		return stackSettingsToAdd[i].StackName < stackSettingsToAdd[j].StackName
-	})
-
-	for _, stackSetting := range stackSettingsToAdd {
-		glg.Infof("adding missing stack %s", stackSetting.StackName)
-		db.CreateStackSettings(stackSetting)
-	}
-
-	allStackSettings, err2 := db.GetAllStackSettings()
-	if err2 != nil {
-		handleError(c, err2, "Failed to get all stack settings", http.StatusInternalServerError)
-		return
-	}
-
-	stacksToRemove := make([]string, 0)
-
-	for _, stackSettings := range allStackSettings {
-		if _, ok := collectedStackMap[stackSettings.StackName]; !ok {
-			stacksToRemove = append(stacksToRemove, stackSettings.StackName)
-		}
-	}
-
-	for _, stack := range stacksToRemove {
-		glg.Infof("removing orphaned stack %s", stack)
-		err := db.DeleteStackSettings(stack)
-		if err != nil {
-			glg.Errorf("Failed to delete orphaned stack %s", stack)
-		}
-	}
-
-	allStackSettings, err2 = db.GetAllStackSettings()
-	if err2 != nil {
-		handleError(c, err2, "Failed to get all stack settings 2", http.StatusInternalServerError)
-		return
-	}
-
-	newIndex := 0
-	if newStackCount > 0 {
-		for _, settings := range allStackSettings {
-			if settings.Priority == -1 {
-				settings.Priority = newIndex
-				newIndex++
-				glg.Debugf("setting position of new stack %v", settings)
-			} else {
-				settings.Priority = settings.Priority + newStackCount
-			}
-			db.UpdateStackSettings(&settings, settings.StackName)
-		}
 	}
 
 	glg.Infof("sync completed")
