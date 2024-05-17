@@ -62,7 +62,7 @@ export default defineConfig({
         "/#!/${endpointId}/docker/stacks/${stackName}?id=${stackId}&type=2&regular=true&external=false&orphaned=false",
       PORTAINER_DEFAULT_ENDPOINT_ID: 1,
       //commitHash: gitCommitIdShort,
-      commitHash: JSON.stringify(process.env.COMMIT_ID_SHORT)
+      commitHash: process.env.COMMIT_ID_SHORT
     },
   },
   resolve: {

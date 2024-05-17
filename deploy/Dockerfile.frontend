@@ -3,9 +3,6 @@ FROM node:20.10-bullseye as builder
 WORKDIR /app
 ARG COMMIT_ID_SHORT
 
-# Install Git to get the commit hash
-RUN apt-get update && apt-get install -y git
-
 # Copy package manager lock file and package.json
 COPY ./frontend/pnpm-lock.yaml ./frontend/package.json /app/
 RUN npm install -g pnpm

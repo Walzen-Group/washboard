@@ -16,7 +16,7 @@
 import { computed } from "vue";
 
 const commitHash = computed(() => {
-    if (process.env.commitHash) {
+    if (process.env.commitHash && process.env.commitHash.length > 0) {
         return process.env.commitHash.substring(0, 7);
     } else {
         return "jannis";
