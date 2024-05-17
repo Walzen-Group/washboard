@@ -348,6 +348,11 @@ async function ModifySelectedContainerStatus(action: Action) {
     stackOperationInProgress.value = true;
     for (const stack of stacksInternal.value) {
         if (stack.checked) {
+            for (const container of stack.containers) {
+                if (container.image.includes("washboard")) {
+                    continue;
+                }
+            }
             await manageStack(stack, action);
         }
     }
