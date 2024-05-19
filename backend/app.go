@@ -59,20 +59,21 @@ func main() {
 	//router.SetTrustedProxies([]string{"localhost"})
 
 	if len(appState.Config.Cors) == 0 {
-		glg.Warnf("No CORS allowed origins found in config")
-		appState.Config.Cors = []string{}
+		glg.Infof("CORS disabled")
+	} else {
+		glg.Infof("CORS allowed origins: %v", appState.Config.Cors)
+		router.Use(cors.New(cors.Config{
+			//AllowOrigins:     []string{"http://localhost:3000", "http://192.168.0.38:3000", "http://10.10.194.2:3000", "http://172.31.0.37:3000", "http://10.10.10.37:3000"},
+			AllowOrigins:     state.Instance().Config.Cors,
+			AllowMethods:     []string{"*, PUT"},
+			AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
+			ExposeHeaders:    []string{"Content-Length"},
+			AllowCredentials: true,
+			MaxAge:           12 * time.Hour,
+		}))
 	}
 
-	glg.Infof("CORS allowed origins: %v", appState.Config.Cors)
-	router.Use(cors.New(cors.Config{
-		//AllowOrigins:     []string{"http://localhost:3000", "http://192.168.0.38:3000", "http://10.10.194.2:3000", "http://172.31.0.37:3000", "http://10.10.10.37:3000"},
-		AllowOrigins:     state.Instance().Config.Cors,
-		AllowMethods:     []string{"*, PUT"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Content-Length", "Accept-Encoding", "X-CSRF-Token", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+
 
 	authMiddleware, err := jwt.New(&jwt.GinJWTMiddleware{
 		Realm:           "walzen",
