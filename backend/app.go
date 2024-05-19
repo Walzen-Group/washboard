@@ -59,8 +59,8 @@ func main() {
 	//router.SetTrustedProxies([]string{"localhost"})
 
 	if len(appState.Config.Cors) == 0 {
-		glg.Warnf("No CORS allowed origins found in config, allowing all origins")
-		appState.Config.Cors = []string{"*"}
+		glg.Warnf("No CORS allowed origins found in config")
+		appState.Config.Cors = []string{}
 	}
 
 	glg.Infof("CORS allowed origins: %v", appState.Config.Cors)
