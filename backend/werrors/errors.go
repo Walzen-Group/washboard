@@ -49,3 +49,19 @@ func NewDoesNotExistError(err error, info string) *DoesNotExistError {
 		Err:     err,
 	}
 }
+
+type AlreadyInProgressError struct {
+	Context string
+	Err     error
+}
+
+func (w *AlreadyInProgressError) Error() string {
+	return fmt.Sprintf("%s: %v", w.Context, w.Err)
+}
+
+func NewAlreadyInProgressError(err error, info string) *AlreadyInProgressError {
+	return &AlreadyInProgressError{
+		Context: info,
+		Err:     err,
+	}
+}

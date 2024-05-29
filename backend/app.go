@@ -192,8 +192,9 @@ func main() {
 		c.JSON(404, gin.H{"code": "PAGE_NOT_FOUND", "message": "Pagenius nicht gefunden!"})
 	})
 
+	endpointIds := &types.SyncOptions{EndpointIds: []int{appState.Config.StartEndpointId}}
+
 	if appState.Config.StartStacksOnLaunch {
-		endpointIds := &types.SyncOptions{EndpointIds: []int{appState.Config.StartEndpointId}}
 		err := portainer.PerformSync(endpointIds)
 		if err != nil {
 			glg.Errorf("Failed to sync on launch: %s", err)
@@ -204,9 +205,9 @@ func main() {
 			}
 		}
 	} else {
-		err = control.SyncAutoStartState(appState.Config.StartEndpointId)
+		err := portainer.PerformSync(endpointIds)
 		if err != nil {
-			glg.Errorf("Failed to sync autostart state on launch: %s", err)
+			glg.Errorf("Failed to sync on launch: %s", err)
 		}
 	}
 
