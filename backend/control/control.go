@@ -69,6 +69,7 @@ func SyncAutoStartState(endpointId int) error {
 		glg.Infof("syncAutoStartState already in progress")
 		return werrors.NewAlreadyInProgressError(errors.New("Operation can only be performed once"), "A container state sync operation is already in progress.")
 	}
+	controlCache.Set("syncAutoStartState", true, cache.DefaultExpiration)
 
 	portainer.PerformSync(&types.SyncOptions{EndpointIds: []int{endpointId}})
 	settings, err := db.GetAllStackSettings()
