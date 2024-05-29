@@ -24,6 +24,8 @@ import (
 func main() {
 	appState := state.Instance()
 
+	glg.Infof("welcome to washboard")
+
 	if appState.Config.JwtSecret == "" {
 		// generate very long secret
 		glg.Warnf("No JWT secret found in config, generating a new one. This will cause sessions to be lost after app restarts.")
