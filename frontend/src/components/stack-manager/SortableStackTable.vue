@@ -280,7 +280,7 @@ const localStore = useLocalStore();
 const { urlConfig } = storeToRefs(localStore);
 
 const search: Ref<string> = ref("");
-const searchActive: Ref<boolean> = ref(false);
+const searchActive: Ref<boolean> = ref(false)
 const changeOrderTransition: Ref<boolean> = ref(false);
 const orderEditMode: Ref<boolean> = ref(false);
 const sortableRoot = ref<HTMLElement | null>(null);
