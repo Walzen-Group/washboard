@@ -3,6 +3,7 @@
 
     <v-card>
         <v-card-title class="mt-4">Default Endpoint Host</v-card-title>
+        <v-card-subtitle style="text-wrap: wrap;">Change the URL washboard uses to connect to a stack's web ui.</v-card-subtitle>
         <v-card-text class="pb-0">
             <v-text-field
                           v-model="defaultHost"
@@ -12,7 +13,8 @@
             </v-text-field>
         </v-card-text>
 
-        <v-card-title class="pt-0">Portainer Address</v-card-title>
+        <v-card-title class="pt-0">Portainer Link URL</v-card-title>
+        <v-card-subtitle style="text-wrap: wrap;">Change the URL washboard uses when linking to Portainer.</v-card-subtitle>
         <v-card-text>
             <v-text-field
                           v-model="portainerAddress"
