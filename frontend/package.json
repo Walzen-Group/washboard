@@ -15,6 +15,7 @@
     "axios": "^1.6.8",
     "core-js": "^3.37.0",
     "gsap": "^3.12.5",
+    "lodash.debounce": "^4.0.8",
     "roboto-fontface": "^0.10.0",
     "sortablejs": "^1.15.2",
     "vue": "^3.4.27",

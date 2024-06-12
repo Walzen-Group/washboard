@@ -64,19 +64,24 @@
     </v-expansion-panels>
 
     <div class="d-flex mt-4">
-        <v-switch color="blue" v-model="orderEditMode" inset density="compact" hide-details
+        <v-switch color="blue" @update:model-value="toggleEditMode" inset density="compact" hide-details
                   label="Change Autostart Order"></v-switch>
     </div>
 
     <v-divider class="mb-2 mt-4" />
-    <div v-if="loading">
+
+    <div class="mt-4 mb-4">
+        <!-- serach box-->
+        <v-text-field v-if="!orderEditMode" v-model="search" :disabled="orderEditMode" label="Search" hide-details variant="filled"></v-text-field>
+    </div>
+
+    <div v-if="loading || searchActive">
         <v-skeleton-loader v-for="index in 10" :key="index" class="mb-2"
-                           :loading="loading"
                            type="list-item-two-line">
         </v-skeleton-loader>
     </div>
     <div ref="sortableRoot">
-        <v-fade-transition group>
+        <v-fade-transition group :disabled="changeOrderTransition" v-if="!loading">
             <v-card v-for="element in stacksInternal" class="pb-2 pt-3 mb-2" :key="element.id">
                 <v-row dense :class="[paddingClass[element.name]]">
                     <v-col cols="auto" class="ml-2">
@@ -266,6 +271,7 @@ import { getPortainerUrl, getContainerStatusCircleColor, getFirstContainerIcon }
 import { useDisplay } from "vuetify";
 import axios from "axios";
 import { storeToRefs } from "pinia";
+import debounce from 'lodash.debounce';
 
 const { xs } = useDisplay();
 
@@ -273,11 +279,15 @@ const snackbarsStore = useSnackbarStore();
 const localStore = useLocalStore();
 const { urlConfig } = storeToRefs(localStore);
 
+const search: Ref<string> = ref("");
+const searchActive: Ref<boolean> = ref(false);
+const changeOrderTransition: Ref<boolean> = ref(false);
 const orderEditMode: Ref<boolean> = ref(false);
 const sortableRoot = ref<HTMLElement | null>(null);
 const panel: Ref<Number | undefined> = ref(undefined);
 const props = defineProps<{ items: Stack[], portainerUrlTemplate: string, loading: boolean }>();
 const stacksInternal: Ref<StackInternal[]> = ref([]);
+const stacksUnfiltered: Ref<StackInternal[]> = ref([]);
 const paddingClass: Ref<PaddingClass> = ref({});
 const stackOperationInProgress: Ref<boolean> = ref(false);
 let loaderState: Record<string, boolean> = reactive({});
@@ -292,6 +302,7 @@ watch(props, () => {
         paddingClass.value[stack.name] = "row-sst";
         return stackInternal;
     })
+    stacksUnfiltered.value = stacksInternal.value;
 });
 
 watch(xs, (value) => {
@@ -307,6 +318,21 @@ watch(xs, (value) => {
         }
     }
 });
+
+watch(search, (newVal, oldVal) => {
+    if (newVal == "" && !searchActive.value) {
+        searchActive.value = true;
+    }
+});
+
+watch(search, debounce(() => {
+    changeOrderTransition.value = true;
+    filterStacks();
+    searchActive.value = false;
+    setTimeout(() => {
+        changeOrderTransition.value = false;
+    }, 150);
+}, 50))
 
 useSortable(sortableRoot, stacksInternal, {
     handle: ".jannis",
@@ -344,6 +370,11 @@ useSortable(sortableRoot, stacksInternal, {
         }, 100);
     }
 });
+
+function toggleEditMode() {
+    orderEditMode.value = !orderEditMode.value;
+    search.value = "";
+}
 
 async function ModifySelectedContainerStatus(action: Action) {
     stackOperationInProgress.value = true;
@@ -528,6 +559,11 @@ function clearSelection() {
     });
 }
 
+function filterStacks() {
+    stacksInternal.value = stacksUnfiltered.value.filter((stack) => {
+        return stack.name.toLowerCase().includes(search.value.toLowerCase());
+    });
+}
 
 </script>
 
