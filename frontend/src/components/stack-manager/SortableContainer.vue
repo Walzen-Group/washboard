@@ -2,7 +2,7 @@
     <!-- Content title -->
     <v-row class="fill-height row-sc" dense>
         <v-col>
-            <div>
+            <div class="clickyboi"  @click="show = !show" >
                 <div>
                     <slot name="title"></slot>
                 </div>
@@ -21,7 +21,7 @@
             <v-hover v-slot="{ isHovering, props }">
                 <v-card
                         rounded="md"
-                        @click="show = !show"
+                        @click.stop="show = !show"
                         variant="flat"
                         :color="isHovering ? 'rgba(0, 0, 0, 0.04)' : undefined"
                         v-bind="props"
@@ -53,4 +53,9 @@ watch(show, () => {
 .row-sc {
     flex-wrap: nowrap;
 }
+
+.clickyboi {
+    cursor: pointer;
+}
+
 </style>

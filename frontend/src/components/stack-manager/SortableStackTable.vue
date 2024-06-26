@@ -171,6 +171,7 @@
                                                     <v-chip v-else-if="checkWebUILabel(element) == 1"
                                                             color="wurple"
                                                             v-bind="props"
+                                                            @click.stop=""
                                                             target="_blank"
                                                             :href="resolveWebUILink(element.containers.filter((container) => webUILabel in container.labels)[0])"
                                                             class="ml-2 px-2"
@@ -181,6 +182,7 @@
 
                                                 <a :href="getPortainerUrl(element, portainerUrlTemplate)" target="_blank"
                                                    class="text-h6"
+                                                   @click.stop=""
                                                    style="text-decoration: none; color: inherit;">
                                                     {{ element.name }}
                                                 </a>
@@ -212,7 +214,7 @@
                                                 <v-row :class="[xs ? 'pr-4' : 'pr-10']" justify="end">
                                                     <v-switch :disabled="checkWashboard(element.containers)"
                                                               :loading="loaderState[element.id]"
-                                                              @click="toggleAutoStart(element)" color="blue-darken-1"
+                                                              @click.stop="toggleAutoStart(element)" color="blue-darken-1"
                                                               density="compact" hide-details
                                                               v-model="element.autoStart" inset></v-switch>
                                                 </v-row>
