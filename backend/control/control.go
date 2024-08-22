@@ -56,7 +56,7 @@ func StopAllStacks(endpointId int) error {
 				glg.Infof("not modifying stack containing a washboard image")
 				continue
 			}
-			//portainer.StartOrStopStack(endpointId, setting.StackId, "stop")
+			portainer.StartOrStopStack(endpointId, setting.StackId, "stop")
 			glg.Infof("stopped %s", setting.StackName)
 		}
 	}
