@@ -702,7 +702,9 @@ func getStackFile(stackId int) (string, error) {
 	}
 
 	stackFileContentRaw := stackFileContent["StackFileContent"]
+	stackFileContentRaw = strings.ReplaceAll(stackFileContentRaw, "\\", "\\\\")
 	stackFileContentRaw = strings.ReplaceAll(stackFileContentRaw, "\n", "\\n")
 	stackFileContentRaw = strings.ReplaceAll(stackFileContentRaw, "\"", "\\\"")
+
 	return stackFileContentRaw, nil
 }
