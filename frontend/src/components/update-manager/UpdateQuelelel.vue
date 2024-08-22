@@ -22,24 +22,21 @@
                                     <v-list-item :subtitle="item.raw.status">
                                         <template v-slot:append>
                                             <v-icon
-                                                v-if="item.raw.status == QueueStatus.Done"
-                                                size="35"
-                                                icon="mdi-robot-happy"
-                                                color="primary"
-                                                class="mr-2"
-                                            />
+                                                    v-if="item.raw.status == QueueStatus.Done"
+                                                    size="35"
+                                                    icon="mdi-robot-happy"
+                                                    color="primary"
+                                                    class="mr-2" />
                                             <v-icon
-                                                v-else-if="item.raw.status == QueueStatus.Queued"
-                                                size="35"
-                                                icon="mdi-robot-confused-outline"
-                                                :class="`mr-2 loader`"
-                                            />
+                                                    v-else-if="item.raw.status == QueueStatus.Queued"
+                                                    size="35"
+                                                    icon="mdi-robot-confused-outline"
+                                                    :class="`mr-2 loader`" />
                                             <v-icon
-                                                v-else-if="item.raw.status == QueueStatus.Error"
-                                                size="35"
-                                                icon="mdi-robot-dead-outline"
-                                                class="mr-2"
-                                            />
+                                                    v-else-if="item.raw.status == QueueStatus.Error"
+                                                    size="35"
+                                                    icon="mdi-robot-dead-outline"
+                                                    class="mr-2" />
                                             <v-icon v-else size="35" icon="mdi-robot" class="mr-2" />
                                         </template>
 
@@ -51,9 +48,8 @@
                                             <v-row dense>
                                                 <v-col cols="auto" xl="6">
                                                     <span
-                                                        class="cursor-default"
-                                                        :class="getColorClass(item.raw.status)"
-                                                    >
+                                                          class="cursor-default"
+                                                          :class="getColorClass(item.raw.status)">
                                                         {{
                                                             item.raw.status == QueueStatus.Queued
                                                                 ? "in progress"
@@ -67,8 +63,7 @@
                                                         {{ new Date(item.raw.timestamp * 1000).toLocaleString() }}
                                                     </v-tooltip>
                                                     <span class="cursor-default">
-                                                        {{ timeAgo(item.raw.timestamp) }}</span
-                                                    >
+                                                        {{ timeAgo(item.raw.timestamp) }}</span>
                                                 </v-col>
                                             </v-row>
                                         </template>
@@ -82,24 +77,22 @@
                     <template v-slot:header="{ page, pageCount, prevPage, nextPage }">
                         <div class="d-flex align-center justify-center px-4 pb-4">
                             <v-btn
-                                class="mr-1"
-                                :disabled="page === 1"
-                                icon="mdi-arrow-left"
-                                density="comfortable"
-                                variant="tonal"
-                                @click="prevPage"
-                            ></v-btn>
+                                   class="mr-1"
+                                   :disabled="page === 1"
+                                   icon="mdi-arrow-left"
+                                   density="comfortable"
+                                   variant="tonal"
+                                   @click="prevPage"></v-btn>
 
                             <div class="mx-2 text-caption">Page {{ page }} of {{ pageCount }}</div>
 
                             <v-btn
-                                class="ml-1"
-                                :disabled="page >= pageCount"
-                                icon="mdi-arrow-right"
-                                density="comfortable"
-                                variant="tonal"
-                                @click="nextPage"
-                            ></v-btn>
+                                   class="ml-1"
+                                   :disabled="page >= pageCount"
+                                   icon="mdi-arrow-right"
+                                   density="comfortable"
+                                   variant="tonal"
+                                   @click="nextPage"></v-btn>
                         </div>
                     </template>
                 </v-data-iterator>
@@ -193,17 +186,22 @@ const items: ComputedRef<QueueItem[]> = computed(() => {
             return -1;
         } else if (a.status !== QueueStatus.Queued && b.status === QueueStatus.Queued) {
             return 1;
-        } else if (a.status === QueueStatus.Error && b.status !== QueueStatus.Error) {
-            return 1;
-        } else if (a.status !== QueueStatus.Error && b.status === QueueStatus.Error) {
-            return -1;
         }
 
-        // Then sort alphabetically by stackName
-        if (a.timestamp == b.timestamp) {
-            return a.stackName.localeCompare(b.stackName);
+        // Prioritize 'error' after 'queued'
+        if (a.status === QueueStatus.Error && b.status !== QueueStatus.Error) {
+            return -1;
+        } else if (a.status !== QueueStatus.Error && b.status === QueueStatus.Error) {
+            return 1;
         }
-        return a.timestamp > b.timestamp ? -1 : 1;
+
+        // If the statuses are the same, sort by timestamp (descending)
+        if (a.timestamp !== b.timestamp) {
+            return a.timestamp > b.timestamp ? -1 : 1;
+        }
+
+        // If timestamps are the same, sort alphabetically by stackName (ascending)
+        return a.stackName.localeCompare(b.stackName);
     });
 
     return items;
