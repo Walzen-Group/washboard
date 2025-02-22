@@ -144,6 +144,12 @@ func main() {
 
 	// db CRUD
 
+	// db ignored image routes
+	dbIgnoredImageRoute := apiRoute.Group("/db/ignored-images", authMiddleware.MiddlewareFunc())
+	dbIgnoredImageRoute.POST("", api.CreateIgnoredImage)
+	dbIgnoredImageRoute.DELETE("/:name", api.DeleteIgnoredImage)
+	dbIgnoredImageRoute.GET("", api.GetIgnoredImages)
+
 	// db stack routes
 	dbStackRoute := apiRoute.Group("/db/stacks", authMiddleware.MiddlewareFunc())
 	dbStackRoute.POST("", api.CreateStackSettings)

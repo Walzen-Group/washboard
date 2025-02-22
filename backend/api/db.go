@@ -38,6 +38,70 @@ func SyncWithPortainer(c *gin.Context) {
 	glg.Infof("sync completed")
 }
 
+func CreateIgnoredImage(c *gin.Context) {
+	var ignoredImage *types.IgnoredImage = &types.IgnoredImage{}
+	if err := c.ShouldBindJSON(&ignoredImage); err != nil {
+		errorMessage := "Failed to bind json. Check the request body and ensure that the correct fields are present."
+		handleError(c, err, errorMessage, http.StatusBadRequest)
+		return
+	}
+	glg.Infof("Creating ignored image: %+v", ignoredImage)
+	err := db.CreateIgnoredImage(ignoredImage)
+	if err != nil {
+		target := &werrors.CannotInsertError{}
+		if errors.As(err, &target) {
+			glg.Errorf("%s %s", err.(*werrors.CannotInsertError), err)
+			c.JSON(http.StatusNotAcceptable, gin.H{
+				"message": "There was an issue with the insert operation",
+				"error":   err,
+			})
+			return
+		}
+		handleError(c, err, "Failed to create ignored image", http.StatusInternalServerError)
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{
+		"message":       "Ignored image created successfully.",
+		"ignoredImage": ignoredImage,
+	})
+}
+
+func DeleteIgnoredImage(c *gin.Context) {
+	name := c.Param("name")
+
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "image name is required",
+		})
+		return
+	}
+
+	err := db.DeleteIgnoredImage(name)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Failed to delete ignored image",
+			"error":   err.Error(),
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Ignored image deleted successfully.",
+	})
+}
+
+func GetIgnoredImages(c *gin.Context) {
+	ignoredImages, err := db.GetAllIgnoredImages()
+	if err != nil {
+		handleError(c, err, "Failed to get ignored images", http.StatusInternalServerError)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"message":        "ok",
+		"ignoredImages": ignoredImages,
+	})
+}
+
 func CreateStackSettings(c *gin.Context) {
 	var stackSettings *types.StackSettings = &types.StackSettings{}
 	if err := c.ShouldBindJSON(&stackSettings); err != nil {

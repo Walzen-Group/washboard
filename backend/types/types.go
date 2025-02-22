@@ -54,6 +54,7 @@ const (
 	Queued                    string          = "queued"
 	NotRequested              string          = "not_requested"
 	DbName                    string          = "washb"
+	DbIgnoredImagesCollection string          = "ignored_images"
 	DbGroupSettingsCollection string          = "group_settings"
 	DbStackSettingsCollection string          = "stack_settings"
 	DbAccountsCollection      string          = "accounts"
@@ -79,10 +80,14 @@ type User struct {
 	UserName string
 }
 type StackSettings struct {
-	StackName string `bson:"stackName" json:"stackName"`
-	StackId   int    `bson:"stackId" json:"stackId"`
-	Priority  int    `bson:"priority" json:"priority"`
-	AutoStart bool   `bson:"autoStart" json:"autoStart"`
+	StackName     string   `bson:"stackName" json:"stackName"`
+	StackId       int      `bson:"stackId" json:"stackId"`
+	Priority      int      `bson:"priority" json:"priority"`
+	AutoStart     bool     `bson:"autoStart" json:"autoStart"`
+}
+
+type IgnoredImage struct {
+	Name string `json:"name"`
 }
 
 type SyncOptions struct {

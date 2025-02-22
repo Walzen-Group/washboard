@@ -52,6 +52,7 @@
 <script lang="ts" setup>
 import axios, { AxiosError } from "axios";
 import { useRouter, useRoute } from "vue-router";
+import { useLocalStore } from "@/store/local";
 
 const router = useRouter();
 const route = useRoute();

@@ -9,7 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${workspaceFolder}\\app.go",
+            "program": "${workspaceFolder}/app.go",
             "output": "debug",
             "cwd": "${workspaceFolder}",
             "env": {},

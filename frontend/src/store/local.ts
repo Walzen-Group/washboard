@@ -6,6 +6,59 @@ const SIDEBAR_SETTINGS = 'sidebarSettings';
 const URL_STORE_NAME = 'urlConfig';
 const PORT_SETTING = 'defaultStartPort';
 
+export const useLocalStore = defineStore(STORE_NAME, () => {
+    const dockerUpdateManagerSettings: Ref<DockerUpdateManagerSettings> = ref(getDockerUpdateManagerSettings())
+    const sidebarSettings: Ref<SidebarSettings> = ref(getSidebarSettings())
+    const urlConfig: Ref<URLConfig> = ref(getURLConfig())
+    const defaultStartPort: Ref<Number> = ref(getDefaultStartPort())
+
+    function updateDockerUpdateManagerSettings(partialSettings: any) {
+        dockerUpdateManagerSettings.value = {
+            ...dockerUpdateManagerSettings.value,
+            ...partialSettings,
+        }
+        localStorage.setItem(STORE_NAME, JSON.stringify(dockerUpdateManagerSettings.value))
+    }
+
+    function updateSidebarSettings(partialSettings: any) {
+        sidebarSettings.value = {
+            ...sidebarSettings.value,
+            ...partialSettings,
+        }
+        localStorage.setItem(SIDEBAR_SETTINGS, JSON.stringify(sidebarSettings.value))
+    }
+
+    function updateURLConfig(partialSettings: any) {
+        urlConfig.value = {
+            ...urlConfig.value,
+            ...partialSettings,
+        }
+        localStorage.setItem(URL_STORE_NAME, JSON.stringify(urlConfig.value))
+    }
+
+    function resetURLConfig() {
+        localStorage.removeItem(URL_STORE_NAME)
+        urlConfig.value = getDefaultURLConfig()
+    }
+
+    function updateDefaultStartPort(newPort: number) {
+        defaultStartPort.value = newPort
+    }
+
+    return {
+        urlConfig,
+        dockerUpdateManagerSettings,
+        sidebarSettings,
+        defaultStartPort,
+
+        updateDockerUpdateManagerSettings,
+        updateSidebarSettings,
+        updateURLConfig,
+        resetURLConfig,
+        updateDefaultStartPort
+    }
+})
+
 const getDockerUpdateManagerDefaultSettings = (): DockerUpdateManagerSettings => ({
     ignoredImages: {},
 })
@@ -21,50 +74,10 @@ const getDefaultURLConfig = (): URLConfig => ({
     defaultPortainerAddress: process.env.PORTAINER_BASE_URL || `${location.hostname}:9000`
 })
 
-export const useLocalStore = defineStore(STORE_NAME, {
-    state: () => ({
-        dockerUpdateManagerSettings: getDockerUpdateManagerSettings(),
-        sidebarSettings: getSidebarSettings(),
-        urlConfig: getURLConfig(),
-        defaultStartPort: getDefaultStartPort()
-    }),
-    actions: {
-        updateDockerUpdateManagerSettings(partialSettings: any) {
-            this.dockerUpdateManagerSettings = {
-                ...this.dockerUpdateManagerSettings,
-                ...partialSettings,
-            }
-            localStorage.setItem(STORE_NAME, JSON.stringify(this.dockerUpdateManagerSettings))
-        },
-        updateSidebarSettings(partialSettings: any) {
-            this.sidebarSettings = {
-                ...this.sidebarSettings,
-                ...partialSettings,
-            }
-            localStorage.setItem(SIDEBAR_SETTINGS, JSON.stringify(this.sidebarSettings))
-        },
-        updateURLConfig(partialSettings: any) {
-            this.urlConfig = {
-                ...this.urlConfig,
-                ...partialSettings,
-            }
-            localStorage.setItem(URL_STORE_NAME, JSON.stringify(this.urlConfig))
-        },
-        resetURLConfig() {
-            resetURLConfig()
-            this.urlConfig = getDefaultURLConfig()
-        },
-        updateDefaultStartPort(newPort: number) {
-            this.defaultStartPort = newPort
-        }
-    },
-})
-
 const getDefaultStartPort = (): number => {
     const port = localStorage.getItem(PORT_SETTING)
     return port ? parseInt(port) : 10000
 }
-
 
 const getSidebarSettings = (): SidebarSettings => {
     const settings = localStorage.getItem(SIDEBAR_SETTINGS)
@@ -79,8 +92,4 @@ const getDockerUpdateManagerSettings = (): DockerUpdateManagerSettings => {
 const getURLConfig = (): URLConfig => {
     const settings = localStorage.getItem(URL_STORE_NAME)
     return settings ? JSON.parse(settings) : getDefaultURLConfig()
-}
-
-const resetURLConfig = () => {
-    localStorage.removeItem(URL_STORE_NAME)
 }

@@ -55,6 +55,76 @@ func GetConnection() (*DataStore, error) {
 	return instance, nil
 }
 
+func CreateIgnoredImage(ignoredImage *types.IgnoredImage) error {
+	conn, conErr := GetConnection()
+	if conErr != nil {
+		return conErr
+	}
+	collection := conn.db.Collection(types.DbIgnoredImagesCollection)
+	indexModel := mongo.IndexModel{
+		Keys:    bson.D{primitive.E{Key: "name", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	}
+	ctxOp2, cancelOp2 := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancelOp2()
+	_, err := collection.Indexes().CreateOne(ctxOp2, indexModel)
+	if err != nil {
+		return err
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	_, err = collection.InsertOne(ctx, ignoredImage)
+	if err != nil {
+		err = werrors.NewCannotInsertError(err, err.(mongo.WriteException).WriteErrors[0].Message) // 🌯 the error
+	}
+	return err
+}
+
+func DeleteIgnoredImage(name string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	conn, conErr := GetConnection()
+	if conErr != nil {
+		return conErr
+	}
+	collection := conn.db.Collection(types.DbIgnoredImagesCollection)
+	res, err := collection.DeleteOne(ctx, bson.M{"name": name})
+	if err != nil {
+		return err
+	}
+	if res.DeletedCount == 0 {
+		return fmt.Errorf("No ignored image found with name %s", name)
+	}
+	return err
+}
+
+func GetAllIgnoredImages() ([]types.IgnoredImage, error) {
+	conn, conErr := GetConnection()
+	if conErr != nil {
+		return nil, conErr
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	collection := conn.db.Collection(types.DbIgnoredImagesCollection)
+	var ignoredImages []types.IgnoredImage
+
+	cursor, err := collection.Find(ctx, bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(ctx)
+
+	err = cursor.All(ctx, &ignoredImages)
+	if err != nil {
+		return nil, err
+	}
+	return ignoredImages, nil
+}
+
 // CreateStackSettings creates a new stack settings document in the database
 func CreateStackSettings(stackSettings *types.StackSettings) error {
 	conn, conErr := GetConnection()
