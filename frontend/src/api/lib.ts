@@ -168,7 +168,7 @@ function connectWebSocket() {
                 const queueItem = newItems[stackName];
 
                 let previousBucket: string | undefined = undefined;
-                for (let [oldStatus, oldItems] of Object.entries(stackQueue.value)) {
+                for (let [oldStatus, oldItems] of Object.entries(stackQueue.value) as [QueueStatus, Record<string, QueueItem>][]) {
                     if (queueItem.stackName in oldItems) {
                         previousBucket = oldStatus;
                         break;
