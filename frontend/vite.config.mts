@@ -77,4 +77,11 @@ export default defineConfig({
   build: {
     modulePreload: { polyfill: true },
   },
+  css: {
+    preprocessorOptions: {
+      sass: {
+        api: 'modern-compiler' // or "modern"
+      }
+    }
+  }
 });

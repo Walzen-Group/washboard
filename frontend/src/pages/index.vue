@@ -126,7 +126,7 @@ function getNextFreePort() {
             publicPorts.push(...container.ports.map((port: string) => Number(port.split(":")[0])));
         }
     }
-    publicPorts = publicPorts.filter((port: number) => port >= defaultStartPort.value);
+    publicPorts = publicPorts.filter((port: number) => port >= Number(defaultStartPort.value));
     publicPorts.sort((a: number, b: number) => a - b);
     console.log(publicPorts);
     for (let i = 0; i < publicPorts.length; i++) {
