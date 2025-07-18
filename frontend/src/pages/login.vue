@@ -11,37 +11,34 @@
                             </v-col>
                             <v-col class="login-fields">
                                 <v-alert
-                                    v-if="loginError"
-                                    type="error"
-                                    color="deep-purple-lighten-2"
-                                    class="mb-6"
-                                    dense
-                                    >{{ loginErrorMessage }}</v-alert
-                                >
-                                <v-text-field
-                                    v-model="username"
-                                    label="Name"
-                                    class="mb-3"
-                                    :rules="usernameRules"
-                                    variant="filled"
-                                >
-                                </v-text-field>
-                                <v-text-field
-                                    @keydown.enter="submitLogin"
-                                    v-model="password"
-                                    label="Password"
-                                    type="password"
-                                    variant="filled"
-                                >
-                                </v-text-field>
+                                         v-if="loginError"
+                                         type="error"
+                                         color="deep-purple-lighten-2"
+                                         class="mb-6"
+                                         dense>{{ loginErrorMessage }}</v-alert>
+                                <v-form @submit.prevent>
+                                    <v-text-field
+                                                  v-model="username"
+                                                  label="Name"
+                                                  class="mb-3"
+                                                  :rules="usernameRules"
+                                                  variant="filled">
+                                    </v-text-field>
+                                    <v-text-field
+                                                  @keydown.enter="submitLogin"
+                                                  v-model="password"
+                                                  label="Password"
+                                                  type="password"
+                                                  variant="filled">
+                                    </v-text-field>
+                                </v-form>
                             </v-col>
                         </v-row>
                     </v-card-text>
                     <v-card-actions>
                         <v-spacer></v-spacer>
-                        <v-btn :loading="loading" class="mx-1 my-1" variant="tonal" @click="submitLogin"
-                            >Start Laundry</v-btn
-                        >
+                        <v-btn :loading="loading" class="mx-1 my-1" variant="tonal" @click="submitLogin">Start
+                            Laundry</v-btn>
                     </v-card-actions>
                 </div>
             </v-card>
@@ -60,7 +57,7 @@ const usernameRules = [
     (value: string) => {
         if (/^[a-zA-Z0-9_.-]*$/.test(value)) return true;
 
-        return "Last name can not contain digits.";
+        return "Username must be alphanumeric";
     },
 ];
 

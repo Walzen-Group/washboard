@@ -434,7 +434,6 @@ function resolveWebUILink(container: Container) {
     const portDict = Object.fromEntries(ports);
 
     let target = urlConfig.value.defaultHost;
-
     if (!container.labels[webUILabel].includes(webUIAddressKey)) {
         //console.log(`container: ${container.name} has no address key`);
         return container.labels[webUILabel];
@@ -448,7 +447,11 @@ function resolveWebUILink(container: Container) {
     }
 
     //console.log(`container: ${container.name} output url: ${outputUrl}`);
-    return "//" + outputUrl;
+
+    if (!target.startsWith("http://") && !target.startsWith("https://")) {
+        return "//" + outputUrl;
+    }
+    return outputUrl;
 }
 
 async function manageStack(stack: Stack, action: Action) {
