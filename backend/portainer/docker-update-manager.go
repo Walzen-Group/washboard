@@ -368,6 +368,7 @@ func queryContainerImageStatus(endpointId int, containersDto []*types.ContainerD
 func GetStackImagesStatus(stackId int) (string, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/stacks/%d/images_status", appState.Config.PortainerUrl, stackId), nil)
+	glg.Debugf("fetching images for stack %d", stackId)
 	if err != nil {
 		glg.Errorf("Failed to create request: %s", err)
 		return "", err
@@ -401,6 +402,7 @@ func GetStackImagesStatus(stackId int) (string, error) {
 }
 
 func GetImageStatus(endpointId int, containerId string) (string, error) {
+	glg.Debugf("fetching images for container %s in endpoint %d", containerId, endpointId)
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/docker/%d/containers/%s/image_status", appState.Config.PortainerUrl, endpointId, containerId), nil)
 	if err != nil {
