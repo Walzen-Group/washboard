@@ -42,13 +42,12 @@ const portainerAddress = ref(urlConfig.value.defaultPortainerAddress);
 function handleEndpointFieldChange() {
     localStore.updateURLConfig({
         defaultHost: defaultHost.value,
-        defaultPortainerAddress: portainerAddress.value,
     });
 }
 
 function handlePortainerAddressChange() {
     localStore.updateURLConfig({
-        defaultHost: defaultHost.value,
+        defaultPortainerAddress: portainerAddress.value,
     });
 }
 
