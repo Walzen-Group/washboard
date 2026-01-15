@@ -213,6 +213,8 @@ func main() {
 		}
 	}
 
+	portainer.StartBackgroundUpdateCheck(appState.Config.StartEndpointId)
+
 	ret := router.Run()
 	if ret != nil {
 		panic(ret)
