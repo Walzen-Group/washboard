@@ -60,6 +60,81 @@ func GetEndpointId(endpointName string) (int, error) {
 	return -1, nil
 }
 
+// StartBackgroundUpdateCheck starts a background job that checks for updates every 24 hours
+func StartBackgroundUpdateCheck(endpointId int) {
+	go func() {
+		glg.Info("Starting background update check...")
+		runUpdateCheck(endpointId)
+		ticker := time.NewTicker(24 * time.Hour)
+		for range ticker.C {
+			if val, found := fallbackCache.Get(FallbackCacheLastUpdatedKey); found {
+				if lastUpdated, ok := val.(time.Time); ok {
+					if time.Since(lastUpdated) < 24*time.Hour {
+						glg.Info("Skipping background update check because cache is fresh enough")
+						continue
+					}
+				}
+			}
+
+			runUpdateCheck(endpointId)
+		}
+	}()
+}
+
+func runUpdateCheck(endpointId int) {
+	glg.Info("Running background update check")
+	stacks, err := GetStacks(endpointId, true)
+	if err != nil {
+		glg.Errorf("Failed to get stacks for background update check: %s", err)
+		return
+	}
+
+	for _, stack := range stacks {
+		// Optimization 1: Check if any container in the stack is already known to be outdated in fallback cache
+		stackHasOutdated := false
+		for _, container := range stack.Containers {
+			if val, found := fallbackCache.Get(container.Id); found {
+				if val.(string) == types.Outdated {
+					stackHasOutdated = true
+					break
+				}
+			}
+		}
+
+		if !stackHasOutdated {
+			// Stack seems clean, try bulk check
+			status, err := GetStackImagesStatus(stack.Id)
+			if err != nil {
+				glg.Errorf("Failed to get stack images status for stack %s: %s", stack.Name, err)
+			} else if status == types.Updated {
+				// Mark all containers as updated
+				for _, container := range stack.Containers {
+					fallbackCache.Set(container.Id, types.Updated, cache.NoExpiration)
+				}
+				continue
+			}
+		}
+
+		// Check individual containers
+		for _, container := range stack.Containers {
+			// Skip if already outdated in fallback cache
+			if val, found := fallbackCache.Get(container.Id); found && val.(string) == types.Outdated {
+				continue
+			}
+
+			status, err := GetImageStatus(endpointId, container.Id)
+			if err != nil {
+				glg.Warnf("Error fetching image status for container id %s: %s", container.Id, err)
+				fallbackCache.Delete(container.Id)
+			} else {
+				fallbackCache.Set(container.Id, status, cache.NoExpiration)
+			}
+		}
+	}
+	fallbackCache.Set(FallbackCacheLastUpdatedKey, time.Now(), cache.NoExpiration)
+	glg.Info("Background update check finished")
+}
+
 // GetStacks returns the stacks for the given endpoint
 func GetStacks(endpointId int, skeletonOnly bool) ([]types.StackDto, error) {
 	client := &http.Client{}
@@ -219,11 +294,18 @@ func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([
 		}
 		if val, ok := stacks[stackName]["allImagesStatus"]; ok {
 			if val.(string) == types.NotRequested {
-				container.UpToDate = val.(string)
+				// Check fallback cache
+				if cachedStatus, found := fallbackCache.Get(container.Id); found {
+					container.UpToDate = cachedStatus.(string)
+				} else {
+					container.UpToDate = types.NotRequested
+				}
 			} else if val.(string) != types.Updated {
 				queryImageStatusContainers = append(queryImageStatusContainers, container)
 			} else {
 				container.UpToDate = types.Updated
+				// Update fallback cache
+				fallbackCache.Set(container.Id, types.Updated, cache.NoExpiration)
 			}
 		}
 		if val, ok := stacksDto[stackName]; ok {
@@ -249,6 +331,9 @@ func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([
 
 	if len(queryImageStatusContainers) > 0 {
 		queryContainerImageStatus(endpointId, queryImageStatusContainers)
+	} else if !skeletonOnly {
+		// if we didn't query any containers (all up to date), update timestamp
+		fallbackCache.Set(FallbackCacheLastUpdatedKey, time.Now(), cache.NoExpiration)
 	}
 
 	stackSettings, err := db.GetAllStackSettings()
@@ -335,8 +420,11 @@ func queryContainerImageStatus(endpointId int, containersDto []*types.ContainerD
 				if err != nil {
 					glg.Warnf("Error fetching image status for container id %s", container.Id)
 					portainerCache.Set(container.Id, liveStatus, time.Minute*5)
+					fallbackCache.Delete(container.Id)
+				} else {
+					portainerCache.Set(container.Id, liveStatus, cache.DefaultExpiration)
+					fallbackCache.Set(container.Id, liveStatus, cache.NoExpiration)
 				}
-				portainerCache.Set(container.Id, liveStatus, cache.DefaultExpiration)
 				status = liveStatus
 			}
 			statusChan <- struct {
@@ -363,6 +451,7 @@ func queryContainerImageStatus(endpointId int, containersDto []*types.ContainerD
 		}
 	}
 	glg.Infof("cached container image statuses: %d, uncached container images statuses: %d", cachedCount, uncachedCount)
+	fallbackCache.Set(FallbackCacheLastUpdatedKey, time.Now(), cache.NoExpiration)
 }
 
 func GetStackImagesStatus(stackId int) (string, error) {
