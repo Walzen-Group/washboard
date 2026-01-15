@@ -727,6 +727,21 @@ func updateStack(endpointId int, stackId int, reqBodyByte []byte) (float64, erro
 	glg.Infof("Stack %s updated", stack["Name"])
 	// remove cached images status when an update was performed
 	portainerCache.Delete(fmt.Sprintf("stack-%d-images-status", stackId))
+
+	if stackName, ok := stack["Name"]; ok {
+		if nameStr, ok := stackName.(string); ok {
+			containers, err := GetContainers(endpointId, nameStr)
+			if err == nil {
+				for _, container := range containers {
+					fallbackCache.Delete(container.Id)
+					portainerCache.Delete(container.Id)
+				}
+			} else {
+				glg.Errorf("Failed to get containers for cache clearing: %s", err)
+			}
+		}
+	}
+
 	return stack["Id"].(float64), nil
 }
 
