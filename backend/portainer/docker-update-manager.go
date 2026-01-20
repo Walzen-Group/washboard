@@ -331,7 +331,7 @@ func buildStacksDto(stacks map[string]map[string]interface{}, endpointId int) ([
 
 	if len(queryImageStatusContainers) > 0 {
 		queryContainerImageStatus(endpointId, queryImageStatusContainers)
-	} else if !skeletonOnly {
+	} else {
 		// if we didn't query any containers (all up to date), update timestamp
 		fallbackCache.Set(FallbackCacheLastUpdatedKey, time.Now(), cache.NoExpiration)
 	}
