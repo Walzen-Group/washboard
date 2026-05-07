@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+	"washboard/portainer"
 	"washboard/types"
 
 	"github.com/gin-gonic/gin"
@@ -62,6 +63,9 @@ func readData(ws *websocket.Conn, oniiChan chan string) {
 
 func pushData(ws *websocket.Conn, oniiChan chan string) {
 	defer ws.Close()
+	// Force the first refresh-state push so reconnecting clients sync immediately.
+	const firstPush = ^uint64(0)
+	lastRefreshVersion := firstPush
 	for {
 		select {
 		case msg := <-oniiChan:
@@ -72,32 +76,43 @@ func pushData(ws *websocket.Conn, oniiChan chan string) {
 		default:
 		}
 
+		// Always push the stack-update queue (cheap, and the frontend reconciles).
 		items := appState.StackUpdateQueue.Items()
-
-		// group items by status and create new map[string]map[string]cache.Item
 		groupedItems := make(map[string]map[string]types.StackUpdateStatus)
 		for _, item := range items {
 			stackUpdateStatus := item.Object.(types.StackUpdateStatus)
-
 			status := stackUpdateStatus.Status
 			if _, ok := groupedItems[status]; !ok {
 				groupedItems[status] = make(map[string]types.StackUpdateStatus)
 			}
 			groupedItems[status][stackUpdateStatus.StackName] = stackUpdateStatus
 		}
+		if err := writeEnvelope(ws, types.WsMsgStackUpdateQueue, groupedItems); err != nil {
+			glg.Errorf("error writing stack-update-queue envelope: %s", err)
+			return
+		}
 
-		out, err := encodeJson(groupedItems)
-		if err != nil {
-			glg.Warnf("error while marshaling encoder to json: %s", err)
-			break
+		// Push image-refresh state only on first connection or when it has changed.
+		currentVersion := portainer.Refresh.Version()
+		if currentVersion != lastRefreshVersion {
+			if err := writeEnvelope(ws, types.WsMsgImageRefreshState, portainer.Refresh.Snapshot()); err != nil {
+				glg.Errorf("error writing image-refresh-state envelope: %s", err)
+				return
+			}
+			lastRefreshVersion = currentVersion
 		}
-		err = ws.WriteMessage(websocket.TextMessage, out)
-		if err != nil {
-			glg.Errorf("error while writing to websocket: %s", err)
-			break
-		}
+
 		time.Sleep(1 * time.Second)
 	}
+}
+
+func writeEnvelope(ws *websocket.Conn, msgType string, data interface{}) error {
+	out, err := encodeJson(types.WsEnvelope{Type: msgType, Data: data})
+	if err != nil {
+		glg.Warnf("error while marshaling envelope to json: %s", err)
+		return err
+	}
+	return ws.WriteMessage(websocket.TextMessage, out)
 }
 
 func encodeJson(in interface{}) ([]byte, error) {

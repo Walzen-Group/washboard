@@ -125,6 +125,7 @@ func main() {
 	portainerRoute.GET("/endpoint", api.PortainerGetEndpoint)
 	portainerRoute.GET("/containers", api.PortainerGetContainers)
 	portainerRoute.GET("/image-status", api.PortainerGetImageStatus)
+	portainerRoute.POST("/refresh-image-status", api.PortainerRefreshImageStatus)
 	portainerRoute.POST("/update-container", api.PortainerUpdateContainer)
 
 	// portainer container routes

@@ -41,6 +41,23 @@ type StackUpdateStatus struct {
 	Timestamp  int64  `json:"timestamp"`
 }
 
+type ImageRefreshState struct {
+	Running    bool   `json:"running"`
+	StartedAt  int64  `json:"startedAt"`
+	FinishedAt int64  `json:"finishedAt"`
+	Error      string `json:"error"`
+}
+
+type WsEnvelope struct {
+	Type string      `json:"type"`
+	Data interface{} `json:"data"`
+}
+
+const (
+	WsMsgStackUpdateQueue  = "stack-update-queue"
+	WsMsgImageRefreshState = "image-refresh-state"
+)
+
 type ContainerAction string
 
 // We could make an ActionType type and use that instead of string but that would require some annoying refactoring

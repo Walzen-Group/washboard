@@ -60,11 +60,13 @@ func GetEndpointId(endpointName string) (int, error) {
 	return -1, nil
 }
 
-// StartBackgroundUpdateCheck starts a background job that checks for updates every 24 hours
+// StartBackgroundUpdateCheck starts a background job that checks for updates every 24 hours.
+// All refreshes go through Refresh.TriggerRefresh so they are deduplicated against any
+// in-flight refresh started by the API trigger.
 func StartBackgroundUpdateCheck(endpointId int) {
 	go func() {
 		glg.Info("Starting background update check...")
-		runUpdateCheck(endpointId)
+		Refresh.TriggerRefresh(endpointId)
 		ticker := time.NewTicker(24 * time.Hour)
 		for range ticker.C {
 			if val, found := fallbackCache.Get(FallbackCacheLastUpdatedKey); found {
@@ -76,7 +78,7 @@ func StartBackgroundUpdateCheck(endpointId int) {
 				}
 			}
 
-			runUpdateCheck(endpointId)
+			Refresh.TriggerRefresh(endpointId)
 		}
 	}()
 }

@@ -76,6 +76,23 @@ interface URLConfig {
 
 interface UpdateQueue extends Record<QueueStatus, Record<string, QueueItem>> { }
 
+interface ImageRefreshState {
+  running: boolean;
+  startedAt: number;
+  finishedAt: number;
+  error: string;
+}
+
+enum WsMessageType {
+  StackUpdateQueue = "stack-update-queue",
+  ImageRefreshState = "image-refresh-state",
+}
+
+interface WsEnvelope<T = unknown> {
+  type: WsMessageType;
+  data: T;
+}
+
 enum QueueStatus {
   Error = "error",
   Queued = "queued",
@@ -116,7 +133,8 @@ export {
   QueueStatus,
   ImageStatus,
   ContainerStatus,
-  Action
+  Action,
+  WsMessageType
 };
 export type {
   Container,
@@ -133,5 +151,7 @@ export type {
   IgnoredImages,
   UpdateQueue, QueueItem,
   SidebarSettings,
-  URLConfig
+  URLConfig,
+  ImageRefreshState,
+  WsEnvelope
 };

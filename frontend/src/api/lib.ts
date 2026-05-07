@@ -1,9 +1,10 @@
 import axios, { AxiosError } from "axios";
-import { Stack, StackInternal, Action, Container, UpdateQueue, QueueItem, QueueStatus } from "@/types/types";
+import { Stack, StackInternal, Action, Container, UpdateQueue, QueueItem, QueueStatus, WsEnvelope, WsMessageType, ImageRefreshState } from "@/types/types";
 import { Store, storeToRefs } from "pinia";
 import { useLocalStore } from "@/store/local";
 import { useSnackbarStore } from "@/store/snackbar";
 import { useUpdateQuelelelStore } from "@/store/updateQuelelel";
+import { useImageRefreshStore } from "@/store/imageRefresh";
 import { useAppStore } from "@/store/app";
 
 const webUILabel = "org.walzen.washb.webui";
@@ -150,6 +151,7 @@ function getFirstContainerIcon(containers: Container[]): string | undefined {
 function connectWebSocket() {
     const updateQuelelelStore = useUpdateQuelelelStore();
     const { queue: stackQueue } = storeToRefs(updateQuelelelStore);
+    const imageRefreshStore = useImageRefreshStore();
     const snackbarsStore = useSnackbarStore();
     const appStore = useAppStore();
     const { webSocketStacksUpdate } = storeToRefs(appStore);
@@ -161,45 +163,63 @@ function connectWebSocket() {
     let socket = new WebSocket(wsAddr);
     webSocketStacksUpdate.value = socket;
     socket.onmessage = function (event) {
-        let data: UpdateQueue = JSON.parse(event.data);
+        let envelope: WsEnvelope;
+        try {
+            envelope = JSON.parse(event.data) as WsEnvelope;
+        } catch (e) {
+            console.error("failed to parse ws envelope", e);
+            return;
+        }
 
-        for (let [newStatus, newItems] of Object.entries(data) as [QueueStatus, Record<string, QueueItem>][]) {
-            for (let stackName in newItems) {
-                const queueItem = newItems[stackName];
+        switch (envelope.type) {
+            case WsMessageType.StackUpdateQueue: {
+                const data = envelope.data as UpdateQueue;
+                for (let [newStatus, newItems] of Object.entries(data) as [QueueStatus, Record<string, QueueItem>][]) {
+                    for (let stackName in newItems) {
+                        const queueItem = newItems[stackName];
 
-                let previousBucket: string | undefined = undefined;
-                for (let [oldStatus, oldItems] of Object.entries(stackQueue.value) as [QueueStatus, Record<string, QueueItem>][]) {
-                    if (queueItem.stackName in oldItems) {
-                        previousBucket = oldStatus;
-                        break;
+                        let previousBucket: string | undefined = undefined;
+                        for (let [oldStatus, oldItems] of Object.entries(stackQueue.value) as [QueueStatus, Record<string, QueueItem>][]) {
+                            if (queueItem.stackName in oldItems) {
+                                previousBucket = oldStatus;
+                                break;
+                            }
+                        }
+
+                        switch (newStatus) {
+                            case QueueStatus.Queued:
+                                break;
+                            case QueueStatus.Done:
+                                if (previousBucket && previousBucket != newStatus) {
+                                    snackbarsStore.addSnackbar(
+                                        `${queueItem.stackId}_update`,
+                                        `Stack ${queueItem.stackName} updated successfully`,
+                                        "success"
+                                    );
+                                }
+                                break;
+                            case QueueStatus.Error:
+                                if (previousBucket && previousBucket != newStatus) {
+                                    snackbarsStore.addSnackbar(
+                                        `${queueItem.stackId}_update`,
+                                        `Stack ${queueItem.stackName} update failed`,
+                                        "error"
+                                    );
+                                }
+                                break;
+                        }
                     }
                 }
-
-                switch (newStatus) {
-                    case QueueStatus.Queued:
-                        break;
-                    case QueueStatus.Done:
-                        if (previousBucket && previousBucket != newStatus) {
-                            snackbarsStore.addSnackbar(
-                                `${queueItem.stackId}_update`,
-                                `Stack ${queueItem.stackName} updated successfully`,
-                                "success"
-                            );
-                        }
-                        break;
-                    case QueueStatus.Error:
-                        if (previousBucket && previousBucket != newStatus) {
-                            snackbarsStore.addSnackbar(
-                                `${queueItem.stackId}_update`,
-                                `Stack ${queueItem.stackName} update failed`,
-                                "error"
-                            );
-                        }
-                        break;
-                }
+                updateQuelelelStore.update(data);
+                break;
             }
+            case WsMessageType.ImageRefreshState: {
+                imageRefreshStore.update(envelope.data as ImageRefreshState);
+                break;
+            }
+            default:
+                console.warn("unknown ws envelope type", envelope.type);
         }
-        updateQuelelelStore.update(data);
     };
 
     socket.onclose = function (event) {
@@ -213,6 +233,13 @@ function connectWebSocket() {
         console.error("Socket encountered error, closing socket");
         socket.close();
     };
+}
+
+async function triggerImageRefresh(endpointId: number = 1) {
+    // Fire and forget. Backend dedupes; completion arrives via websocket.
+    return axios.post("/api/portainer/refresh-image-status", null, {
+        params: { endpointId },
+    });
 }
 
 // functions
@@ -234,5 +261,6 @@ export {
     getPortainerUrl,
     getContainerStatusCircleColor,
     connectWebSocket,
+    triggerImageRefresh,
     awaitTimeout,
 };

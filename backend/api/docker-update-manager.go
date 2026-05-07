@@ -205,6 +205,34 @@ func PortainerGetImageStatus(c *gin.Context) {
 	})
 }
 
+// PortainerRefreshImageStatus triggers an asynchronous refresh of the image-status fallback
+// cache. If a refresh is already running, the request is a no-op and the current state is
+// returned. Completion is signaled to clients via the /api/ws/stacks-update websocket.
+//
+// Query Parameters:
+// - endpointId (optional, default "1"): the Portainer endpoint to refresh against.
+//
+// Responses:
+// - 202 Accepted: returns {started: bool, state: ImageRefreshState}.
+//   started=false means a refresh was already running and this call was deduplicated.
+func PortainerRefreshImageStatus(c *gin.Context) {
+	endpoint := c.DefaultQuery("endpointId", "1")
+	endpointId, err := strconv.Atoi(endpoint)
+	if err != nil {
+		glg.Errorf("failed to convert endpointId to int: %s", err)
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": fmt.Sprintf("failed to convert endpointId \"%s\" to int", endpoint),
+		})
+		return
+	}
+
+	started := portainer.Refresh.TriggerRefresh(endpointId)
+	c.JSON(http.StatusAccepted, gin.H{
+		"started": started,
+		"state":   portainer.Refresh.Snapshot(),
+	})
+}
+
 // PortainerUpdateContainer handles the HTTP request to update a container configuration in Portainer.
 // It reads from a JSON request body to extract necessary parameters such as the container's identifier,
 // the endpoint ID where the container is located, and a boolean flag indicating whether to pull the

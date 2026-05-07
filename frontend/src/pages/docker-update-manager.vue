@@ -197,10 +197,11 @@
 <script lang="ts" setup>
 import axios from "axios";
 import gsap from "gsap";
-import { startStack, stopStack, updateStack, getContainers, handleStackStateChange, awaitTimeout } from "@/api/lib";
+import { startStack, stopStack, updateStack, getContainers, handleStackStateChange, triggerImageRefresh } from "@/api/lib";
 import { useLocalStore } from "@/store/local";
 import { useSnackbarStore } from "@/store/snackbar";
 import { useUpdateQuelelelStore } from "@/store/updateQuelelel";
+import { useImageRefreshStore } from "@/store/imageRefresh";
 import { storeToRefs } from "pinia";
 import { ref, Ref, onMounted, computed, watch, reactive } from "vue";
 import { Stack, Container, UpdateQueue, QueueStatus, ImageStatus, Action } from "@/types/types";
@@ -213,6 +214,9 @@ const { dockerUpdateManagerSettings: dockerUpdateManagerSettings, urlConfig } = 
 
 const updateQuelelelStore = useUpdateQuelelelStore();
 const { queue, queueCount } = storeToRefs(updateQuelelelStore);
+
+const imageRefreshStore = useImageRefreshStore();
+const { running: imageRefreshRunning } = storeToRefs(imageRefreshStore);
 
 const snackbarsStore = useSnackbarStore();
 
@@ -236,7 +240,7 @@ const selectedStackNames: Ref<string[]> = ref([]);
 const items: Ref<Stack[]> = ref([]);
 const loading: Ref<boolean> = ref(true);
 const refreshing: Ref<boolean> = ref(true);
-const waitingForImageStatus: Ref<boolean> = ref(false);
+const waitingForImageStatus = computed(() => imageRefreshRunning.value);
 
 // computed properties
 const portainerStackUrl = computed(() => {
@@ -265,6 +269,15 @@ watch(queueCount, async (newVal, oldVal) => {
     if (newVal === 0 && oldVal !== 0) {
         loadingUpdateButton.value = false;
         await leeroad();
+    }
+});
+
+// When a backend image refresh finishes, re-pull the skeleton so the cards reflect
+// the now-updated fallback cache. Backend dedup ensures simultaneous user triggers
+// don't pile up while a refresh is in flight.
+watch(imageRefreshRunning, async (running, prev) => {
+    if (prev && !running) {
+        await init();
     }
 });
 
@@ -319,34 +332,32 @@ function updateStatusCounts() {
 }
 
 async function init() {
-    const response = await axios.get("/api/portainer/stacks", { params: { skeletonOnly: true } });
-    items.value = response.data;
-    loading.value = false;
-    waitingForImageStatus.value = true;
-    refreshing.value = false;
-}
-
-async function leeroad() {
-    refreshing.value = true;
     try {
-        const request = axios.get("/api/portainer/stacks");
-        const timeout = awaitTimeout(5000);
-        const first = await Promise.any([request, timeout]);
-        if (first === "loading") {
-            await init();
-        }
-        const response = await request;
-        console.log("leeroaded");
+        const response = await axios.get("/api/portainer/stacks", { params: { skeletonOnly: true } });
         items.value = response.data;
-        waitingForImageStatus.value = false;
         connectionFailed.value = false;
         setImageIgnores();
         updateStatusCounts();
     } catch (error) {
         connectionFailed.value = true;
         console.log(error);
+    } finally {
+        loading.value = false;
     }
+}
+
+async function leeroad() {
+    refreshing.value = true;
+    await init();
     refreshing.value = false;
+    try {
+        const response = await triggerImageRefresh();
+        if (response?.data?.state) {
+            imageRefreshStore.update(response.data.state);
+        }
+    } catch (error) {
+        console.log("failed to trigger image refresh", error);
+    }
 }
 
 function setImageIgnores() {

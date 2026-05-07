@@ -1,6 +1,7 @@
 # secrets
 secrets.yaml
 .env
+.direnv
 
 # logging
 */log/
