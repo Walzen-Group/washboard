@@ -1,5 +1,5 @@
 # Stage 1: Build the frontend
-FROM node:20.10-bullseye as builder
+FROM node:20-bullseye AS builder
 WORKDIR /app
 ARG COMMIT_ID_SHORT
 
