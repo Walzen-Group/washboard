@@ -381,8 +381,19 @@ func buildContainerDto(containers []map[string]interface{}) []*types.ContainerDt
 			networkNames = append(networkNames, networkName)
 		}
 
-		name := container["Names"].([]interface{})[0].(string)
-		name = helper.RemoveFirstIfMatch(name, "/")
+		names, _ := container["Names"].([]interface{})
+		var name string
+		if len(names) > 0 {
+			if n, ok := names[0].(string); ok {
+				name = helper.RemoveFirstIfMatch(n, "/")
+			}
+		}
+		if name == "" {
+			if id, ok := container["Id"].(string); ok && len(id) >= 12 {
+				name = id[:12]
+			}
+			glg.Warnf("container has no Names; falling back to id=%q", name)
+		}
 		containersDto = append(containersDto, &types.ContainerDto{
 			Id:       container["Id"].(string),
 			Name:     name,
