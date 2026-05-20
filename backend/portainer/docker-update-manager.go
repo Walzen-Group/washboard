@@ -103,12 +103,24 @@ func runUpdateCheck(endpointId int) {
 			}
 		}
 
+		stackCacheKey := fmt.Sprintf("stack-%d-images-status", stack.Id)
 		if !stackHasOutdated {
-			// Stack seems clean, try bulk check
-			status, err := GetStackImagesStatus(stack.Id)
-			if err != nil {
-				glg.Errorf("Failed to get stack images status for stack %s: %s", stack.Name, err)
-			} else if status == types.Updated {
+			// Stack seems clean, try bulk check — but honor the live-result cache first
+			var status string
+			if val, ok := portainerCache.Get(stackCacheKey); ok {
+				status = val.(string)
+				glg.Debugf("using cached stack images status for stack %d", stack.Id)
+			} else {
+				var err error
+				status, err = GetStackImagesStatus(stack.Id)
+				if err != nil {
+					glg.Errorf("Failed to get stack images status for stack %s: %s", stack.Name, err)
+					status = ""
+				} else {
+					portainerCache.Set(stackCacheKey, status, cache.DefaultExpiration)
+				}
+			}
+			if status == types.Updated {
 				// Mark all containers as updated
 				for _, container := range stack.Containers {
 					fallbackCache.Set(container.Id, types.Updated, cache.NoExpiration)
@@ -123,12 +135,20 @@ func runUpdateCheck(endpointId int) {
 			if val, found := fallbackCache.Get(container.Id); found && val.(string) == types.Outdated {
 				continue
 			}
+			// Skip if portainerCache still has a fresh live result for this container
+			if val, found := portainerCache.Get(container.Id); found {
+				if s, ok := val.(string); ok && s != "" {
+					fallbackCache.Set(container.Id, s, cache.NoExpiration)
+					continue
+				}
+			}
 
 			status, err := GetImageStatus(endpointId, container.Id)
 			if err != nil {
 				glg.Warnf("Error fetching image status for container id %s: %s", container.Id, err)
 				fallbackCache.Delete(container.Id)
 			} else {
+				portainerCache.Set(container.Id, status, cache.DefaultExpiration)
 				fallbackCache.Set(container.Id, status, cache.NoExpiration)
 			}
 		}
